@@ -1,0 +1,50 @@
+Involved people:
+Peter Zeller
+→ Our contact if there are questions
+Annette Bieniusa
+→ In charge of the whole project
+Deepthi Akkoorath
+→ Can answer specific questions about Antidote
+
+Participants:
+Those four people on the second slide. Two people, who were previously listed in the Git repository have cancelled their participation.
+
+The work we do during the project won't land in the rubbish bin after we're done, so we are actively contributing to a greater project (which we can for example mention in our curriculum vitae)
+
+Antidote: 
+A planet-scale, available, transactional database with strong semantics
+Planet-scale -> Not only one database, but replicas all over the planet so the nearest can be contacted.
+Available → Let's say Australia is cut off from  the rest of the world, then the system will still work in Australia although updates from the other replicas won't arrive there.
+Transactional → Usage of transactions, which are atomic (either nothing happens or all the updates within the transaction are applied)
+Strong semantics → Don't know how to explain this easily
+
+Other properties:
+Key-Value store → One approach (SQL would be another approach)
+Replicated data types → List on slide 17, the bold ones are supported by Antidote
+
+What we do: Java-Client for Antidote Requirements
+Basic functionality must be implemented
+API design and fault tolerance: The mentioned things shall be respected and implemented as much as possible concerning the time we have
+
+First steps:
+Everyone chooses one of the six tasks and fulfills it within the next two weeks. Two tasks may be dropped because those six tasks were meant do be done by the initial six participants.
+-> Tasks 1 and 3 are already taken, taking a look at Cassandra is highly recommended. If I remember correctly, JDBC can be dropped as one member of the team has already some experience with this one.
+
+General tasks (Slide 10):
+Must be done. We talked a bit more about coding guidelines, where we can use an existing guideline (a guideline from Google was mentioned) and mention this in our documentation.
+
+Organization:
+Our effort must be documented so it is clear who spends how much time on which task. If we work on one day, then it is sufficient to enter our working hours at the end of this day (not too granular and not too vague). Instead of the time sheet in the repository, we will use a time tracker, which Salman will set up. This is necessary to compare our project with other projects.
+
+There are rooms which we can use to work on the project. One room is usually locked, so we have to ask Peter for the key. Also we can borrow a laptop, but at least half of our team has a laptop.
+
+We must designate a project manager and a quality assurance guy, which will be done on the next meeting in two weeks. The project manager is in charge of delegating tasks within the team while the QA guy is in charge when new features are merged into the main branch. Also the QA guy shall manage code reviews within the team (by telling member A to check member B's code) and he is responsible for testing.
+
+CAP-Theorem:
+Three properties, which can never be fulfilled all three. In this case, consistency is weakened, which is illustrated on later slides.
+
+CRDTs:
+We're working with these, so it is useful to get a rough understanding of what this is. There are some things we must be aware of, like the example on slide 31. Let's say we have an empty register containing the comments. Two methods want to add a comment, say „a“ and „hello“. Both read the empty register and take the union of that register and the comment they want to add. The first method then writes the union, into the register, so the register contains one single comment „a“. The second method, having read the empty register, then adds the union of this empty register and „hello“. It writes this to the register, and the result will be a register containing only the comment „hello“ because the register with „a“ is overwritten. Solution with Andidote: Use a set instead of a register.
+
+Additional information:
+Luc currently lives in Luxembourg, so it is hardly possible for him to work face to face with the rest of the team. However, if some urgent meeting is required, he can drive to Kaiserslautern.
