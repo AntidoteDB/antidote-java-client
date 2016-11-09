@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="pb">
+    <CLASSES>
+      <root url="jar://D:/antidote/protobuf-master/java/out/artifacts/protocolBuffer_jar/pb.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
