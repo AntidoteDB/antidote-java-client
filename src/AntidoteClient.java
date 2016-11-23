@@ -116,7 +116,7 @@ public class AntidoteClient {
 
 
             ApbGetCounterResp readResponse = ApbGetCounterResp.parseFrom(messageData);
-
+            
             System.out.println(readResponse);
             socket.close();
 
@@ -125,8 +125,6 @@ public class AntidoteClient {
         }       
     }
     
-    
-    //assumption: when multiple elements are removed, the parameter is a list
     public void removeSet(String name, String bucket, List<String> elements){
         ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
         ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
@@ -542,9 +540,89 @@ public class AntidoteClient {
         }       
     }
     
-    
- /*   	work in progress
-   		public void updateMap(String name, String bucket) {
+    public void updateMap(String name, String bucket, ApbMapKey key, ApbUpdateOperation update){
+    	List<ApbUpdateOperation> updates = new ArrayList<ApbUpdateOperation>();
+    	updates.add(0, update);
+    	updateMap(name, bucket, key, updates);
+    }
+ 
+   	public void updateMap(String name, String bucket, ApbMapKey key, List<ApbUpdateOperation> updates) {
+
+        ApbStaticUpdateObjects.Builder mapUpdateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
+
+        ApbBoundObject.Builder mapObject = ApbBoundObject.newBuilder(); // The object in the message
+        mapObject.setKey(ByteString.copyFromUtf8(name));
+        mapObject.setType(CRDT_type.AWMAP);
+        mapObject.setBucket(ByteString.copyFromUtf8(bucket));
+        
+        ApbMapNestedUpdate.Builder mapNestedUpdateBuilder = ApbMapNestedUpdate.newBuilder(); // The specific instruction in update instruction
+        List<ApbMapNestedUpdate> mapNestedUpdateList = new ArrayList<ApbMapNestedUpdate>();
+        
+        int i=0;
+        for (ApbUpdateOperation update : updates){
+        	mapNestedUpdateBuilder.setUpdate(update);
+        	mapNestedUpdateBuilder.setKey(key);
+        	ApbMapNestedUpdate mapNestedUpdate = mapNestedUpdateBuilder.build();
+        	mapNestedUpdateList.add(i, mapNestedUpdate);
+        	i++;
+        }
+
+        ApbMapUpdate.Builder mapUpdateInstruction = ApbMapUpdate.newBuilder(); // The specific instruction in update instruction
+        mapUpdateInstruction.addAllUpdates(mapNestedUpdateList);
+            
+        ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
+        updateOperation.setMapop(mapUpdateInstruction);
+
+        ApbUpdateOp.Builder updateInstruction = ApbUpdateOp.newBuilder();
+        updateInstruction.setBoundobject(mapObject);
+        updateInstruction.setOperation(updateOperation);
+
+        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
+
+        ApbStartTransaction.Builder writeTransaction = ApbStartTransaction.newBuilder();
+        writeTransaction.setProperties(transactionProperties);
+
+        mapUpdateMessage.setTransaction(writeTransaction);
+        mapUpdateMessage.addUpdates(updateInstruction);
+
+        ApbStaticUpdateObjects mapUpdateMessageObject = mapUpdateMessage.build();
+
+        int messageLength = mapUpdateMessageObject.toByteArray().length + 1; // Protobuf length + message code
+        int messageCode = 122; // todo: change this to enum
+
+        // Message written and read as <length:32> <msg_code:8> <pbmsg>
+
+        try {
+            socket = new Socket(host, port);
+            DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+            dataOutputStream.writeInt(messageLength);
+            dataOutputStream.writeByte(messageCode);
+            mapUpdateMessageObject.writeTo(dataOutputStream);
+            dataOutputStream.flush();
+
+            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            int responseLength = dataInputStream.readInt();
+            int responseCode = dataInputStream.readByte();
+
+            byte[] messageData = new byte[responseLength - 1];
+            dataInputStream.readFully(messageData, 0, responseLength - 1);
+
+            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(messageData);
+            System.out.println(commitResponse);
+            socket.close();
+        } catch (Exception e) {
+            System.out.println(e);
+        } 	
+        
+    }
+   	
+   	public void removeMap(String name, String bucket, ApbMapKey key){
+    	List<ApbMapKey> keys = new ArrayList<ApbMapKey>();
+    	keys.add(0, key);
+    	removeMap(name, bucket, keys);
+    }
+   	
+   	public void removeMap(String name, String bucket, List<ApbMapKey> keys) {
 
         ApbStaticUpdateObjects.Builder mapUpdateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
 
@@ -553,8 +631,8 @@ public class AntidoteClient {
         mapObject.setType(CRDT_type.AWMAP);
         mapObject.setBucket(ByteString.copyFromUtf8(bucket));
 
-        ApbMapUpdate.Builder mapUpdateInstruction = ApbMapUpdate.newBuilder(); // The specific instruction in update instructions
-        mapUpdateInstruction.setInc(inc); 
+        ApbMapUpdate.Builder mapUpdateInstruction = ApbMapUpdate.newBuilder(); // The specific instruction in update instruction
+        mapUpdateInstruction.addAllRemovedKeys(keys);
         
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setMapop(mapUpdateInstruction);
@@ -600,5 +678,4 @@ public class AntidoteClient {
             System.out.println(e);
         }
     }
-    */
 }
