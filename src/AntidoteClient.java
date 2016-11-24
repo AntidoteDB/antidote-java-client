@@ -5,6 +5,7 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import java.util.*;
 import java.io.*;
 import java.net.Socket;
+import static java.lang.Math.toIntExact;
 
 public class AntidoteClient {
     private Socket socket;
@@ -78,7 +79,7 @@ public class AntidoteClient {
         }
     }
 
-    public void readCounter(String name, String bucket) {
+    public int readCounter(String name, String bucket) {
 
         ApbBoundObject.Builder counterObject = ApbBoundObject.newBuilder(); // The object in the message
         counterObject.setKey(ByteString.copyFromUtf8(name));
@@ -114,24 +115,27 @@ public class AntidoteClient {
             byte[] messageData = new byte[responseLength - 1];
             dataInputStream.readFully(messageData, 0, responseLength - 1);
 
-
-            ApbGetCounterResp readResponse = ApbGetCounterResp.parseFrom(messageData);
-            
-            System.out.println(readResponse);
-            socket.close();
+            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(messageData);
+            ApbGetCounterResp counter = readResponse.getObjects().getObjects(0).getCounter();
+            int val = counter.getValue();
+            return val;
 
         } catch (Exception e) {
             System.out.println(e);
-        }       
+            return -1;
+        }  
     }
     
+    //assumption: when multiple elements are removed, the parameter is a list
     public void removeSet(String name, String bucket, List<String> elements){
         ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
         ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
         setUpdateInstruction.setOptype(opType);
+        List<ByteString> elementsByteString = new ArrayList<ByteString>();
         for (String e : elements){
-            setUpdateInstruction.setRems(0, ByteString.copyFromUtf8(e)); //index must be given, but this doesn't appear in the .proto file, so no clue about this
+        	elementsByteString.add(ByteString.copyFromUtf8(e));
         }
+        setUpdateInstruction.addAllRems(elementsByteString);
         updateSetHelper(name, bucket, setUpdateInstruction);
     }
     
@@ -139,9 +143,11 @@ public class AntidoteClient {
         ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
         ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(1);
         setUpdateInstruction.setOptype(opType);
+        List<ByteString> elementsByteString = new ArrayList<ByteString>();
         for (String e : elements){
-            setUpdateInstruction.setAdds(0, ByteString.copyFromUtf8(e)); //index must be given, but this doesn't appear in the .proto file, so no clue about this
+        	elementsByteString.add(ByteString.copyFromUtf8(e));
         }
+        setUpdateInstruction.addAllAdds(elementsByteString);
         updateSetHelper(name, bucket, setUpdateInstruction);
     }
     
@@ -149,7 +155,7 @@ public class AntidoteClient {
         ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
         ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
         setUpdateInstruction.setOptype(opType);
-        setUpdateInstruction.setRems(0, ByteString.copyFromUtf8(element)); //index must be given, but this doesn't appear in the .proto file, so no clue about this
+        setUpdateInstruction.addRems(ByteString.copyFromUtf8(element));
         updateSetHelper(name, bucket, setUpdateInstruction);
     }
     
@@ -157,7 +163,7 @@ public class AntidoteClient {
         ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
         ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(1);
         setUpdateInstruction.setOptype(opType);
-        setUpdateInstruction.setAdds(0, ByteString.copyFromUtf8(element)); //index must be given, but this doesn't appear in the .proto file, so no clue about this
+        setUpdateInstruction.addAdds(ByteString.copyFromUtf8(element)); 
         updateSetHelper(name, bucket, setUpdateInstruction);
     }
     
@@ -189,8 +195,6 @@ public class AntidoteClient {
         int messageLength = setUpdateMessageObject.toByteArray().length + 1; // Protobuf length + message code
         int messageCode = 122; // todo: change this to enum
 
-        // Message written and read as <length:32> <msg_code:8> <pbmsg>
-
         try {
             socket = new Socket(host, port);
             DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
@@ -214,7 +218,7 @@ public class AntidoteClient {
         }
     }
     
-    public void readSet(String name, String bucket) {
+    public List<String> readSet(String name, String bucket) {
 
         ApbBoundObject.Builder setObject = ApbBoundObject.newBuilder(); // The object in the message
         setObject.setKey(ByteString.copyFromUtf8(name));
@@ -250,15 +254,21 @@ public class AntidoteClient {
             byte[] messageData = new byte[responseLength - 1];
             dataInputStream.readFully(messageData, 0, responseLength - 1);
 
-            ApbGetSetResp readResponse = ApbGetSetResp.parseFrom(messageData);
-            List<ByteString> elements = readResponse.getValueList();
-            for (ByteString e : elements){
-            	System.out.println(e.toString());
+            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(messageData);
+            System.out.println(readResponse);
+            ApbGetSetResp set = readResponse.getObjects().getObjects(0).getSet();
+            List<ByteString> valList = set.getValueList();
+            List<String> valListString = new ArrayList<String>();      
+            
+            for (ByteString e : valList){
+            	valListString.add(e.toStringUtf8());
             }
             socket.close();
+            return valListString;
 
         } catch (Exception e) {
             System.out.println(e);
+            return null;
         }       
     }
     
@@ -272,7 +282,7 @@ public class AntidoteClient {
 
     }
     
-    public void readRegister(String name, String bucket) {
+    public String readRegister(String name, String bucket) {
 
         ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
         regObject.setKey(ByteString.copyFromUtf8(name));
@@ -306,14 +316,17 @@ public class AntidoteClient {
 
             byte[] messageData = new byte[responseLength - 1];
             dataInputStream.readFully(messageData, 0, responseLength - 1);
-
-            ApbGetRegResp readResponse = ApbGetRegResp.parseFrom(messageData);
             
-            System.out.println(readResponse.toString());
+            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(messageData);
+            ApbGetRegResp reg = readResponse.getObjects().getObjects(0).getReg();
+            ByteString val = reg.getValue();
+            String valString = val.toStringUtf8();
             socket.close();
+            return valString;
 
         } catch (Exception e) {
             System.out.println(e);
+            return null;
         }   
 
     }
@@ -327,7 +340,7 @@ public class AntidoteClient {
         updateRegisterHelper(name, bucket, value, regObject);
     }
     
-    public void readMVRegister(String name, String bucket) {
+    public String readMVRegister(String name, String bucket) {
     	
     	ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
         regObject.setKey(ByteString.copyFromUtf8(name));
@@ -362,18 +375,18 @@ public class AntidoteClient {
 
             byte[] messageData = new byte[responseLength - 1];
             dataInputStream.readFully(messageData, 0, responseLength - 1);
-
-
-            ApbGetMVRegResp readResponse = ApbGetMVRegResp.parseFrom(messageData);
-            List<ByteString> elements = readResponse.getValuesList();
-            for (ByteString e : elements){
-            	System.out.println(e.toString());
-            }
+            
+            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(messageData);
+            ApbGetMVRegResp reg = readResponse.getObjects().getObjects(0).getMvreg();           
+            ByteString val = reg.getValues(0); // don't really know how to do this properly, TODO
+            String valString = val.toStringUtf8();
             socket.close();
+            return valString;
 
         } catch (Exception e) {
             System.out.println(e);
-        }       
+            return null;
+        }        
     }
     
     public void updateRegisterHelper(String name, String bucket, String value, ApbBoundObject.Builder regObject){
@@ -494,7 +507,7 @@ public class AntidoteClient {
         }
     }
     
-    public void readInteger(String name, String bucket) {
+    public int readInteger(String name, String bucket) {
 
         ApbBoundObject.Builder intObject = ApbBoundObject.newBuilder(); // The object in the message
         intObject.setKey(ByteString.copyFromUtf8(name));
@@ -530,22 +543,18 @@ public class AntidoteClient {
             byte[] messageData = new byte[responseLength - 1];
             dataInputStream.readFully(messageData, 0, responseLength - 1);
 
-
-            ApbGetIntegerResp readResponse = ApbGetIntegerResp.parseFrom(messageData);
-            System.out.println(readResponse);
-            socket.close();
+            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(messageData);
+            ApbGetIntegerResp number = readResponse.getObjects().getObjects(0).getInt();
+            int val = toIntExact(number.getValue());
+            return val;
 
         } catch (Exception e) {
             System.out.println(e);
+            return -1;
         }       
     }
     
-    public void updateMap(String name, String bucket, ApbMapKey key, ApbUpdateOperation update){
-    	List<ApbUpdateOperation> updates = new ArrayList<ApbUpdateOperation>();
-    	updates.add(0, update);
-    	updateMap(name, bucket, key, updates);
-    }
- 
+    
    	public void updateMap(String name, String bucket, ApbMapKey key, List<ApbUpdateOperation> updates) {
 
         ApbStaticUpdateObjects.Builder mapUpdateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
