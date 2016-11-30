@@ -126,7 +126,14 @@ public class AntidoteClient {
         }  
     }
     
-    //assumption: when multiple elements are removed, the parameter is a list
+    public void removeSet(String name, String bucket, String element){
+        ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
+        ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
+        setUpdateInstruction.setOptype(opType);
+        setUpdateInstruction.addRems(ByteString.copyFromUtf8(element));
+        updateSetHelper(name, bucket, setUpdateInstruction);
+    }
+    
     public void removeSet(String name, String bucket, List<String> elements){
         ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
         ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
@@ -139,6 +146,14 @@ public class AntidoteClient {
         updateSetHelper(name, bucket, setUpdateInstruction);
     }
     
+    public void addSet(String name, String bucket, String element){
+        ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
+        ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(1);
+        setUpdateInstruction.setOptype(opType);
+        setUpdateInstruction.addAdds(ByteString.copyFromUtf8(element)); 
+        updateSetHelper(name, bucket, setUpdateInstruction);
+    }
+    
     public void addSet(String name, String bucket, List<String> elements){
         ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
         ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(1);
@@ -148,22 +163,6 @@ public class AntidoteClient {
         	elementsByteString.add(ByteString.copyFromUtf8(e));
         }
         setUpdateInstruction.addAllAdds(elementsByteString);
-        updateSetHelper(name, bucket, setUpdateInstruction);
-    }
-    
-    public void removeSet(String name, String bucket, String element){
-        ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
-        ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
-        setUpdateInstruction.setOptype(opType);
-        setUpdateInstruction.addRems(ByteString.copyFromUtf8(element));
-        updateSetHelper(name, bucket, setUpdateInstruction);
-    }
-    
-    public void addSet(String name, String bucket, String element){
-        ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
-        ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(1);
-        setUpdateInstruction.setOptype(opType);
-        setUpdateInstruction.addAdds(ByteString.copyFromUtf8(element)); 
         updateSetHelper(name, bucket, setUpdateInstruction);
     }
     
@@ -275,53 +274,6 @@ public class AntidoteClient {
 
     }
     
-    public ApbGetRegResp readRegister(String name, String bucket) {
-
-        ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
-        regObject.setKey(ByteString.copyFromUtf8(name));
-        regObject.setType(CRDT_type.LWWREG);
-        regObject.setBucket(ByteString.copyFromUtf8(bucket));
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
-        readTransaction.setProperties(transactionProperties);
-
-        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
-        readMessage.setTransaction(readTransaction);
-        readMessage.addObjects(regObject);
-
-        ApbStaticReadObjects readMessageObject = readMessage.build();
-
-        int messageLength = readMessageObject.toByteArray().length + 1; // Protobuf length + message code
-        int messageCode = 123; // todo: change this to enum
-
-        try {
-            socket = new Socket(host, port);
-            DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-            dataOutputStream.writeInt(messageLength);
-            dataOutputStream.writeByte(messageCode);
-            readMessageObject.writeTo(dataOutputStream);
-            dataOutputStream.flush();
-
-            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-            int responseLength = dataInputStream.readInt();
-            int responseCode = dataInputStream.readByte();
-
-            byte[] messageData = new byte[responseLength - 1];
-            dataInputStream.readFully(messageData, 0, responseLength - 1);
-            
-            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(messageData);
-            ApbGetRegResp reg = readResponse.getObjects().getObjects(0).getReg();
-            socket.close();
-            return reg;
-
-        } catch (Exception e) {
-            System.out.println(e);
-            return null;
-        }   
-
-    }
-    
     public void updateMVRegister(String name, String bucket, String value){
     	
         ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
@@ -329,53 +281,6 @@ public class AntidoteClient {
         regObject.setType(CRDT_type.MVREG);
         regObject.setBucket(ByteString.copyFromUtf8(bucket));
         updateRegisterHelper(name, bucket, value, regObject);
-    }
-    
-    public ApbGetMVRegResp readMVRegister(String name, String bucket) {
-    	
-    	ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
-        regObject.setKey(ByteString.copyFromUtf8(name));
-        regObject.setType(CRDT_type.MVREG);
-        regObject.setBucket(ByteString.copyFromUtf8(bucket));
-        
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
-        readTransaction.setProperties(transactionProperties);
-
-        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
-        readMessage.setTransaction(readTransaction);
-        readMessage.addObjects(regObject);
-
-        ApbStaticReadObjects readMessageObject = readMessage.build();
-
-        int messageLength = readMessageObject.toByteArray().length + 1; // Protobuf length + message code
-        int messageCode = 123; // todo: change this to enum
-
-        try {
-            socket = new Socket(host, port);
-            DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-            dataOutputStream.writeInt(messageLength);
-            dataOutputStream.writeByte(messageCode);
-            readMessageObject.writeTo(dataOutputStream);
-            dataOutputStream.flush();
-
-            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-            int responseLength = dataInputStream.readInt();
-            int responseCode = dataInputStream.readByte();
-
-            byte[] messageData = new byte[responseLength - 1];
-            dataInputStream.readFully(messageData, 0, responseLength - 1);
-            
-            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(messageData);
-            ApbGetMVRegResp reg = readResponse.getObjects().getObjects(0).getMvreg();           
-            socket.close();
-            return reg;
-
-        } catch (Exception e) {
-            System.out.println(e);
-            return null;
-        }        
     }
     
     public void updateRegisterHelper(String name, String bucket, String value, ApbBoundObject.Builder regObject){
@@ -426,6 +331,100 @@ public class AntidoteClient {
         } catch (Exception e) {
             System.out.println(e);
         }
+    }
+    
+    public ApbGetRegResp readRegister(String name, String bucket) {
+
+        ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
+        regObject.setKey(ByteString.copyFromUtf8(name));
+        regObject.setType(CRDT_type.LWWREG);
+        regObject.setBucket(ByteString.copyFromUtf8(bucket));
+        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
+
+        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
+        readTransaction.setProperties(transactionProperties);
+
+        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
+        readMessage.setTransaction(readTransaction);
+        readMessage.addObjects(regObject);
+
+        ApbStaticReadObjects readMessageObject = readMessage.build();
+
+        int messageLength = readMessageObject.toByteArray().length + 1; // Protobuf length + message code
+        int messageCode = 123; // todo: change this to enum
+
+        try {
+            socket = new Socket(host, port);
+            DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+            dataOutputStream.writeInt(messageLength);
+            dataOutputStream.writeByte(messageCode);
+            readMessageObject.writeTo(dataOutputStream);
+            dataOutputStream.flush();
+
+            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            int responseLength = dataInputStream.readInt();
+            int responseCode = dataInputStream.readByte();
+
+            byte[] messageData = new byte[responseLength - 1];
+            dataInputStream.readFully(messageData, 0, responseLength - 1);
+            
+            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(messageData);
+            ApbGetRegResp reg = readResponse.getObjects().getObjects(0).getReg();
+            socket.close();
+            return reg;
+
+        } catch (Exception e) {
+            System.out.println(e);
+            return null;
+        }   
+
+    }
+    
+    public ApbGetMVRegResp readMVRegister(String name, String bucket) {
+    	
+    	ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
+        regObject.setKey(ByteString.copyFromUtf8(name));
+        regObject.setType(CRDT_type.MVREG);
+        regObject.setBucket(ByteString.copyFromUtf8(bucket));
+        
+        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
+
+        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
+        readTransaction.setProperties(transactionProperties);
+
+        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
+        readMessage.setTransaction(readTransaction);
+        readMessage.addObjects(regObject);
+
+        ApbStaticReadObjects readMessageObject = readMessage.build();
+
+        int messageLength = readMessageObject.toByteArray().length + 1; // Protobuf length + message code
+        int messageCode = 123; // todo: change this to enum
+
+        try {
+            socket = new Socket(host, port);
+            DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+            dataOutputStream.writeInt(messageLength);
+            dataOutputStream.writeByte(messageCode);
+            readMessageObject.writeTo(dataOutputStream);
+            dataOutputStream.flush();
+
+            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            int responseLength = dataInputStream.readInt();
+            int responseCode = dataInputStream.readByte();
+
+            byte[] messageData = new byte[responseLength - 1];
+            dataInputStream.readFully(messageData, 0, responseLength - 1);
+            
+            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(messageData);
+            ApbGetMVRegResp reg = readResponse.getObjects().getObjects(0).getMvreg();           
+            socket.close();
+            return reg;
+
+        } catch (Exception e) {
+            System.out.println(e);
+            return null;
+        }        
     }
     
     public void incrementInteger(String name, String bucket, Integer inc) {
