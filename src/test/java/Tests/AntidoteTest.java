@@ -17,7 +17,7 @@ import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
 public class AntidoteTest{
-	AntidoteClient antidoteClient = new AntidoteClient("192.168.99.100", 8087);
+	AntidoteClient antidoteClient = new AntidoteClient("localhost", 8087);
 	
 	@Test
 	public void addElemTest() {
