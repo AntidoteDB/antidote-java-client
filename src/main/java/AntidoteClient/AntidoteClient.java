@@ -1,7 +1,8 @@
 /*
  * 
  */
-package AntidoteClient;
+package main.java.AntidoteClient;
+import static java.lang.Math.toIntExact;
 import com.basho.riak.protobuf.AntidotePB.*;
 import com.google.protobuf.*;
 import java.util.*;
@@ -33,7 +34,7 @@ public class AntidoteClient {
         this.host = host;
         this.port = port;
     }
-
+    
     /**
      * Send message.
      *
@@ -65,18 +66,7 @@ public class AntidoteClient {
             return null;
         }
     }
-    
-    /**
-     * Update counter.
-     *
-     * @param name the name
-     * @param bucket the bucket
-     */
-    // if no parameter is given, increment by 1
-    public void updateCounter(String name, String bucket){
-    	updateCounter(name, bucket, 1);
-    }
-    
+
     /**
      * Update counter.
      *
@@ -130,7 +120,7 @@ public class AntidoteClient {
      * @param bucket the bucket
      * @return the apb get counter resp
      */
-    public ApbGetCounterResp readCounter(String name, String bucket) {
+    public AntidoteCounter readCounter(String name, String bucket) {
 
         ApbBoundObject.Builder counterObject = ApbBoundObject.newBuilder(); // The object in the message
         counterObject.setKey(ByteString.copyFromUtf8(name));
@@ -153,26 +143,12 @@ public class AntidoteClient {
         try {
             ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
             ApbGetCounterResp counter = readResponse.getObjects().getObjects(0).getCounter();
-            return counter;
+            AntidoteCounter antidoteCounter = new AntidoteCounter(name, bucket, counter.getValue(), this);
+            return antidoteCounter;
         } catch (Exception e ) {
             System.out.println(e);
             return null;
         }
-    }
-    
-    /**
-     * Removes the set element.
-     *
-     * @param name the name
-     * @param bucket the bucket
-     * @param element the element
-     */
-    public void removeSetElement(String name, String bucket, String element){
-        ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
-        ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
-        setUpdateInstruction.setOptype(opType);
-        setUpdateInstruction.addRems(ByteString.copyFromUtf8(element));
-        updateSetHelper(name, bucket, setUpdateInstruction);
     }
     
     /**
@@ -193,22 +169,7 @@ public class AntidoteClient {
         setUpdateInstruction.addAllRems(elementsByteString);
         updateSetHelper(name, bucket, setUpdateInstruction);
     }
-    
-    /**
-     * Adds the set element.
-     *
-     * @param name the name
-     * @param bucket the bucket
-     * @param element the element
-     */
-    public void addSetElement(String name, String bucket, String element){
-        ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
-        ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(1);
-        setUpdateInstruction.setOptype(opType);
-        setUpdateInstruction.addAdds(ByteString.copyFromUtf8(element)); 
-        updateSetHelper(name, bucket, setUpdateInstruction);
-    }
-    
+
     /**
      * Adds the set element.
      *
@@ -277,7 +238,7 @@ public class AntidoteClient {
      * @param bucket the bucket
      * @return the apb get set resp
      */
-    public ApbGetSetResp readSet(String name, String bucket) {
+    public AntidoteSet readSet(String name, String bucket) {
 
         ApbBoundObject.Builder setObject = ApbBoundObject.newBuilder(); // The object in the message
         setObject.setKey(ByteString.copyFromUtf8(name));
@@ -300,7 +261,12 @@ public class AntidoteClient {
         try {
             ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
             ApbGetSetResp set = readResponse.getObjects().getObjects(0).getSet();
-            return set;
+            List<String> entriesList = new ArrayList<String>();
+            for (ByteString e : set.getValueList()){
+            	entriesList.add(e.toStringUtf8());
+            }
+            AntidoteSet antidoteSet = new AntidoteSet(name, bucket, entriesList, this);
+            return antidoteSet;
         } catch (Exception e ) {
             System.out.println(e);
             return null;
@@ -387,7 +353,7 @@ public class AntidoteClient {
      * @param bucket the bucket
      * @return the apb get reg resp
      */
-    public ApbGetRegResp readRegister(String name, String bucket) {
+    public AntidoteRegister readRegister(String name, String bucket) {
 
         ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
         regObject.setKey(ByteString.copyFromUtf8(name));
@@ -410,7 +376,7 @@ public class AntidoteClient {
         try {
             ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
             ApbGetRegResp reg = readResponse.getObjects().getObjects(0).getReg();
-            return reg;
+            return new AntidoteRegister(name, bucket, reg.getValue().toStringUtf8(), this);
         } catch (Exception e ) {
             System.out.println(e);
             return null;
@@ -424,7 +390,7 @@ public class AntidoteClient {
      * @param bucket the bucket
      * @return the apb get MV reg resp
      */
-    public ApbGetMVRegResp readMVRegister(String name, String bucket) {
+    public AntidoteMVRegister readMVRegister(String name, String bucket) {
     	
     	ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
         regObject.setKey(ByteString.copyFromUtf8(name));
@@ -446,8 +412,13 @@ public class AntidoteClient {
         AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(messageCode, readMessageObject));
         try {
             ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
-            ApbGetMVRegResp reg = readResponse.getObjects().getObjects(0).getMvreg();           
-            return reg;
+            ApbGetMVRegResp reg = readResponse.getObjects().getObjects(0).getMvreg();         
+            List<String> entriesList = new ArrayList<String>();
+            for (ByteString e : reg.getValuesList()){
+            	entriesList.add(e.toStringUtf8());
+            }
+            AntidoteMVRegister antidoteMVRegister = new AntidoteMVRegister(name, bucket, entriesList, this);
+            return antidoteMVRegister;
         } catch (Exception e ) {
             System.out.println(e);
             return null;
@@ -459,21 +430,9 @@ public class AntidoteClient {
      *
      * @param name the name
      * @param bucket the bucket
-     */
-    public void incrementInteger(String name, String bucket) {
-
-        incrementInteger(name, bucket, 1);
-    }
-    
-    /**
-     * Increment integer.
-     *
-     * @param name the name
-     * @param bucket the bucket
      * @param inc the inc
      */
     public void incrementInteger(String name, String bucket, int inc) {
-
         ApbIntegerUpdate.Builder intUpdateInstruction = ApbIntegerUpdate.newBuilder(); // The specific instruction in update instructions
         intUpdateInstruction.setInc(inc); // Set increment
         updateIntegerHelper(name, bucket, intUpdateInstruction);
@@ -487,7 +446,6 @@ public class AntidoteClient {
      * @param number the number
      */
     public void setInteger(String name, String bucket, int number) {
-
         ApbIntegerUpdate.Builder intUpdateInstruction = ApbIntegerUpdate.newBuilder(); // The specific instruction in update instructions
         intUpdateInstruction.setSet(number); //Set the integer to this value
         updateIntegerHelper(name, bucket, intUpdateInstruction);
@@ -543,7 +501,7 @@ public class AntidoteClient {
      * @param bucket the bucket
      * @return the apb get integer resp
      */
-    public ApbGetIntegerResp readInteger(String name, String bucket) {
+    public AntidoteInteger readInteger(String name, String bucket) {
 
         ApbBoundObject.Builder intObject = ApbBoundObject.newBuilder(); // The object in the message
         intObject.setKey(ByteString.copyFromUtf8(name));
@@ -566,7 +524,7 @@ public class AntidoteClient {
         try {
             ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
             ApbGetIntegerResp number = readResponse.getObjects().getObjects(0).getInt();
-            return number;
+            return new AntidoteInteger(name, bucket, toIntExact(number.getValue()), this);
         } catch (Exception e ) {
             System.out.println(e);
             return null;
@@ -582,44 +540,7 @@ public class AntidoteClient {
      * @param type the type
      * @param update the update
      */
-    public void updateMap(String name, String bucket, String key, CRDT_type type, ApbUpdateOperation update) {
-    	List<ApbUpdateOperation> updateList = new ArrayList<ApbUpdateOperation>();
-    	updateList.add(update);
-    	updateMap(name, bucket, key, type, updateList);
-    }
     
-    /**
-     * Update map.
-     *
-     * @param name the name
-     * @param bucket the bucket
-     * @param key the key
-     * @param type the type
-     * @param updates the updates
-     */
-    public void updateMap(String name, String bucket, String key, CRDT_type type, List<ApbUpdateOperation> updates){
-        ApbMapKey.Builder mapKeyBuilder = ApbMapKey.newBuilder();
-        mapKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-        mapKeyBuilder.setType(type);
-        ApbMapKey mapKey = mapKeyBuilder.build();
-        updateMap(name, bucket, mapKey, updates);
-    }
-    
-    /**
-     * Update map.
-     *
-     * @param name the name
-     * @param bucket the bucket
-     * @param key the key
-     * @param update the update
-     */
-    public void updateMap(String name, String bucket, ApbMapKey key, ApbUpdateOperation update){
-    	List<ApbUpdateOperation> updateList = new ArrayList<ApbUpdateOperation>();
-    	updateList.add(update);
-    	updateMap(name, bucket, key, updateList);
-    }
-    
-
 	/**
 	 * Update map.
 	 *
@@ -679,19 +600,6 @@ public class AntidoteClient {
             System.out.println(e);
         }        
     }
-   	
-	/**
-	 * Removes the map element.
-	 *
-	 * @param name the name
-	 * @param bucket the bucket
-	 * @param key the key
-	 */
-	public void removeMapElement(String name, String bucket, ApbMapKey key) {
-    	List<ApbMapKey> keyList = new ArrayList<ApbMapKey>();
-    	keyList.add(key);
-    	removeMapElement(name, bucket, keyList);
-    }
     
     /**
      * Removes the map element.
@@ -748,7 +656,8 @@ public class AntidoteClient {
 	 * @param bucket the bucket
 	 * @return the apb get map resp
 	 */
-	public ApbGetMapResp readMap(String name, String bucket) {
+    
+	public AntidoteMap readMap(String name, String bucket) {
 
         ApbBoundObject.Builder intObject = ApbBoundObject.newBuilder(); // The object in the message
         intObject.setKey(ByteString.copyFromUtf8(name));
@@ -771,22 +680,72 @@ public class AntidoteClient {
         try {
             ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
             ApbGetMapResp map = readResponse.getObjects().getObjects(0).getMap();
-            return map;
+            List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
+            apbEntryList = map.getEntriesList();
+            List<AntidoteMapEntry> antidoteEntryList = new ArrayList<AntidoteMapEntry>();
+    		List<ApbMapKey> path = new ArrayList<ApbMapKey>();
+            antidoteEntryList = readMapHelper(name, bucket, path, apbEntryList);     
+            return new AntidoteMap(name, bucket, antidoteEntryList, this);
         } catch (Exception e ) {
             System.out.println(e);
             return null;
         }      
     }
-   	
-	/**
-	 * Creates the counter increment operation.
-	 *
-	 * @return the apb update operation
-	 */
-	public ApbUpdateOperation createCounterIncrementOperation(){
-    	return createCounterIncrementOperation(1);
-    };
-   	
+	
+	public List<AntidoteMapEntry> readMapHelper(String name, String bucket, List<ApbMapKey> path, List<ApbMapEntry> apbEntryList){
+		List<AntidoteMapEntry> antidoteEntryList = new ArrayList<AntidoteMapEntry>();
+		path.add( null);
+		for (ApbMapEntry e: apbEntryList){
+        	path.set(path.size()-1, e.getKey());
+        	List<ApbMapKey> path2 = new ArrayList<ApbMapKey>();
+        	switch(e.getKey().getType()){
+        		case COUNTER :
+        			path2 = new ArrayList<ApbMapKey>();
+        			path2.addAll(path);
+             		antidoteEntryList.add(new AntidoteMapCounterEntry(e.getValue().getCounter().getValue(), this, name, bucket, path2));
+             		break;
+         		case ORSET :
+         			path2 = new ArrayList<ApbMapKey>();
+        			path2.addAll(path);
+         			List<String> entryList = new ArrayList<String>();
+         	        for (ByteString elt : e.getValue().getSet().getValueList()){
+         	        	entryList.add(elt.toStringUtf8());
+         	        }
+             		antidoteEntryList.add(new AntidoteMapSetEntry(entryList, this, name, bucket, path2));
+             		break;
+         		case AWMAP :
+         			path2 = new ArrayList<ApbMapKey>();
+        			path2.addAll(path);
+             		antidoteEntryList.add(new AntidoteMapMapEntry(
+             				readMapHelper(name, bucket, path, e.getValue().getMap().getEntriesList()), this, name, bucket, path2));
+             		break;
+         		case INTEGER:
+         			path2 = new ArrayList<ApbMapKey>();
+        			path2.addAll(path);
+             		antidoteEntryList.add(new AntidoteMapIntegerEntry(toIntExact(e.getValue().getInt().getValue()), this, name, bucket, path2));
+             		break;
+         		case LWWREG :
+        			path2 = new ArrayList<ApbMapKey>();
+        			path2.addAll(path);
+             		antidoteEntryList.add(new AntidoteMapRegisterEntry(e.getValue().getReg().getValue().toStringUtf8(), this, name, bucket, path2));
+             		break;
+         		case MVREG :
+        			path2 = new ArrayList<ApbMapKey>();
+        			path2.addAll(path);
+        			List<String> values = new ArrayList<String>();
+        			for (ByteString elt : e.getValue().getMvreg().getValuesList()){
+        				values.add(elt.toStringUtf8());
+        			}
+             		antidoteEntryList.add(new AntidoteMapMVRegisterEntry(values, this, name, bucket, path2));
+             		break;
+			default:
+				break;
+         	}
+        }
+		path.remove(0);
+		return antidoteEntryList;
+	}
+
     /**
      * Creates the counter increment operation.
      *
@@ -855,49 +814,6 @@ public class AntidoteClient {
      * Creates the map update operation.
      *
      * @param key the key
-     * @param type the type
-     * @param update the update
-     * @return the apb update operation
-     */
-    public ApbUpdateOperation createMapUpdateOperation(String key, CRDT_type type, ApbUpdateOperation update){
-        List<ApbUpdateOperation> updates = new ArrayList<ApbUpdateOperation>();
-        updates.add(update);
-        return createMapUpdateOperation(key, type, updates);
-    };
-    
-    /**
-     * Creates the map update operation.
-     *
-     * @param key the key
-     * @param update the update
-     * @return the apb update operation
-     */
-    public ApbUpdateOperation createMapUpdateOperation(ApbMapKey key, ApbUpdateOperation update){
-        List<ApbUpdateOperation> updates = new ArrayList<ApbUpdateOperation>();
-        updates.add(update);
-        return createMapUpdateOperation(key, updates);
-    };
-    
-    /**
-     * Creates the map update operation.
-     *
-     * @param key the key
-     * @param type the type
-     * @param updates the updates
-     * @return the apb update operation
-     */
-    public ApbUpdateOperation createMapUpdateOperation(String key, CRDT_type type, List <ApbUpdateOperation> updates){
-        ApbMapKey.Builder mapKeyBuilder = ApbMapKey.newBuilder();
-        mapKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-        mapKeyBuilder.setType(type);
-        ApbMapKey mapKey = mapKeyBuilder.build();
-        return createMapUpdateOperation(mapKey, updates);
-    };
-    
-    /**
-     * Creates the map update operation.
-     *
-     * @param key the key
      * @param updates the updates
      * @return the apb update operation
      */
@@ -908,14 +824,11 @@ public class AntidoteClient {
     	ApbMapNestedUpdate.Builder mapNestedUpdateBuilder = ApbMapNestedUpdate.newBuilder();
         List<ApbMapNestedUpdate> mapNestedUpdateList = new ArrayList<ApbMapNestedUpdate>();
         ApbMapNestedUpdate mapNestedUpdate;
-        
-        int i=0;
         for (ApbUpdateOperation update : updates){
         	mapNestedUpdateBuilder.setUpdate(update);
         	mapNestedUpdateBuilder.setKey(key);
         	mapNestedUpdate = mapNestedUpdateBuilder.build();
-        	mapNestedUpdateList.add(i, mapNestedUpdate);
-        	i++;
+        	mapNestedUpdateList.add(mapNestedUpdate);
         }
     	upBuilder.addAllUpdates(mapNestedUpdateList);
     	ApbMapUpdate up = upBuilder.build();
@@ -924,16 +837,14 @@ public class AntidoteClient {
     	return op;
     };
     
-    /**
-     * Creates the set add element operation.
-     *
-     * @param element the element
-     * @return the apb update operation
-     */
-    public ApbUpdateOperation createSetAddElementOperation(String element){
-    	List<String> elements = new ArrayList<String>();
-    	elements.add(0, element);
-    	return createSetAddElementOperation(elements);
+    public ApbUpdateOperation createMapRemoveOperation(List<ApbMapKey> keyList){
+    	ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
+    	ApbMapUpdate.Builder upBuilder = ApbMapUpdate.newBuilder();
+    	upBuilder.addAllRemovedKeys(keyList);
+    	ApbMapUpdate up = upBuilder.build();
+    	opBuilder.setMapop(up);
+    	ApbUpdateOperation op = opBuilder.build();
+    	return op;
     };
 
     /**
@@ -960,18 +871,6 @@ public class AntidoteClient {
     /**
      * Creates the set remove element operation.
      *
-     * @param element the element
-     * @return the apb update operation
-     */
-    public ApbUpdateOperation createSetRemoveElementOperation(String element){
-    	List<String> elements = new ArrayList<String>();
-    	elements.add(element);
-    	return createSetAddElementOperation(elements);
-    };
-    
-    /**
-     * Creates the set remove element operation.
-     *
      * @param elements the elements
      * @return the apb update operation
      */
@@ -988,258 +887,4 @@ public class AntidoteClient {
     	ApbUpdateOperation op = opBuilder.build();
     	return op;
     };
-    
- //A getter for each CRDT that can be stored within a map
-
- /**
-  * Map get counter.
-  *
-  * @param name the name
-  * @param bucket the bucket
-  * @param key the key
-  * @return the apb get counter resp
-  */
- public ApbGetCounterResp mapGetCounter(String name, String bucket, String key){
-    	CRDT_type type = CRDT_type.COUNTER;
-    	ApbReadObjectResp readResponse = getMapEntryHelper(name, bucket, key, type);
-    	ApbGetCounterResp counter = null;
-    	if (! (readResponse == null)){
-    		counter = readResponse.getCounter();
-    	}
-        return counter;
-    }
-    
-    /**
-     * Nested map get counter.
-     *
-     * @param outerMap the outer map
-     * @param key the key
-     * @return the apb get counter resp
-     */
-    public ApbGetCounterResp nestedMapGetCounter(ApbGetMapResp outerMap, String key){
-    	CRDT_type type = CRDT_type.COUNTER;
-    	ApbReadObjectResp readResponse = getNestedMapEntryHelper(key, type, outerMap);
-    	ApbGetCounterResp counter = null;
-    	if (! (readResponse == null)){
-    		counter = readResponse.getCounter();
-    	}
-        return counter;
-    }
-    
-    /**
-     * Map get integer.
-     *
-     * @param name the name
-     * @param bucket the bucket
-     * @param key the key
-     * @return the apb get integer resp
-     */
-    public ApbGetIntegerResp mapGetInteger(String name, String bucket, String key){
-    	CRDT_type type = CRDT_type.INTEGER;
-    	ApbReadObjectResp readResponse = getMapEntryHelper(name, bucket, key, type);
-    	ApbGetIntegerResp integer = null;
-    	if (! (readResponse == null)){
-    		integer = readResponse.getInt();
-    	}
-        return integer;
-    }
-    
-    /**
-     * Nested map get integer.
-     *
-     * @param outerMap the outer map
-     * @param key the key
-     * @return the apb get integer resp
-     */
-    public ApbGetIntegerResp nestedMapGetInteger(ApbGetMapResp outerMap, String key){
-    	   	
-    	CRDT_type type = CRDT_type.INTEGER;
-    	ApbReadObjectResp readResponse = getNestedMapEntryHelper(key, type, outerMap);
-    	ApbGetIntegerResp integer = null;
-    	if (! (readResponse == null)){
-    		integer = readResponse.getInt();
-    	}
-        return integer;
-    }
-    
-    /**
-     * Map get set.
-     *
-     * @param name the name
-     * @param bucket the bucket
-     * @param key the key
-     * @return the apb get set resp
-     */
-    public ApbGetSetResp mapGetSet(String name, String bucket, String key){
-    	CRDT_type type = CRDT_type.ORSET;
-    	ApbReadObjectResp readResponse = getMapEntryHelper(name, bucket, key, type);        
-        ApbGetSetResp set = null;
-    	if (! (readResponse == null)){
-    		set = readResponse.getSet();
-    	}
-        return set;
-    }
-
-    /**
-     * Nested map get set.
-     *
-     * @param outerMap the outer map
-     * @param key the key
-     * @return the apb get set resp
-     */
-    public ApbGetSetResp nestedMapGetSet(ApbGetMapResp outerMap, String key){
-    	CRDT_type type = CRDT_type.ORSET;
-    	ApbReadObjectResp readResponse = getNestedMapEntryHelper(key, type, outerMap);        
-        ApbGetSetResp set = null;
-    	if (! (readResponse == null)){
-    		set = readResponse.getSet();
-    	}
-        return set;
-    }
-    
-    /**
-     * Map get MV register.
-     *
-     * @param name the name
-     * @param bucket the bucket
-     * @param key the key
-     * @return the apb get MV reg resp
-     */
-    public ApbGetMVRegResp mapGetMVRegister(String name, String bucket, String key){
-    	CRDT_type type = CRDT_type.MVREG;
-    	ApbReadObjectResp readResponse = getMapEntryHelper(name, bucket, key, type);      
-        ApbGetMVRegResp reg = null;
-    	if (! (readResponse == null)){
-    		reg = readResponse.getMvreg();
-    	}
-        return reg;
-    }
-    
-    /**
-     * Nested map get MV register.
-     *
-     * @param outerMap the outer map
-     * @param key the key
-     * @return the apb get MV reg resp
-     */
-    public ApbGetMVRegResp nestedMapGetMVRegister(ApbGetMapResp outerMap, String key){
-    	CRDT_type type = CRDT_type.MVREG;
-    	ApbReadObjectResp readResponse = getNestedMapEntryHelper(key, type, outerMap);      
-        ApbGetMVRegResp reg = null;
-    	if (! (readResponse == null)){
-    		reg = readResponse.getMvreg();
-    	}
-        return reg;
-    }
-    
-    /**
-     * Map get register.
-     *
-     * @param name the name
-     * @param bucket the bucket
-     * @param key the key
-     * @return the apb get reg resp
-     */
-    public ApbGetRegResp mapGetRegister(String name, String bucket, String key){
-    	CRDT_type type = CRDT_type.LWWREG;
-    	ApbReadObjectResp readResponse = getMapEntryHelper(name, bucket, key, type);  
-        ApbGetRegResp reg = null;
-    	if (! (readResponse == null)){
-    		reg = readResponse.getReg();
-    	}
-        return reg;
-    }
-    
-    /**
-     * Map get register.
-     *
-     * @param outerMap the outer map
-     * @param key the key
-     * @return the apb get reg resp
-     */
-    public ApbGetRegResp mapGetRegister(ApbGetMapResp outerMap, String key){
-    	CRDT_type type = CRDT_type.LWWREG;
-    	ApbReadObjectResp readResponse = getNestedMapEntryHelper(key, type, outerMap);  
-        ApbGetRegResp reg = null;
-    	if (! (readResponse == null)){
-    		reg = readResponse.getReg();
-    	}
-        return reg;
-    }
-    
-    /**
-     * Map get map.
-     *
-     * @param name the name
-     * @param bucket the bucket
-     * @param key the key
-     * @return the apb get map resp
-     */
-    public ApbGetMapResp mapGetMap(String name, String bucket, String key){
-    	CRDT_type type = CRDT_type.AWMAP;
-    	ApbReadObjectResp readResponse = getMapEntryHelper(name, bucket, key, type);
-        ApbGetMapResp map = null;
-    	if (! (readResponse == null)){
-    		map = readResponse.getMap();
-    	}
-        return map;
-    }
-    
-    /**
-     * Nested map get map.
-     *
-     * @param outerMap the outer map
-     * @param key the key
-     * @return the apb get map resp
-     */
-    public ApbGetMapResp nestedMapGetMap(ApbGetMapResp outerMap, String key){
-    	
-    	CRDT_type type = CRDT_type.AWMAP;
-    	ApbReadObjectResp readResponse = getNestedMapEntryHelper(key, type, outerMap);
-        ApbGetMapResp map = null;
-    	if (! (readResponse == null)){
-    		map = readResponse.getMap();
-    	}
-        return map;
-    }
-    
-    /**
-     * Helper for the getters above.
-     *
-     * @param name the name
-     * @param bucket the bucket
-     * @param key the key
-     * @param type the type
-     * @return the map entry helper
-     */
-    public ApbReadObjectResp getMapEntryHelper(String name, String bucket, String key, CRDT_type type){
-    	ApbGetMapResp map = readMap(name, bucket);
-    	List<ApbMapEntry> entriesList = map.getEntriesList();
-    	ApbReadObjectResp entry = null;
-    	for (ApbMapEntry e : entriesList){
-    		if (e.getKey().getKey().equals(ByteString.copyFromUtf8(key)) && e.getKey().getType().equals(type)){
-    			entry = e.getValue();	
-    		}
-       	}
-    	return entry;
-    }
-    
-    /**
-     * Helper for the getters above.
-     *
-     * @param key the key
-     * @param type the type
-     * @param map the map
-     * @return the nested map entry helper
-     */
-    public ApbReadObjectResp getNestedMapEntryHelper(String key, CRDT_type type, ApbGetMapResp map){	
-    	List<ApbMapEntry> entriesList = map.getEntriesList();
-    	ApbReadObjectResp entry = null;
-    	for (ApbMapEntry e : entriesList){
-    		if (e.getKey().getKey().equals(ByteString.copyFromUtf8(key)) && e.getKey().getType().equals(type)){
-    			entry = e.getValue();	
-    		}
-       	}
-    	return entry;
-    }      
 }

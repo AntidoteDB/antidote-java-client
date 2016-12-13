@@ -1,29 +1,58 @@
-package Tests;
-import AntidoteClient.*;
+package test.java.Tests;
+import main.java.AntidoteClient.*;
+
 import java.util.*;
 import java.util.ArrayList;
-
 import org.junit.Test;
-
-import com.basho.riak.protobuf.AntidotePB.ApbGetCounterResp;
-import com.basho.riak.protobuf.AntidotePB.ApbGetIntegerResp;
-import com.basho.riak.protobuf.AntidotePB.ApbGetMVRegResp;
-import com.basho.riak.protobuf.AntidotePB.ApbGetMapResp;
-import com.basho.riak.protobuf.AntidotePB.ApbGetRegResp;
-import com.basho.riak.protobuf.AntidotePB.ApbGetSetResp;
-import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
-import com.basho.riak.protobuf.AntidotePB.CRDT_type;
-import com.google.protobuf.ByteString;
-
 public class AntidoteTest{
-	AntidoteClient antidoteClient = new AntidoteClient("localhost", 8087);
+	AntidoteClient antidoteClient = new AntidoteClient("192.168.99.100", 8087);
+	
+	@Test
+	public void incBy1Test() {					
+		AntidoteCounter counter = antidoteClient.readCounter("testCounter5", "testBucket");
+		int oldValue = counter.getValue();
+		counter.increment();
+		int newValue = counter.getValue();
+		assert(newValue == oldValue+1);
+		counter.getUpdate();
+		newValue = counter.getValue();
+		assert(newValue == oldValue+1);	
+	}
+	
+	@Test
+	public void decrementToZeroTest() {
+		AntidoteCounter testCounter = antidoteClient.readCounter("testCounter", "testBucket");
+		testCounter.increment(0-testCounter.getValue());
+		assert(testCounter.getValue() == 0); //operation executed locally
+		testCounter = antidoteClient.readCounter("testCounter", "testBucket");
+		assert(testCounter.getValue() == 0); //operation executed in the data base
+	}
+	
+	@Test
+	public void incBy5Test(){					
+		AntidoteCounter counter = antidoteClient.readCounter("testCounter5", "testBucket");
+		int oldValue = counter.getValue();
+		counter.increment(5);
+		int newValue = counter.getValue();
+		assert(newValue == oldValue+5);
+		counter.getUpdate();
+		newValue = counter.getValue();
+		assert(newValue == oldValue+5);		
+	}
+	
+	@Test
+	public void notInitializedTest(){
+		AntidoteCounter notInitCounter = antidoteClient.readCounter("someCounter2", "someBucket2");  //counter not initialized is always 0
+		assert(notInitCounter.getValue() == 0);		
+	}
 	
 	@Test
 	public void addElemTest() {
-		antidoteClient.addSetElement("testSet", "testBucket", "element");
-		ApbGetSetResp testSet = antidoteClient.readSet("testSet", "testBucket");
-		assert(testSet.getValueList().contains(ByteString.copyFromUtf8("element")));
+		AntidoteSet testSet = antidoteClient.readSet("testSet", "testBucket");
+		testSet.add("element");
+		assert(testSet.getValueList().contains("element"));
+		testSet.getUpdate();
+		assert(testSet.getValueList().contains("element"));
 	}
 	
 	@Test
@@ -31,10 +60,13 @@ public class AntidoteTest{
 		List<String> elements = new ArrayList<String>();
 		elements.add("Hi");
 		elements.add("Bye");
-		antidoteClient.addSetElement("testSet", "testBucket", elements);
-		ApbGetSetResp testSet = antidoteClient.readSet("testSet", "testBucket");
-		assert(testSet.getValueList().contains(ByteString.copyFromUtf8("Hi")));
-		assert(testSet.getValueList().contains(ByteString.copyFromUtf8("Bye")));
+		AntidoteSet testSet = antidoteClient.readSet("testSet", "testBucket");
+		testSet.add(elements);
+		assert(testSet.getValueList().contains("Hi"));
+		assert(testSet.getValueList().contains("Bye"));
+		testSet.getUpdate();
+		assert(testSet.getValueList().contains("Hi"));
+		assert(testSet.getValueList().contains("Bye"));
 	}
 	
 	@Test
@@ -42,11 +74,14 @@ public class AntidoteTest{
 		List<String> elements = new ArrayList<String>();
 		elements.add("Hi");
 		elements.add("Bye");
-		antidoteClient.addSetElement("testSet", "testBucket", elements);
-		antidoteClient.removeSetElement("testSet", "testBucket", elements);
-		ApbGetSetResp testSet = antidoteClient.readSet("testSet", "testBucket");
-		assert(! testSet.getValueList().contains(ByteString.copyFromUtf8("Hi")));
-		assert(! testSet.getValueList().contains(ByteString.copyFromUtf8("Bye")));
+		AntidoteSet testSet = antidoteClient.readSet("testSet", "testBucket");
+		testSet.add(elements);
+		testSet.remove(elements);
+		assert(! testSet.getValueList().contains("Hi"));
+		assert(! testSet.getValueList().contains("Bye"));
+		testSet.getUpdate();
+		assert(! testSet.getValueList().contains("Hi"));
+		assert(! testSet.getValueList().contains("Bye"));
 	}
 	
 	@Test
@@ -54,167 +89,260 @@ public class AntidoteTest{
 		List<String> elements = new ArrayList<String>();
 		elements.add("Hi");
 		elements.add("Bye");
-		antidoteClient.addSetElement("testSet", "testBucket", elements);
-		antidoteClient.removeSetElement("testSet", "testBucket", "Hi");
-		ApbGetSetResp testSet = antidoteClient.readSet("testSet", "testBucket");
-		assert(! testSet.getValueList().contains(ByteString.copyFromUtf8("Hi")));
-		assert(testSet.getValueList().contains(ByteString.copyFromUtf8("Bye")));
-	}
-	
-	@Test
-	public void decrementTest() {
-		ApbGetCounterResp testCounter = antidoteClient.readCounter("testCounter", "testBucket");
-		antidoteClient.updateCounter("testCounter", "testBucket", 0-testCounter.getValue());
-		testCounter = antidoteClient.readCounter("testCounter", "testBucket");
-		assert(testCounter.getValue() == 0);
-	}
-	
-	@Test
-	public void incBy1Test() {					
-		ApbGetCounterResp oldCounter = antidoteClient.readCounter("testCounter", "testBucket");
-		antidoteClient.updateCounter("testCounter", "testBucket");
-        ApbGetCounterResp newCounter = antidoteClient.readCounter("testCounter", "testBucket");
-		assert(oldCounter.getValue()+1 == newCounter.getValue());		
-	}
-	
-	@Test
-	public void incBy5Test(){					
-		ApbGetCounterResp oldCounter = antidoteClient.readCounter("testCounter", "testBucket");
-		antidoteClient.updateCounter("testCounter", "testBucket", 5);
-        ApbGetCounterResp newCounter = antidoteClient.readCounter("testCounter", "testBucket");
-		assert(oldCounter.getValue()+5 == newCounter.getValue());		
-	}
-	
-	@Test
-	public void notInitializedTest(){
-		ApbGetCounterResp notInitCounter = antidoteClient.readCounter("someCounter", "someBucket");
-		assert(notInitCounter.getValue() == 0);		
+		AntidoteSet testSet = antidoteClient.readSet("testSet", "testBucket");
+		testSet.add(elements);
+		testSet.remove("Hi");
+		assert(! testSet.getValueList().contains("Hi"));
+		assert(testSet.getValueList().contains("Bye"));
+		testSet.getUpdate();
+		assert(! testSet.getValueList().contains("Hi"));
+		assert(testSet.getValueList().contains("Bye"));
 	}
 	
 	@Test
 	public void updateRegTest() {
-		antidoteClient.updateRegister("testReg", "testBucket", "hi");
-        antidoteClient.updateRegister("testReg", "testBucket", "bye");
-        ApbGetRegResp testReg = antidoteClient.readRegister("testReg", "testBucket");
-        assert(testReg.getValue().toStringUtf8().equals("bye"));
-        assert(! testReg.getValue().toStringUtf8().equals("hi"));
+        AntidoteRegister testReg = antidoteClient.readRegister("testReg", "testBucket");
+        testReg.update("hi");
+        testReg.update("bye");
+        assert(testReg.getValue().equals("bye"));
+        assert(! testReg.getValue().equals("hi"));
 	}
 	
 	@Test
 	public void updateMVRegTest() {
-		antidoteClient.updateMVRegister("testMVReg", "testBucket", "hi");
-        antidoteClient.updateMVRegister("testMVReg", "testBucket", "bye");
-        ApbGetMVRegResp testReg = antidoteClient.readMVRegister("testMVReg", "testBucket");
-        assert(testReg.getValuesList().contains(ByteString.copyFromUtf8("bye")));
-        assert(! testReg.getValuesList().contains(ByteString.copyFromUtf8("hi")));
+		AntidoteMVRegister testReg = antidoteClient.readMVRegister("testMVReg", "testBucket");
+        testReg.update("hi");
+        testReg.update("bye");
+        assert(testReg.getValueList().contains("bye"));
+        assert(! testReg.getValueList().contains("hi"));
 	}
 	
 	@Test
-	public void notInitializedSet(){
-		ApbGetMVRegResp testReg = antidoteClient.readMVRegister("someReg", "someBucket");
-        assert(testReg.getValuesList().isEmpty());
+	public void notInitializedReg(){
+		AntidoteMVRegister testReg = antidoteClient.readMVRegister("someReg", "someBucket");
+        assert(testReg.getValueList().isEmpty());
 	}
 	
 	@Test
 	public void incIntBy1Test() {
-		ApbGetIntegerResp oldInteger = antidoteClient.readInteger("testInteger", "testBucket");
-		antidoteClient.incrementInteger("testInteger", "testBucket");
-		ApbGetIntegerResp newInteger = antidoteClient.readInteger("testInteger", "testBucket");
-		assert(oldInteger.getValue() + 1 == newInteger.getValue());
+		AntidoteInteger integer = antidoteClient.readInteger("testInteger", "testBucket");
+		int oldValue = integer.getValue();
+		integer.increment();
+		int newValue = integer.getValue();
+		assert(oldValue+1 == newValue);
+		integer.getUpdate();
+		newValue = integer.getValue();
+		assert(oldValue+1 == newValue);
 	}
 	
 	@Test
 	public void decBy5Test() {
-		ApbGetIntegerResp oldInteger = antidoteClient.readInteger("testInteger", "testBucket");
-		antidoteClient.incrementInteger("testInteger", "testBucket", -5);
-		ApbGetIntegerResp newInteger = antidoteClient.readInteger("testInteger", "testBucket");
-		assert(oldInteger.getValue() - 5 == newInteger.getValue());
+		AntidoteInteger integer = antidoteClient.readInteger("testInteger", "testBucket");
+		int oldValue = integer.getValue();
+		integer.increment(-5);
+		int newValue = integer.getValue();
+		assert(oldValue-5 == newValue);
+		integer.getUpdate();
+		newValue = integer.getValue();
+		assert(oldValue-5 == newValue);
 	}
 	
 	@Test
 	public void setIntTest() {					
-		antidoteClient.setInteger("testInteger", "testBucket", 42);
-		ApbGetIntegerResp newInteger = antidoteClient.readInteger("testInteger", "testBucket");
-		assert(newInteger.getValue() == 42);	
+		AntidoteInteger integer = antidoteClient.readInteger("testInteger", "testBucket");
+		integer.setValue(42);
+		assert(integer.getValue() == 42);	
+		integer.getUpdate();
+		assert(integer.getValue() == 42);	
 	}
-	
+
 	@Test
 	public void counterTest() {
-        ApbUpdateOperation counterInc = antidoteClient.createCounterIncrementOperation(3);
-        ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-        keyBuilder.setKey(ByteString.copyFromUtf8("key"));
-        keyBuilder.setType(CRDT_type.COUNTER);
-        ApbMapKey keyCounter = keyBuilder.build();
-        ApbGetCounterResp oldCounter = antidoteClient.mapGetCounter("testMap", "testBucket", "key");
-        antidoteClient.updateMap("testMap", "testBucket", keyCounter, counterInc);
-        ApbGetCounterResp newCounter = antidoteClient.mapGetCounter("testMap", "testBucket", "key");
-        assert(newCounter.getValue() == oldCounter.getValue()+3);
+		AntidoteMap testMap = antidoteClient.readMap("testMap6123", "testBucket");
+		AntidoteMapUpdate counterUpdate = testMap.createCounterIncrement(5);
+		try {
+			testMap.update("counterkey", counterUpdate);
+			testMap.update("counterkey2", counterUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		testMap.getUpdate();
+		testMap.removeCounter("counterkey");
+		testMap.getUpdate();
+		AntidoteMapUpdate mapUpdate = null;
+		try {
+			mapUpdate = testMap.createMapUpdate("testCounter", counterUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			testMap.update("mapKey", mapUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		AntidoteMapMapEntry nestedMap = testMap.getMapEntry("mapKey");
+		AntidoteMapCounterEntry counter2 = nestedMap.getCounterEntry("testCounter");
+		int oldValue = counter2.getValue();
+		counter2.increment(20);
+		counter2.getUpdate();
+		int newValue = counter2.getValue();
+		assert(newValue == oldValue +20);
+		try {
+			nestedMap.update("testCounter", counterUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		counter2.getUpdate();
+		oldValue = newValue;
+		newValue = counter2.getValue();
+		assert(oldValue + 5 == newValue);
+		nestedMap.removeCounter("testCounter");
+		AntidoteMapCounterEntry counter = testMap.getCounterEntry("counterkey2");
+		oldValue = counter.getValue();
+		counter.increment(50);
+		counter.getUpdate();
+		newValue = counter.getValue();
+		assert(newValue == oldValue +50);
 	}
-		
+	
+	@Test
+	public void integerTest() {
+		AntidoteMap testMap = antidoteClient.readMap("testMap612", "testBucket");
+		AntidoteMapUpdate integerUpdate = testMap.createIntegerIncrement(5);
+		try {
+			testMap.update("integerkey", integerUpdate);
+			testMap.update("integerkey2", integerUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		testMap.getUpdate();
+		testMap.removeInteger("integerkey");
+		testMap.getUpdate();
+		AntidoteMapUpdate mapUpdate = null;
+		try {
+			mapUpdate = testMap.createMapUpdate("testInteger", integerUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			testMap.update("mapKey", mapUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		AntidoteMapMapEntry nestedMap = testMap.getMapEntry("mapKey");
+		AntidoteMapIntegerEntry integer2 = nestedMap.getIntegerEntry("testInteger");
+		int oldValue = integer2.getValue();
+		integer2.increment(20);
+		integer2.getUpdate();
+		int newValue = integer2.getValue();
+		assert(newValue == oldValue +20);
+		try {
+			nestedMap.update("testInteger", integerUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		integer2.getUpdate();
+		oldValue = newValue;
+		newValue = integer2.getValue();
+		assert(oldValue + 5 == newValue);
+		nestedMap.removeInteger("testInteger");
+		AntidoteMapIntegerEntry integer = testMap.getIntegerEntry("integerkey2");
+		oldValue = integer.getValue();
+		integer.increment(50);
+		integer.getUpdate();
+		newValue = integer.getValue();
+		assert(newValue == oldValue +50);
+	}
+	
 	@Test
 	public void setTest() {
-		ApbUpdateOperation setAdd = antidoteClient.createSetAddElementOperation("bye");
-        ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-        keyBuilder.setKey(ByteString.copyFromUtf8("key"));
-        keyBuilder.setType(CRDT_type.ORSET);
-        ApbMapKey keySet = keyBuilder.build();
-        antidoteClient.updateMap("testMap", "testBucket", keySet, setAdd);
-        ApbGetSetResp newSet = antidoteClient.mapGetSet("testMap", "testBucket", "key");
-        assert(newSet.getValueList().contains(ByteString.copyFromUtf8("bye")));
+		AntidoteMap testMap = antidoteClient.readMap("testMap25", "testBucket");
+		AntidoteMapUpdate setUpdate = testMap.createSetAdd("hi");
+		AntidoteMapUpdate mapUpdate = null;
+		try {
+			AntidoteMapUpdate mapUpdate3 = testMap.createMapUpdate("testSet", setUpdate);
+			AntidoteMapUpdate mapUpdate2 = testMap.createMapUpdate("testMapNested3", mapUpdate3);
+			mapUpdate = testMap.createMapUpdate("testMapNested2", mapUpdate2);
+			System.out.println(mapUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			testMap.update("testMapNested1", mapUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		AntidoteMapMapEntry nestedMap1 = testMap.getMapEntry("testMapNested1");
+		AntidoteMapMapEntry nestedMap2 = nestedMap1.getMapEntry("testMapNested2");
+		AntidoteMapMapEntry nestedMap3 = nestedMap2.getMapEntry("testMapNested3");
+		AntidoteMapSetEntry set = nestedMap3.getSetEntry("testSet");
+		System.out.println(set.getValueList());
+		assert(set.getValueList().contains("hi"));
+		nestedMap3.removeSet("testSet");
+		nestedMap3.getUpdate();
+		assert(nestedMap3.getEntryList().size()==0);
 	}
 	
 	@Test
-	public void intTest() {
-		ApbUpdateOperation integerInc = antidoteClient.createIntegerIncrementOperation(3);
-        ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-        keyBuilder.setKey(ByteString.copyFromUtf8("key"));
-        keyBuilder.setType(CRDT_type.INTEGER);
-        ApbMapKey keyInteger = keyBuilder.build();
-        ApbGetIntegerResp oldInt = antidoteClient.mapGetInteger("testMap", "testBucket", "key");
-        antidoteClient.updateMap("testMap", "testBucket", keyInteger, integerInc);
-        ApbGetIntegerResp newInt = antidoteClient.mapGetInteger("testMap", "testBucket", "key");
-        assert(oldInt.getValue()+3 == newInt.getValue());
-        
+	public void registerTest() {
+		AntidoteMap testMap = antidoteClient.readMap("testMap22", "testBucket");
+		AntidoteMapUpdate regUpdate = testMap.createRegisterSet("hi");
+		AntidoteMapUpdate mapUpdate = null;
+		try {
+			AntidoteMapUpdate mapUpdate3 = testMap.createMapUpdate("testReg", regUpdate);
+			AntidoteMapUpdate mapUpdate2 = testMap.createMapUpdate("testMapNested3", mapUpdate3);
+			mapUpdate = testMap.createMapUpdate("testMapNested2", mapUpdate2);
+			System.out.println(mapUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			testMap.update("testMapNested1", mapUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		AntidoteMapMapEntry nestedMap1 = testMap.getMapEntry("testMapNested1");
+		AntidoteMapMapEntry nestedMap2 = nestedMap1.getMapEntry("testMapNested2");
+		AntidoteMapMapEntry nestedMap3 = nestedMap2.getMapEntry("testMapNested3");
+		AntidoteMapRegisterEntry register = nestedMap3.getRegisterEntry("testReg");
+		assert(register.getValue().equals("hi"));
+		regUpdate = testMap.createRegisterSet("bus");
+		try {
+			nestedMap3.update("testReg", regUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		};
+		register.getUpdate();
+		assert(register.getValue().equals("bus"));
+		register.update("car");
+		register.getUpdate();
+		assert(register.getValue().equals("car"));
 	}
 	
 	@Test
-	public void regTest() {
-		ApbUpdateOperation regSet = antidoteClient.createRegisterSetOperation("bye");        
-		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-        keyBuilder.setKey(ByteString.copyFromUtf8("key"));
-        keyBuilder.setType(CRDT_type.LWWREG);
-        ApbMapKey keyReg = keyBuilder.build();
-        antidoteClient.updateMap("testMap", "testBucket", keyReg, regSet);
-        ApbGetRegResp newReg = antidoteClient.mapGetRegister("testMap", "testBucket", "key");
-        assert(newReg.getValue().toStringUtf8().equals("bye"));
-	}
-	
-	@Test
-	public void mvRegTest() {
-		ApbUpdateOperation regSet = antidoteClient.createRegisterSetOperation("bye");        
-		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-        keyBuilder.setKey(ByteString.copyFromUtf8("key"));
-        keyBuilder.setType(CRDT_type.MVREG);
-        ApbMapKey keyReg = keyBuilder.build();
-        antidoteClient.updateMap("testMap", "testBucket", keyReg, regSet);
-        ApbGetMVRegResp newReg = antidoteClient.mapGetMVRegister("testMap", "testBucket", "key");
-        assert(newReg.getValuesList().contains(ByteString.copyFromUtf8("bye")));
-
-	}
-	
-	@Test
-	public void mapTest() {
-		ApbUpdateOperation intSet = antidoteClient.createIntegerSetOperation(3);
-        ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-        keyBuilder.setKey(ByteString.copyFromUtf8("key"));
-        keyBuilder.setType(CRDT_type.INTEGER);
-        ApbMapKey keyInteger = keyBuilder.build();		
-		ApbUpdateOperation mapUpdate = antidoteClient.createMapUpdateOperation(keyInteger, intSet);    
-        keyBuilder.setType(CRDT_type.AWMAP);
-        ApbMapKey keyMap = keyBuilder.build();
-        antidoteClient.updateMap("testMap", "testBucket", keyMap, mapUpdate);
-        ApbGetMapResp newMap = antidoteClient.mapGetMap("testMap", "testBucket", "key");
-        ApbGetIntegerResp newInteger = antidoteClient.nestedMapGetInteger(newMap, "key");
-        assert(newInteger.getValue() == 3);
+	public void mvRegisterTest() {
+		AntidoteMap testMap = antidoteClient.readMap("testMap23", "testBucket");
+		AntidoteMapUpdate regUpdate = testMap.createMVRegisterSet("hi");
+		AntidoteMapUpdate mapUpdate = null;
+		try {
+			AntidoteMapUpdate mapUpdate3 = testMap.createMapUpdate("testReg", regUpdate);
+			AntidoteMapUpdate mapUpdate2 = testMap.createMapUpdate("testMapNested3", mapUpdate3);
+			mapUpdate = testMap.createMapUpdate("testMapNested2", mapUpdate2);
+			System.out.println(mapUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			testMap.update("testMapNested1", mapUpdate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		AntidoteMapMapEntry nestedMap1 = testMap.getMapEntry("testMapNested1");
+		AntidoteMapMapEntry nestedMap2 = nestedMap1.getMapEntry("testMapNested2");
+		AntidoteMapMapEntry nestedMap3 = nestedMap2.getMapEntry("testMapNested3");
+		AntidoteMapMVRegisterEntry register = nestedMap3.getMVRegisterEntry("testReg");
+		assert(register.getValueList().contains("hi"));
+		register.update("car");
+		assert(register.getValueList().contains("car"));
 	}
 }

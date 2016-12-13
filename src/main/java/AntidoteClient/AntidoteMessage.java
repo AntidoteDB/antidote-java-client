@@ -1,4 +1,4 @@
-package AntidoteClient;
+package main.java.AntidoteClient;
 public class AntidoteMessage {
     private int length;
     private int code;

@@ -1,4 +1,4 @@
-package AntidoteClient;
+package main.java.AntidoteClient;
 import com.google.protobuf.AbstractMessage;
 
 public class AntidoteRequest {
