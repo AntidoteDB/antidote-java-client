@@ -1,332 +1,465 @@
 package main.java.AntidoteClient;
 
+import static java.lang.Math.toIntExact;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
+import com.basho.riak.protobuf.AntidotePB.ApbMapNestedUpdate;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
+/**
+ * The Class AntidoteMapMapEntry.
+ */
 public class AntidoteMapMapEntry extends AntidoteMapEntry {
+	
+	/** The entry list. */
 	private List<AntidoteMapEntry> entryList;
 	
-	public AntidoteMapMapEntry(List<AntidoteMapEntry> entryList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path){
-		super(antidoteClient, name, bucket, path);
+	/**
+	 * Instantiates a new antidote map map entry.
+	 *
+	 * @param entryList the entry list
+	 * @param antidoteClient the antidote client
+	 * @param name the name
+	 * @param bucket the bucket
+	 * @param path the path
+	 * @param outerMapType the outer map type
+	 */
+	public AntidoteMapMapEntry(List<AntidoteMapEntry> entryList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
+		super(antidoteClient, name, bucket, path, outerMapType);
 		this.entryList = entryList;
 	}
 	
+	/**
+	 * Gets the entry list.
+	 *
+	 * @return the entry list
+	 */
 	public List<AntidoteMapEntry> getEntryList(){
 		return entryList;
 	}
 	
-	public void getUpdate(){	
-		AntidoteMap outerMap = getClient().readMap(getName(), getBucket());
-		AntidoteMapMapEntry innerMap = outerMap.getMapEntry(getPath().get(0).getKey().toStringUtf8());
-		for (int i = 1; i<getPath().size(); i++){
-			innerMap = innerMap.getMapEntry(getPath().get(i).getKey().toStringUtf8());
+	/**
+	 * Sets the entry list.
+	 *
+	 * @param entryList the new entry list
+	 */
+	public void setEntryList(List<AntidoteMapEntry> entryList){
+		this.entryList = entryList;
+	}
+	
+	/**
+	 * Helper for readDatabase.
+	 *
+	 * @param outerMap the outer map
+	 * @return the update helper
+	 */
+	public AntidoteMapMapEntry getUpdateHelper(AntidoteGMap outerMap){
+		if (getPath().get(0).getType() == CRDT_type.GMAP){
+			return outerMap.getGMapEntry(getPath().get(0).getKey().toStringUtf8());
+		}
+		else if(getPath().get(0).getType() == CRDT_type.AWMAP){
+			return outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+		}
+		return null;
+	}
+	
+	/**
+	 * Helper for readDatabase.
+	 *
+	 * @param outerMap the outer map
+	 * @return the update helper
+	 */
+	public AntidoteMapMapEntry getUpdateHelper(AntidoteAWMap outerMap){
+		if (getPath().get(0).getType() == CRDT_type.GMAP){
+			return outerMap.getGMapEntry(getPath().get(0).getKey().toStringUtf8());
+		}
+		else if(getPath().get(0).getType() == CRDT_type.AWMAP){
+			return outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+		}
+		return null;
+	}
+	
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){	
+		AntidoteMapMapEntry innerMap = null;
+		if (getOuterMapType() == CRDT_type.GMAP){
+			AntidoteGMap outerMap = getClient().readGMap(getName(), getBucket());
+			innerMap = getUpdateHelper(outerMap);
+		}
+		else if (getOuterMapType() == CRDT_type.AWMAP){
+			AntidoteAWMap outerMap = getClient().readAWMap(getName(), getBucket());
+			innerMap = getUpdateHelper(outerMap);
+		}
+		for (int i = 1; i<getPath().size()-1; i++){
+			if (getPath().get(i).getType() == CRDT_type.GMAP){
+				innerMap = innerMap.getGMapEntry(getPath().get(i).getKey().toStringUtf8());
+			}
+			else if(getPath().get(i).getType() == CRDT_type.AWMAP){
+				innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
+			}
 		}
 		entryList = innerMap.getEntryList();
 	}
-
-	//TODO: migrate to AntidoteClient, also in AntidoteMap
-	public AntidoteMapUpdate createCounterIncrement(){
-		return createCounterIncrement(1);
-	}
 	
-	public AntidoteMapUpdate createCounterIncrement(int inc){
-		return new AntidoteMapUpdate(CRDT_type.COUNTER, getClient().createCounterIncrementOperation(inc));
-	}
-	
-	public AntidoteMapUpdate createIntegerIncrement(){
-		return createCounterIncrement(1);
-	}
-	
-	public AntidoteMapUpdate createIntegerIncrement(int inc){
-		return new AntidoteMapUpdate(CRDT_type.INTEGER, getClient().createIntegerIncrementOperation(inc));
-	}
-	
-	public AntidoteMapUpdate createIntegerSet(int value){
-		return new AntidoteMapUpdate(CRDT_type.INTEGER, getClient().createIntegerSetOperation(value));
-	}
-	
-	public AntidoteMapUpdate createSetAdd(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		return createSetAdd(elementList);
-	}
-	
-	public AntidoteMapUpdate createSetAdd(List<String> elementList){
-		return new AntidoteMapUpdate(CRDT_type.ORSET, getClient().createSetAddElementOperation(elementList));
-	}
-	
-	public AntidoteMapUpdate createSetRemove(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		return createSetRemove(elementList);
-	}
-	
-	public AntidoteMapUpdate createSetRemove(List<String> elementList){
-		return new AntidoteMapUpdate(CRDT_type.ORSET, getClient().createSetRemoveElementOperation(elementList));
-	}
-	
-	public AntidoteMapUpdate createRegisterSet(String value){
-		return new AntidoteMapUpdate(CRDT_type.LWWREG, getClient().createRegisterSetOperation(value));
-	}
-	
-	public AntidoteMapUpdate createMVRegisterSet(String value){
-		return new AntidoteMapUpdate(CRDT_type.MVREG, getClient().createRegisterSetOperation(value));
-	}
-	
-	public AntidoteMapUpdate createMapUpdate(String key, AntidoteMapUpdate update) throws Exception{
-		List<AntidoteMapUpdate> updateList = new ArrayList<AntidoteMapUpdate>();
-		updateList.add(update);
-		return createMapUpdate(key, updateList);
-	}
-	
-	public AntidoteMapUpdate createMapUpdate(String key, List<AntidoteMapUpdate> updateList) throws Exception {
+	/**
+	 * Execute updat locally.
+	 *
+	 * @param key the key
+	 * @param updateList the update list
+	 */
+	public void updateLocal(String key, List<AntidoteMapUpdate> updateList){
+		int i = 0;
+		int index = -1;
+		List<ApbMapKey> newPath = new ArrayList<ApbMapKey>();
 		CRDT_type type = updateList.get(0).getType();
-		List<ApbUpdateOperation> apbUpdateList = new ArrayList<ApbUpdateOperation>();
-		for (AntidoteMapUpdate u : updateList){
-			if (!(type.equals(u.getType()))){
-				throw new Exception("Different types detected, only one type allowed");
-			}
-			apbUpdateList.add(u.getOperation());
-		}
 		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
+		apbKeyBuilder.setType(type);
 		apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-		apbKeyBuilder.setType(type);
 		ApbMapKey apbKey = apbKeyBuilder.build();
-		return new AntidoteMapUpdate(CRDT_type.AWMAP, getClient().createMapUpdateOperation(apbKey, apbUpdateList));
-	}
-	//TODO: Take a look at these methods and whether they would be useful 
-	public AntidoteMapUpdate createMapCounterRemove(String key) throws Exception {
-		List<String> keyList = new ArrayList<String>();
-		keyList.add(key);
-		return createMapCounterRemove(keyList);
-	}
-	
-	public AntidoteMapUpdate createMapCounterRemove(List<String> keyList) throws Exception {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-		keyBuilder.setType(CRDT_type.COUNTER);
-		for (String key : keyList){
-			keyBuilder.setKey(ByteString.copyFromUtf8(key));
-			apbKeyList.add(keyBuilder.build());
-		}
-		return new AntidoteMapUpdate(CRDT_type.AWMAP, getClient().createMapRemoveOperation(apbKeyList));
-	}
-	
-	public void update(String mapKey, AntidoteMapUpdate update) throws Exception{
-		List<AntidoteMapUpdate> updateList = new ArrayList<AntidoteMapUpdate>();
-		updateList.add(update);
-		update(mapKey, updateList);
-	}
-	
-	public void update(String mapKey, List<AntidoteMapUpdate> updateList) throws Exception{
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		CRDT_type type = updateList.get(0).getType();
-		for (AntidoteMapUpdate u : updateList){
-			if (!(type.equals(u.getType()))){
-				throw new Exception("Different types detected, only one type allowed");
+		newPath.addAll(getPath());
+		newPath.add(apbKey);
+		switch (type){
+		case ORSET:
+			AntidoteMapORSetEntry updatedORSetEntry = new AntidoteMapORSetEntry(new ArrayList<String>(), getClient(), getName(), getBucket(), newPath, getOuterMapType());
+			for(AntidoteMapEntry e : entryList){
+				//check if there already is an entry for given key
+				//if so, overwrite the newly created one
+				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
+					updatedORSetEntry = (AntidoteMapORSetEntry) e;
+					index = i;
+					break;
+				}
+				i++;
 			}
-		}
-		apbKeyBuilder.setType(type);
-		apbKeyBuilder.setKey(ByteString.copyFromUtf8(mapKey));
-		ApbMapKey apbKey = apbKeyBuilder.build();
-		List<ApbUpdateOperation> apbUpdateList = new ArrayList<ApbUpdateOperation>();
-		for (AntidoteMapUpdate u:updateList){
-			apbUpdateList.add(u.getOperation());
-			
-		}	
-		List<ApbUpdateOperation> innerMapUpdate = new ArrayList<ApbUpdateOperation>(); 
-		innerMapUpdate.add(getClient().createMapUpdateOperation(apbKey, apbUpdateList));
-		ApbUpdateOperation mapUpdate;
-		List<ApbUpdateOperation> mapUpdateList = new ArrayList<ApbUpdateOperation>();
-		ApbMapKey key;
-		for (int i = getPath().size()-1; i>0; i--){
-			key = getPath().get(i);
-			if (i == getPath().size()-1){
-				mapUpdate = getClient().createMapUpdateOperation(key, innerMapUpdate);
-				mapUpdateList.add(mapUpdate);
+			for (AntidoteMapUpdate u : updateList){
+				if (u.getOperation().getSetop().getAddsCount() > 0){
+					for (ByteString add : u.getOperation().getSetop().getAddsList()){
+						updatedORSetEntry.addElementLocal(add.toStringUtf8());
+					}
+				}
+				else if (u.getOperation().getSetop().getRemsCount() > 0){
+					for (ByteString add : u.getOperation().getSetop().getRemsList()){
+						updatedORSetEntry.removeElementLocal(add.toStringUtf8());
+					}	
+				}
+			}			
+			if (index > -1){
+				entryList.set(index, updatedORSetEntry);
 			}
 			else{
-				mapUpdate = getClient().createMapUpdateOperation(key, mapUpdateList);
-				mapUpdateList = new ArrayList<ApbUpdateOperation>();
-				mapUpdateList.add(mapUpdate);
+				entryList.add(updatedORSetEntry);
 			}
-		}
-		if (getPath().size()>1){
-			getClient().updateMap(getName(), getBucket(), getPath().get(0), mapUpdateList); //update data base
-		}
-		else if (getPath().size()==1){
-			getClient().updateMap(getName(), getBucket(), getPath().get(0), innerMapUpdate);
-		}
-		getUpdate();
-	}
+			break;
+		case RWSET:
+			AntidoteMapRWSetEntry updatedRWSetEntry = new AntidoteMapRWSetEntry(new ArrayList<String>(), getClient(), getName(), getBucket(), newPath, getOuterMapType());
+			for(AntidoteMapEntry e : entryList){
+				//check if there already is an entry for given key
+				//if so, overwrite the newly created one
+				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
+					updatedRWSetEntry = (AntidoteMapRWSetEntry) e;
+					index = i;
+					break;
+				}
+				i++;
+			}
+			for (AntidoteMapUpdate u : updateList){
+				if (u.getOperation().getSetop().getAddsCount() > 0){
+					for (ByteString add : u.getOperation().getSetop().getAddsList()){
+						updatedRWSetEntry.addElementLocal(add.toStringUtf8());
+					}
+				}
+				else if (u.getOperation().getSetop().getRemsCount() > 0){
+					for (ByteString add : u.getOperation().getSetop().getRemsList()){
+						updatedRWSetEntry.removeElementLocal(add.toStringUtf8());
+					}	
+				}
+			}			
+			if (index > -1){
+				entryList.set(index, updatedRWSetEntry);
+			}
+			else{
+				entryList.add(updatedRWSetEntry);
+			}
+			break;
+		case COUNTER:
+			AntidoteMapCounterEntry updatedCounterEntry = new AntidoteMapCounterEntry(0, getClient(), getName(), getBucket(), newPath, getOuterMapType());
+			for(AntidoteMapEntry e : entryList){
+				//check if there already is an entry for given key
+				//if so, overwrite the newly created one
+				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
+					updatedCounterEntry = (AntidoteMapCounterEntry) e;
+					index = i;
+					break;
+				}
+				i++;
+			}
+			for (AntidoteMapUpdate u : updateList){
+				updatedCounterEntry.incrementLocal(toIntExact(u.getOperation().getCounterop().getInc()));
+			}			
+			if (index > -1){
+				entryList.set(index, updatedCounterEntry);
+			}
+			else{
+				entryList.add(updatedCounterEntry);
+			}
+			break;
+		case INTEGER:
+			AntidoteMapIntegerEntry updatedIntegerEntry = new AntidoteMapIntegerEntry(0, getClient(), getName(), getBucket(), newPath, getOuterMapType());
+			for(AntidoteMapEntry e : entryList){
+				//check if there already is an entry for given key
+				//if so, overwrite the newly created one
+				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
+					updatedIntegerEntry = (AntidoteMapIntegerEntry) e;
+					index = i;
+					break;
+				}
+				i++;
+			}
+			for (AntidoteMapUpdate u : updateList){
+				if (u.getOperation().getIntegerop().getInc() != 0){
+					updatedIntegerEntry.incrementLocal(toIntExact(u.getOperation().getIntegerop().getInc()));
+				}
+				else{
+					System.out.println(u.getOperation().getIntegerop().getSet());
+					updatedIntegerEntry.setLocal(toIntExact(u.getOperation().getIntegerop().getSet()));
+				}
+			}			
+			if (index > -1){
+				entryList.set(index, updatedIntegerEntry);
+			}
+			else{
+				entryList.add(updatedIntegerEntry);
+			}
+			break;	
+		case LWWREG:
+			AntidoteMapRegisterEntry updatedRegisterEntry = new AntidoteMapRegisterEntry("", getClient(), getName(), getBucket(), newPath, getOuterMapType());
+			for(AntidoteMapEntry e : entryList){
+				//check if there already is an entry for given key
+				//if so, overwrite the newly created one
+				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
+					updatedRegisterEntry = (AntidoteMapRegisterEntry) e;
+					index = i;
+					break;
+				}
+				i++;
+			}
+			for (AntidoteMapUpdate u : updateList){
+				updatedRegisterEntry.setLocal(u.getOperation().getRegop().getValue().toStringUtf8());
+			}			
+			if (index > -1){
+				entryList.set(index, updatedRegisterEntry);
+			}
+			else{
+				entryList.add(updatedRegisterEntry);
+			}
+			break;
+		case MVREG:
+			AntidoteMapMVRegisterEntry updatedMVRegisterEntry = new AntidoteMapMVRegisterEntry(
+					new ArrayList<String>(), getClient(), getName(), getBucket(), newPath, getOuterMapType());
+			for(AntidoteMapEntry e : entryList){
+				//check if there already is an entry for given key
+				//if so, overwrite the newly created one
+				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
+					updatedMVRegisterEntry = (AntidoteMapMVRegisterEntry) e;
+					index = i;
+					break;
+				}
+				i++;
+			}
+			for (AntidoteMapUpdate u : updateList){
+				updatedMVRegisterEntry.setLocal(u.getOperation().getRegop().getValue().toStringUtf8());
+			}			
+			if (index > -1){
+				entryList.set(index, updatedMVRegisterEntry);
+			}
+			else{
+				entryList.add(updatedMVRegisterEntry);
+			}
+			break;
+		case AWMAP:
+			AntidoteMapAWMapEntry updatedAWMapEntry = new AntidoteMapAWMapEntry(new ArrayList<AntidoteMapEntry>(), getClient(), getName(), getBucket(), newPath, getOuterMapType());
+			for(AntidoteMapEntry e : entryList){
+				//check if there already is an entry for given key
+				//if so, overwrite the newly created one
+				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
+					updatedAWMapEntry = (AntidoteMapAWMapEntry) e;
+					index = i;
+					break;
+				}
+				i++;
+			}
+			for (AntidoteMapUpdate u : updateList){
+				if(u.getOperation().getMapop().getRemovedKeysList().size() > 0){
+					updatedAWMapEntry.removeLocal(u.getOperation().getMapop().getRemovedKeysList());
 
-	private void remove(List<ApbMapKey> keyList){
-		List<AntidoteMapEntry> entriesValid = new ArrayList<AntidoteMapEntry>();		
-		for (AntidoteMapEntry e : entryList){
-			if (! keyList.contains(e.getPath().get(e.getPath().size()-1))){
-				entriesValid.add(e);
-			}
-		}
-		entryList = entriesValid; //local changes done
-		List<ApbUpdateOperation> innerMapUpdate = new ArrayList<ApbUpdateOperation>(); 
-		innerMapUpdate.add(getClient().createMapRemoveOperation(keyList));
-		ApbUpdateOperation mapUpdate;
-		List<ApbUpdateOperation> mapUpdateList = new ArrayList<ApbUpdateOperation>();
-		ApbMapKey key;
-		for (int i = getPath().size()-1; i>0; i--){
-			key = getPath().get(i);
-			if (i == getPath().size()-1){
-				mapUpdate = getClient().createMapUpdateOperation(key, innerMapUpdate);
-				mapUpdateList.add(mapUpdate);
+				}
+				else{
+					List<AntidoteMapUpdate> tempList = new ArrayList<AntidoteMapUpdate>();
+			    	for (ApbMapNestedUpdate update : u.getOperation().getMapop().getUpdatesList()){			
+				    	tempList.add(new AntidoteMapUpdate(update.getKey().getType(), update.getUpdate()));
+			    	}
+			    	updatedAWMapEntry.updateLocal(u.getOperation().getMapop().getUpdates(0).getKey().getKey().toStringUtf8(), tempList);
+				}
+			}			
+			if (index > -1){
+				entryList.set(index, updatedAWMapEntry);
 			}
 			else{
-				mapUpdate = getClient().createMapUpdateOperation(key, mapUpdateList);
-				mapUpdateList = new ArrayList<ApbUpdateOperation>();
-				mapUpdateList.add(mapUpdate);
+				entryList.add(updatedAWMapEntry);
 			}
-		}
-		if (getPath().size()>1){
-			getClient().updateMap(getName(), getBucket(), getPath().get(0), mapUpdateList); //update data base
-		}
-		else if (getPath().size()==1){
-			getClient().updateMap(getName(), getBucket(), getPath().get(0), innerMapUpdate);
-		}		
+			break;
+		case GMAP:
+			AntidoteMapGMapEntry updatedGMapEntry = new AntidoteMapGMapEntry(new ArrayList<AntidoteMapEntry>(), getClient(), getName(), getBucket(), newPath, getOuterMapType());
+			for(AntidoteMapEntry e : entryList){
+				//check if there already is an entry for given key
+				//if so, overwrite the newly created one
+				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
+					updatedGMapEntry = (AntidoteMapGMapEntry) e;
+					index = i;
+					break;
+				}
+				i++;
+			}
+			for (AntidoteMapUpdate u : updateList){
+				List<AntidoteMapUpdate> tempList = new ArrayList<AntidoteMapUpdate>();
+			    for (ApbMapNestedUpdate update : u.getOperation().getMapop().getUpdatesList()){			
+				   	tempList.add(new AntidoteMapUpdate(update.getKey().getType(), update.getUpdate()));
+			    }
+			    updatedGMapEntry.updateLocal(u.getOperation().getMapop().getUpdates(0).getKey().getKey().toStringUtf8(), tempList);
+			}			
+			if (index > -1){
+				entryList.set(index, updatedGMapEntry);
+			}
+			else{
+				entryList.add(updatedGMapEntry);
+			}
+			break;
+		}	
 	}
 	
-	public void removeCounter(String key){
-		List<String> keyList = new ArrayList<String>();
-		keyList.add(key);
-		removeCounter(keyList);
-	}
-	
-	public void removeCounter(List<String> keyList){
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(CRDT_type.COUNTER);
-		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
-		}
-		remove(apbKeyList);
-	}
-	
-	public void removeSet(String key){
-		List<String> keyList = new ArrayList<String>();
-		keyList.add(key);
-		removeSet(keyList);
-	}
-	
-	public void removeSet(List<String> keyList){
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(CRDT_type.ORSET);
-		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
-		}
-		remove(apbKeyList);
-	}
-	
-	public void removeInteger(String key){
-		List<String> keyList = new ArrayList<String>();
-		keyList.add(key);
-		removeInteger(keyList);
-	}
-	
-	public void removeInteger(List<String> keyList){
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(CRDT_type.INTEGER);
-		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
-		}
-		remove(apbKeyList);
-	}
-	
-	public void removeMap(String key){
-		List<String> keyList = new ArrayList<String>();
-		keyList.add(key);
-		removeMap(keyList);
-	}
-	
-	public void removeMap(List<String> keyList){
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(CRDT_type.AWMAP);
-		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
-		}
-		remove(apbKeyList);
-	}
-	
+	/**
+	 * Gets the counter entry.
+	 *
+	 * @param key the key
+	 * @return the counter entry
+	 */
 	public AntidoteMapCounterEntry getCounterEntry(String key){
-		AntidoteMapCounterEntry counter = null;
 		for (AntidoteMapEntry e : entryList){
-			if (e.getPath().get(e.getPath().size()-1).getType().equals(CRDT_type.COUNTER) && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
-				counter = (AntidoteMapCounterEntry)e;
+			if (e.getPath().get(e.getPath().size()-1).getType() == CRDT_type.COUNTER && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
+				return (AntidoteMapCounterEntry)e;		
 			}
 		}
-		return counter;
+		return null;
 	}
 	
-	public AntidoteMapSetEntry getSetEntry(String key){
-		AntidoteMapSetEntry set = null;
+	/**
+	 * Gets the OR set entry.
+	 *
+	 * @param key the key
+	 * @return the OR set entry
+	 */
+	public AntidoteMapORSetEntry getORSetEntry(String key){
 		for (AntidoteMapEntry e : entryList){
-			if (e.getPath().get(e.getPath().size()-1).getType().equals(CRDT_type.ORSET) && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
-				set = (AntidoteMapSetEntry) e;
+			if (e.getPath().get(e.getPath().size()-1).getType() == CRDT_type.ORSET && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
+				return (AntidoteMapORSetEntry)e;		
 			}
 		}
-		return set;
+		return null;
 	}
 	
+	/**
+	 * Gets the RW set entry.
+	 *
+	 * @param key the key
+	 * @return the RW set entry
+	 */
+	public AntidoteMapRWSetEntry getRWSetEntry(String key){
+		for (AntidoteMapEntry e : entryList){
+			if (e.getPath().get(e.getPath().size()-1).getType() == CRDT_type.RWSET && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
+				return (AntidoteMapRWSetEntry)e;		
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Gets the register entry.
+	 *
+	 * @param key the key
+	 * @return the register entry
+	 */
 	public AntidoteMapRegisterEntry getRegisterEntry(String key){
-		AntidoteMapRegisterEntry register = null;
 		for (AntidoteMapEntry e : entryList){
-			if (e.getPath().get(e.getPath().size()-1).getType().equals(CRDT_type.LWWREG) && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
-				register = (AntidoteMapRegisterEntry) e;
-			};
+			if (e.getPath().get(e.getPath().size()-1).getType() == CRDT_type.LWWREG && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
+				return (AntidoteMapRegisterEntry)e;		
+			}
 		}
-		return register;
+		return null;
 	}
 	
+	/**
+	 * Gets the MV register entry.
+	 *
+	 * @param key the key
+	 * @return the MV register entry
+	 */
 	public AntidoteMapMVRegisterEntry getMVRegisterEntry(String key){
-		AntidoteMapMVRegisterEntry register = null;
 		for (AntidoteMapEntry e : entryList){
-			if (e.getPath().get(e.getPath().size()-1).getType().equals(CRDT_type.MVREG) && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
-				register = (AntidoteMapMVRegisterEntry) e;
-			};
+			if (e.getPath().get(e.getPath().size()-1).getType() == CRDT_type.MVREG && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
+				return (AntidoteMapMVRegisterEntry)e;		
+			}
 		}
-		return register;
+		return null;
 	}
 	
+	/**
+	 * Gets the integer entry.
+	 *
+	 * @param key the key
+	 * @return the integer entry
+	 */
 	public AntidoteMapIntegerEntry getIntegerEntry(String key){
-		AntidoteMapIntegerEntry integer = null;
 		for (AntidoteMapEntry e : entryList){
-			if (e.getPath().get(e.getPath().size()-1).getType().equals(CRDT_type.INTEGER) && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
-				integer = (AntidoteMapIntegerEntry) e;
+			if (e.getPath().get(e.getPath().size()-1).getType() == CRDT_type.INTEGER && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
+				return (AntidoteMapIntegerEntry)e;		
 			}
 		}
-		return integer;
+		return null;
 	}
 	
-	public AntidoteMapMapEntry getMapEntry(String key){
-		AntidoteMapMapEntry map = null;
+	/**
+	 * Gets the AW map entry.
+	 *
+	 * @param key the key
+	 * @return the AW map entry
+	 */
+	public AntidoteMapAWMapEntry getAWMapEntry(String key){
 		for (AntidoteMapEntry e : entryList){
-			if (e.getPath().get(e.getPath().size()-1).getType().equals(CRDT_type.AWMAP) && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
-				map = (AntidoteMapMapEntry) e;
+			if (e.getPath().get(e.getPath().size()-1).getType() == CRDT_type.AWMAP && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
+				return (AntidoteMapAWMapEntry)e;		
 			}
 		}
-		return map;
+		return null;
+	}
+	
+	/**
+	 * Gets the g map entry.
+	 *
+	 * @param key the key
+	 * @return the g map entry
+	 */
+	public AntidoteMapGMapEntry getGMapEntry(String key){
+		for (AntidoteMapEntry e : entryList){
+			if (e.getPath().get(e.getPath().size()-1).getType() == CRDT_type.GMAP && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
+				return (AntidoteMapGMapEntry)e;		
+			}
+		}
+		return null;
 	}
 }

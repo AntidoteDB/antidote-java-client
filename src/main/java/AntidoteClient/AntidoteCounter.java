@@ -1,29 +1,79 @@
 package main.java.AntidoteClient;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * The Class AntidoteCounter.
+ */
 public class AntidoteCounter extends AntidoteObject {
-	private int value;
-	private AntidoteClient antidoteClient;
 	
+	/** The value of the counter. */
+	private int value;
+	
+	/** The list of locally but not yet pushed operations. */
+	private List<Integer> updateList;
+	
+	/**
+	 * Instantiates a new antidote counter.
+	 *
+	 * @param name the name
+	 * @param bucket the bucket
+	 * @param value the value of the counter
+	 * @param antidoteClient the antidote client
+	 */
 	public AntidoteCounter(String name, String bucket, int value, AntidoteClient antidoteClient) {
-		super(name, bucket);
+		super(name, bucket, antidoteClient);
 		this.value = value;
-		this.antidoteClient = antidoteClient;
+		updateList = new ArrayList<Integer>();
 	}
 	
+	/**
+	 * Gets the value.
+	 *
+	 * @return the value
+	 */
 	public int getValue(){
 		return value;
 	}
 	
-	public void getUpdate(){
-		value = antidoteClient.readCounter(getName(), getBucket()).getValue();
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){
+		value = getClient().readCounter(getName(), getBucket()).getValue();
 	}
 	
+	/**
+	 * Increment by one.
+	 */
 	public void increment(){
 		increment(1);
 	}
 	
+	/**
+	 * Clear update list.
+	 */
+	public void clearUpdateList(){
+		updateList.clear();
+	}
+	
+	/**
+	 * Push locally executed updates to database.
+	 */
+	public void push(){
+		for(int u : updateList){
+			getClient().updateCounter(getName(), getBucket(), u);
+		}
+		updateList.clear();
+	}
+	
+	/**
+	 * Increment.
+	 *
+	 * @param inc the value by which the counter is incremented
+	 */
 	public void increment(int inc){
-		value = value + inc; //update local AntidoteCounter object
-		antidoteClient.updateCounter(getName(), getBucket(), inc); //update data base
+		value = value + inc;
+		updateList.add(inc);
 	}
 }

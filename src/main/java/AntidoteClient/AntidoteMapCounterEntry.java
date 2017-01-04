@@ -1,65 +1,113 @@
 package main.java.AntidoteClient;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
+import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The Class AntidoteMapCounterEntry.
+ */
 public class AntidoteMapCounterEntry extends AntidoteMapEntry {
+	
+	/** The value. */
 	private int value;
 	
-	public AntidoteMapCounterEntry(int value, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path){
-		super(antidoteClient, name, bucket, path);
+	/**
+	 * Instantiates a new antidote map counter entry.
+	 *
+	 * @param value the value
+	 * @param antidoteClient the antidote client
+	 * @param name the name
+	 * @param bucket the bucket
+	 * @param path the path
+	 * @param outerMapType the outer map type
+	 */
+	public AntidoteMapCounterEntry(int value, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
+		super(antidoteClient, name, bucket, path, outerMapType);
 		this.value = value;
 	}
 	
-	public void getUpdate(){	
-		AntidoteMap outerMap = getClient().readMap(getName(), getBucket());
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){	
 		AntidoteMapCounterEntry counter;
-		if (getPath().size() == 1){
-			counter = outerMap.getCounterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
-		}
-		else{
-			AntidoteMapMapEntry innerMap = outerMap.getMapEntry(getPath().get(0).getKey().toStringUtf8());
-			for (int i = 1; i<getPath().size()-1; i++){
-				innerMap = innerMap.getMapEntry(getPath().get(i).getKey().toStringUtf8());
+		if (getOuterMapType() == CRDT_type.GMAP){
+			AntidoteGMap outerMap = getClient().readGMap(getName(), getBucket());
+			if (getPath().size() == 1){
+				counter = outerMap.getCounterEntry(getPath().get(0).getKey().toStringUtf8());
 			}
-			counter = innerMap.getCounterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
-		}		
-		value = counter.getValue();
+			else{
+				AntidoteMapMapEntry innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				for (int i = 1; i<getPath().size()-1; i++){
+					if (getPath().get(i).getType()==CRDT_type.AWMAP){
+						innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
+					}
+					else if (getPath().get(i).getType()==CRDT_type.GMAP){
+						innerMap = innerMap.getGMapEntry(getPath().get(i).getKey().toStringUtf8());
+					}
+				}
+				counter = innerMap.getCounterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
+			}		
+			value = counter.getValue();
+		}
+		else if (getOuterMapType() == CRDT_type.AWMAP){ 
+			AntidoteAWMap outerMap = getClient().readAWMap(getName(), getBucket());
+			if (getPath().size() == 1){
+				counter = outerMap.getCounterEntry(getPath().get(0).getKey().toStringUtf8());
+			}
+			else{
+				AntidoteMapMapEntry innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				for (int i = 1; i<getPath().size()-1; i++){ // hei hunn ech op 1 gesaat
+					if (getPath().get(i).getType()==CRDT_type.AWMAP){
+						innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
+					}
+					else if (getPath().get(i).getType()==CRDT_type.GMAP){
+						innerMap = innerMap.getGMapEntry(getPath().get(i).getKey().toStringUtf8());
+					}
+				}
+				System.out.println(innerMap);
+				counter = innerMap.getCounterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
+			}		
+			value = counter.getValue();
+		}
 	}
 	
+	/**
+	 * Gets the value.
+	 *
+	 * @return the value
+	 */
 	public int getValue(){
 		return value;
 	}
 	
+	/**
+	 * Increment the value by one.
+	 */
 	public void increment(){
 		increment(1);
 	}
 	
+	/**
+	 * Increment the value.
+	 *
+	 * @param inc the increment by which the value is incremented
+	 */
 	public void increment(int inc){
-		value = value + inc; //update local AntidoteCounter object
-		List<ApbUpdateOperation> counterIncrement = new ArrayList<ApbUpdateOperation>(); 
-		counterIncrement.add(getClient().createCounterIncrementOperation(inc));
-		ApbUpdateOperation mapUpdate;
-		ApbMapKey key;
-		List<ApbUpdateOperation> mapUpdateList = new ArrayList<ApbUpdateOperation>();
-		for (int i = getPath().size()-1; i>0; i--){
-			key = getPath().get(i);
-			if (i == getPath().size()-1){
-				mapUpdate = getClient().createMapUpdateOperation(key, counterIncrement);
-				mapUpdateList.add(mapUpdate);
-			}
-			else{
-				mapUpdate = getClient().createMapUpdateOperation(key, mapUpdateList);
-				mapUpdateList = new ArrayList<ApbUpdateOperation>();
-				mapUpdateList.add(mapUpdate);
-			}
-		}
-		if (getPath().size()>1){
-			getClient().updateMap(getName(), getBucket(), getPath().get(0), mapUpdateList); //update data base
-		}
-		else if (getPath().size()==1){
-			getClient().updateMap(getName(), getBucket(), getPath().get(0), counterIncrement);
-		}
+		incrementLocal(inc);
+		List<AntidoteMapUpdate> counterIncrement = new ArrayList<AntidoteMapUpdate>(); 
+		counterIncrement.add(getClient().createCounterIncrement(inc));
+		updateHelper(counterIncrement);
+	}
+	
+	/**
+	 * Execute increment locally
+	 *
+	 * @param inc the increment
+	 */
+	public void incrementLocal(int inc){
+		value = value + inc;
 	}
 }

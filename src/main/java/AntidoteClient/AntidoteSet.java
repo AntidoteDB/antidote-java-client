@@ -2,52 +2,99 @@ package main.java.AntidoteClient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+/**
+ * The Class AntidoteSet.
+ */
 public class AntidoteSet extends AntidoteObject {
-	private List<String> valueList;
-	private AntidoteClient antidoteClient;
 	
+	/** The update list. */
+	private List<Map.Entry<Integer, List<String>>> updateList;	
+	
+	/** The value list. */
+	private List<String> valueList;
+	
+	/**
+	 * Instantiates a new antidote set.
+	 *
+	 * @param name the name
+	 * @param bucket the bucket
+	 * @param valueList the list of all values in the set
+	 * @param antidoteClient the antidote client
+	 */
 	public AntidoteSet(String name, String bucket, List<String> valueList, AntidoteClient antidoteClient) {
-		super(name, bucket);
+		super(name, bucket, antidoteClient);
 		this.valueList = valueList;
-		this.antidoteClient = antidoteClient;
+		updateList = new ArrayList<>();
 	}
 	
+	/**
+	 * Gets the value list.
+	 *
+	 * @return the value list
+	 */
 	public List<String> getValueList(){
 		return valueList;
 	}
 	
-	public void getUpdate(){
-		valueList = antidoteClient.readSet(getName(), getBucket()).getValueList();
+	/**
+	 * Sets the value list.
+	 *
+	 * @param valueList the new value list
+	 */
+	public void setValueList(List<String> valueList){
+		this.valueList = valueList;
 	}
 	
-	public void add(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		add(elementList);
-	}
-	
-	public void add(List<String> elementList){
-		for (String e : elementList){
-			if (! valueList.contains(e)){
-				valueList.add(e);
+	/**
+	 * Removes the values from the valueList.
+	 *
+	 * @param toRemoveList the to remove list
+	 */
+	public void remove(List<String> toRemoveList){
+		for(String s : toRemoveList){
+			if (valueList.contains(s)){
+				valueList.remove(s);
 			}
 		}
-		antidoteClient.addSetElement(getName(), getBucket(), elementList);
 	}
 	
-	public void remove(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		remove(elementList);
-	}
-	
-	public void remove(List<String> elementList){
-		for (String e : elementList){
-			if (valueList.contains(e)){
-				valueList.remove(e);
+	/**
+	 * Adds the values to the valueList.
+	 *
+	 * @param toAddList the to add list
+	 */
+	public void add(List<String> toAddList){
+		for(String s : toAddList){
+			if (! valueList.contains(s)){
+				valueList.add(s);
 			}
 		}
-		antidoteClient.removeSetElement(getName(), getBucket(), elementList);
+	}
+	
+	/**
+	 * Adds the update to the updateList.
+	 *
+	 * @param update the update
+	 */
+	public void addUpdate(Map.Entry<Integer, List<String>> update){
+		updateList.add(update);
+	}
+	
+	/**
+	 * Gets the update list.
+	 *
+	 * @return the update list
+	 */
+	public List<Map.Entry<Integer, List<String>>> getUpdateList(){
+		return updateList;
+	}
+	
+	/**
+	 * Clear update list.
+	 */
+	public void clearUpdateList(){
+		updateList.clear();
 	}
 }
