@@ -10,6 +10,8 @@ import java.net.Socket;
  * The Class AntidoteClient.
  */
 public class AntidoteClient {
+
+    private PoolManager poolManager;
     
     /** The socket. */
     private Socket socket;
@@ -26,9 +28,8 @@ public class AntidoteClient {
      * @param host the host
      * @param port the port
      */
-    public AntidoteClient(String host, int port) {
-        this.host = host;
-        this.port = port;
+    public AntidoteClient(PoolManager pm) {
+        this.poolManager = pm;
     }
     
     /**
@@ -38,29 +39,7 @@ public class AntidoteClient {
      * @return the response
      */
     public AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
-        try {
-            socket = new Socket(host, port);
-            DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-            dataOutputStream.writeInt(requestMessage.getLength());
-            dataOutputStream.writeByte(requestMessage.getCode());
-            requestMessage.getMessage().writeTo(dataOutputStream);
-            dataOutputStream.flush();
-
-            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-            int responseLength = dataInputStream.readInt();
-            int responseCode = dataInputStream.readByte();
-
-            byte[] messageData = new byte[responseLength - 1];
-            dataInputStream.readFully(messageData, 0, responseLength - 1);
-
-            socket.close();
-
-            return new AntidoteMessage(responseLength, responseCode, messageData);
-
-        } catch (Exception e) {
-            System.out.println(e);
-            return null;
-        }
+        return poolManager.sendMessage(requestMessage);
     }
 
     //methods for updating and reading from the database

@@ -5,9 +5,19 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.ArrayList;
 import org.junit.Test;
+
 public class AntidoteTest{
-	AntidoteClient antidoteClient = new AntidoteClient("192.168.99.100", 8087);
-	String bucket = nextSessionId();
+	PoolManager antidotePoolManager;
+	AntidoteClient antidoteClient;
+	String bucket;
+
+	public AntidoteTest() {
+		List<Host> hosts = new LinkedList<Host>();
+		hosts.add(new Host("localhost", 8087));
+		antidotePoolManager = new PoolManager(20, 5, hosts);
+		antidoteClient = new AntidoteClient(antidotePoolManager);
+		bucket = nextSessionId();
+	}
 	  
 	public String nextSessionId() {
 		SecureRandom random = new SecureRandom();
