@@ -1,15 +1,13 @@
 package main.java.AntidoteClient;
 
-import java.util.ArrayList;
 import java.util.List;
-
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 
 /**
  * The Class AntidoteMapRWSetEntry.
  */
-public class AntidoteMapRWSetEntry extends AntidoteMapSetEntry {
+public class AntidoteMapRWSetEntry extends AntidoteMapSetEntry implements SetInterface{
 	
 	/**
 	 * Instantiates a new antidote map RW set entry.
@@ -25,10 +23,23 @@ public class AntidoteMapRWSetEntry extends AntidoteMapSetEntry {
 		super(valueList, antidoteClient, name, bucket, path, outerMapType);
 	}
 
+	public void rollBack(){
+		clearUpdateList();
+		readDatabase();
+	}
+	
+	public void synchronize(){
+		push();
+		readDatabase();
+	}
+	
 	/**
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (getUpdateList().size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		AntidoteMapRWSetEntry set;
 		if (getOuterMapType() == CRDT_type.GMAP){
 			AntidoteGMap outerMap = getClient().readGMap(getName(), getBucket());
@@ -70,51 +81,5 @@ public class AntidoteMapRWSetEntry extends AntidoteMapSetEntry {
 			}		
 			setValueList(set.getValueList());
 		}
-	}
-	
-	/**
-	 * Adds the element.
-	 *
-	 * @param element the element
-	 */
-	public void addElement(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		addElement(elementList);
-	}
-	
-	/**
-	 * Adds the elements.
-	 *
-	 * @param elementList the element list
-	 */
-	public void addElement(List<String> elementList){
-		addElementLocal(elementList);
-		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>(); 
-		setAdd.add(getClient().createRWSetAdd(elementList));
-		updateHelper(setAdd);
-	}
-	
-	/**
-	 * Removes the element.
-	 *
-	 * @param element the element
-	 */
-	public void removeElement(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		removeElement(elementList);
-	}
-	
-	/**
-	 * Removes the elements.
-	 *
-	 * @param elementList the element list
-	 */
-	public void removeElement(List<String> elementList){
-		removeElementLocal(elementList);
-		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>(); 
-		setRemove.add(getClient().createRWSetRemove(elementList));
-		updateHelper(setRemove);
 	}
 }

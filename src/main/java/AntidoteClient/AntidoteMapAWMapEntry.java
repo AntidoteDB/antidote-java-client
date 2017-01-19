@@ -10,7 +10,7 @@ import com.google.protobuf.ByteString;
 /**
  * The Class AntidoteMapAWMapEntry.
  */
-public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
+public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry implements AWMapInterface{
 	
 	/**
 	 * Instantiates a new antidote map AW map entry.
@@ -52,7 +52,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	}
 	
 	/**
-	 * Removes an entry locally.
+	 * Removes entries locally.
 	 *
 	 * @param keyList the key list
 	 */
@@ -66,15 +66,19 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 		setEntryList(entriesValid);
 	}
 
-	/**
-	 * Removes multiple entries locally.
-	 *
-	 * @param keyList the key list
-	 */
-	private void remove(List<ApbMapKey> keyList) {
-		removeLocal(keyList);
+
+	private void remove(List<String> keyList, CRDT_type type) {
+		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
+		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
+		apbKeyBuilder.setType(type);
+		for (String key : keyList){
+			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
+			ApbMapKey apbKey = apbKeyBuilder.build();
+			apbKeyList.add(apbKey);
+		}
+		removeLocal(apbKeyList);
 		List<AntidoteMapUpdate> innerMapUpdate = new ArrayList<AntidoteMapUpdate>(); 
-		innerMapUpdate.add(getClient().createMapRemove(keyList));
+		innerMapUpdate.add(getClient().createMapRemove(keyList, type));
 		AntidoteMapUpdate mapUpdate;
 		List<AntidoteMapUpdate> mapUpdateList = new ArrayList<AntidoteMapUpdate>();
 		ApbMapKey key;
@@ -130,7 +134,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	public void removeCounter(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		removeCounter(keyList);
+		remove(keyList, CRDT_type.COUNTER);
 	}
 	
 	/**
@@ -139,15 +143,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	 * @param keyList the key list
 	 */
 	public void removeCounter(List<String> keyList) {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(CRDT_type.COUNTER);
-		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
-		}
-		remove(apbKeyList);
+		remove(keyList, CRDT_type.COUNTER);
 	}
 	
 	/**
@@ -158,7 +154,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	public void removeRWSet(String key){
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		removeORSet(keyList);
+		remove(keyList, CRDT_type.RWSET);
 	}
 	
 	/**
@@ -167,15 +163,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	 * @param keyList the key list
 	 */
 	public void removeRWSet(List<String> keyList){
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(CRDT_type.RWSET);
-		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
-		}
-		remove(apbKeyList);
+		remove(keyList, CRDT_type.RWSET);
 	}
 	
 	/**
@@ -186,7 +174,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	public void removeORSet(String key){
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		removeORSet(keyList);
+		remove(keyList, CRDT_type.ORSET);
 	}
 	
 	/**
@@ -195,15 +183,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	 * @param keyList the key list
 	 */
 	public void removeORSet(List<String> keyList){
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(CRDT_type.ORSET);
-		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
-		}
-		remove(apbKeyList);
+		remove(keyList, CRDT_type.ORSET);
 	}
 	
 	/**
@@ -214,7 +194,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	public void removeRegister(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		removeRegister(keyList);
+		remove(keyList, CRDT_type.LWWREG);
 	}
 	
 	/**
@@ -223,15 +203,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	 * @param keyList the key list
 	 */
 	public void removeRegister(List<String> keyList) {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(CRDT_type.LWWREG);
-		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
-		}
-		remove(apbKeyList);
+		remove(keyList, CRDT_type.LWWREG);
 	}
 	
 	/**
@@ -242,7 +214,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	public void removeMVRegister(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		removeMVRegister(keyList);
+		remove(keyList, CRDT_type.MVREG);
 	}
 	
 	/**
@@ -251,15 +223,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	 * @param keyList the key list
 	 */
 	public void removeMVRegister(List<String> keyList) {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(CRDT_type.MVREG);
-		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
-		}
-		remove(apbKeyList);
+		remove(keyList, CRDT_type.MVREG);
 	}
 	
 	/**
@@ -270,7 +234,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	public void removeInteger(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		removeInteger(keyList);
+		remove(keyList, CRDT_type.INTEGER);
 	}
 	
 	/**
@@ -279,15 +243,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	 * @param keyList the key list
 	 */
 	public void removeInteger(List<String> keyList) {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(CRDT_type.INTEGER);
-		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
-		}
-		remove(apbKeyList);
+		remove(keyList, CRDT_type.INTEGER);
 	}
 	
 	/**
@@ -298,7 +254,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	public void removeAWMap(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		removeAWMap(keyList);
+		remove(keyList, CRDT_type.AWMAP);
 	}
 	
 	/**
@@ -307,15 +263,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	 * @param keyList the key list
 	 */
 	public void removeAWMap(List<String> keyList){
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(CRDT_type.AWMAP);
-		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
-		}
-		remove(apbKeyList);
+		remove(keyList, CRDT_type.AWMAP);
 	}
 	
 	/**
@@ -326,7 +274,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	public void removeGMap(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		removeAWMap(keyList);
+		remove(keyList, CRDT_type.GMAP);
 	}
 	
 	/**
@@ -335,14 +283,6 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry {
 	 * @param keyList the key list
 	 */
 	public void removeGMap(List<String> keyList){
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(CRDT_type.GMAP);
-		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
-		}
-		remove(apbKeyList);
+		remove(keyList, CRDT_type.GMAP);
 	}
 }

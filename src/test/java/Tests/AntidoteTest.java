@@ -5,6 +5,8 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.ArrayList;
 import org.junit.Test;
+
+import com.google.protobuf.ByteString;
 public class AntidoteTest{
 	AntidoteClient antidoteClient = new AntidoteClient("192.168.99.100", 8087);
 	String bucket = nextSessionId();
@@ -54,7 +56,7 @@ public class AntidoteTest{
 	@Test(timeout=500)
 	public void addElemTest() {
 		AntidoteORSet testSet = antidoteClient.readORSet("testSet3", bucket);
-		testSet.add("element");
+		testSet.addElement("element");
 		testSet.push();
 		assert(testSet.getValueList().contains("element"));
 		testSet.readDatabase();
@@ -67,8 +69,8 @@ public class AntidoteTest{
 		elements.add("Hi");
 		elements.add("Bye");
 		AntidoteORSet testSet = antidoteClient.readORSet("testSet3", bucket);
-		testSet.add(elements);
-		testSet.remove("Hi");
+		testSet.addElement(elements);
+		testSet.removeElement("Hi");
 		testSet.push();
 		assert(! testSet.getValueList().contains("Hi"));
 		assert(testSet.getValueList().contains("Bye"));
@@ -83,7 +85,7 @@ public class AntidoteTest{
 		elements.add("Wall");
 		elements.add("Ball");
 		AntidoteRWSet testSet = antidoteClient.readRWSet("testSet1", bucket);
-		testSet.add(elements);
+		testSet.addElement(elements);
 		testSet.push();
 		testSet.readDatabase();
 		assert(testSet.getValueList().contains("Wall"));
@@ -96,12 +98,12 @@ public class AntidoteTest{
 		elements.add("Hi");
 		elements.add("Bye");
 		AntidoteRWSet testSet = antidoteClient.readRWSet("testSet1", bucket);
-		testSet.add(elements);
-		testSet.remove(elements);
+		testSet.addElement(elements);
+		testSet.removeElement(elements);
 		testSet.push();
 		assert(! testSet.getValueList().contains("Hi"));
 		assert(! testSet.getValueList().contains("Bye"));
-		testSet.add(elements);
+		testSet.addElement(elements);
 		testSet.push();
 		testSet.readDatabase();
 		assert(testSet.getValueList().contains("Hi"));
@@ -111,8 +113,8 @@ public class AntidoteTest{
 	@Test(timeout=500)
 	public void updateRegTest() {
         AntidoteRegister testReg = antidoteClient.readRegister("testReg", bucket);
-        testReg.set("hi");
-        testReg.set("bye");
+        testReg.setValue("hi");
+        testReg.setValue("bye");
         testReg.push();
         assert(testReg.getValue().equals("bye"));
         assert(! testReg.getValue().equals("hi"));
@@ -121,8 +123,8 @@ public class AntidoteTest{
 	@Test(timeout=500)
 	public void updateMVRegTest() {
 		AntidoteMVRegister testReg = antidoteClient.readMVRegister("testMVReg", bucket);
-        testReg.set("hi");
-        testReg.set("bye");
+        testReg.setValue("hi");
+        testReg.setValue("bye");
         testReg.push();
         assert(testReg.getValueList().contains("bye"));
         assert(! testReg.getValueList().contains("hi"));
@@ -164,7 +166,7 @@ public class AntidoteTest{
 		assert(integer.getValue() == 42);	
 	}
 
-	@Test(timeout=500)
+	@Test(timeout=1000)
 	public void counterTest() {
 		String counterKey = "counterKey";
 		AntidoteAWMap testMap = antidoteClient.readAWMap("testMapBestMap12", bucket);
@@ -172,19 +174,15 @@ public class AntidoteTest{
 		testMap.update(counterKey, counterUpdate);
 		int counterValue = testMap.getCounterEntry(counterKey).getValue();
 		assert (counterValue == 5); //local value is 5
-		testMap.readDatabase(); //overwrite local content with database content
+		testMap.synchronize();
 		AntidoteMapCounterEntry counter = testMap.getCounterEntry(counterKey);
-		assert (counter == null); //increment executed only locally, so map in database doesn't have the counter
-		testMap.push();
-		testMap.readDatabase();
 		counterValue = testMap.getCounterEntry(counterKey).getValue();
 		assert(counterValue == 5); //increment forwarded to database, then got a new state from database
 		counter = testMap.getCounterEntry(counterKey);
 		counter.increment(5);
 		counter.increment(5);
 		assert(counter.getValue() == 15); // two local increments in a row
-		counter.push();
-		counter.readDatabase();
+		counter.synchronize();
 		assert(counter.getValue() == 15); // two updates sent to database at the same time and new state received after this
 		counter.increment(-15);
 		counter.push();
@@ -204,11 +202,7 @@ public class AntidoteTest{
 		AntidoteMapAWMapEntry innerMap = testMap.getAWMapEntry(mapKey);
 		int integerValue = innerMap.getIntegerEntry(integerKey).getValue();
 		assert (integerValue == 5); //local value is 5
-		testMap.readDatabase();
-		innerMap = testMap.getAWMapEntry(mapKey); //overwrite local content with database content
-		assert (innerMap == null); //increment executed only locally, so map in database doesn't have the integer
-		testMap.push();
-		testMap.readDatabase();
+		testMap.synchronize();
 		innerMap = testMap.getAWMapEntry(mapKey); //overwrite local content with database content
 		AntidoteMapIntegerEntry integer = innerMap.getIntegerEntry(integerKey);
 		integerValue = integer.getValue();
@@ -217,17 +211,15 @@ public class AntidoteTest{
 		integer.increment(5);
 		integer.increment(5);
 		assert(integer.getValue() == 15); // two local increments in a row
-		integer.push();
-		integer.readDatabase();
+		integer.synchronize();
 		assert(integer.getValue() == 15); // two updates sent to database at the same time and new state received after this
-		integer.set(0);
-		integer.push();
-		integer.readDatabase();
+		integer.setValue(0);
+		integer.synchronize();
 		testMap.removeAWMap(mapKey);
 		testMap.push(); // everything set to initial situation
 	}
 	
-	@Test
+	@Test(timeout=500)
 	public void registerTest() {
 		String registerKey = "registerKey";
 		AntidoteAWMap testMap = antidoteClient.readAWMap("testMapBestMap3", bucket);
@@ -235,27 +227,23 @@ public class AntidoteTest{
 		testMap.update(registerKey, registerUpdate);
 		String registerValue = testMap.getRegisterEntry(registerKey).getValue();
 		assert (registerValue.equals("yes")); //local value is "yes"
-		testMap.readDatabase(); //overwrite local content with database content
 		AntidoteMapRegisterEntry register = testMap.getRegisterEntry(registerKey);
-		assert (register == null); //update executed only locally, so map in database doesn't have the register
-		testMap.push();
-		testMap.readDatabase();
+		testMap.synchronize();
 		registerValue = testMap.getRegisterEntry(registerKey).getValue();
 		assert(registerValue.equals("yes")); //update forwarded to database, then got a new state from database
 		register = testMap.getRegisterEntry(registerKey);
-		register.set("no");
-		register.set("maybe");
+		register.setValue("no");
+		register.setValue("maybe");
 		assert(register.getValue().equals("maybe")); // two local updates in a row
-		register.push();
-		register.readDatabase();
+		register.synchronize();
 		assert(register.getValue().equals("maybe")); // two updates sent to database at the same time, order is preserved
-		register.set("");
+		register.setValue("");
 		register.push();
 		testMap.removeRegister(registerKey); 
 		testMap.push(); // everything set to initial situation
 	}
 	
-	@Test
+	@Test(timeout=500)
 	public void mvRegisterTest() {
 		String registerKey = "mvRegisterKey";
 		AntidoteAWMap testMap = antidoteClient.readAWMap("testMapBestMap3", bucket);
@@ -263,27 +251,23 @@ public class AntidoteTest{
 		testMap.update(registerKey, registerUpdate);
 		List<String> registerValueList = testMap.getMVRegisterEntry(registerKey).getValueList();
 		assert (registerValueList.contains("yes")); //local value is "yes"
-		testMap.readDatabase(); //overwrite local content with database content
 		AntidoteMapMVRegisterEntry register = testMap.getMVRegisterEntry(registerKey);
-		assert (register == null); //update executed only locally, so map in database doesn't have the register
-		testMap.push();
-		testMap.readDatabase();
+		testMap.synchronize();
 		registerValueList = testMap.getMVRegisterEntry(registerKey).getValueList();
 		assert(registerValueList.contains("yes")); //update forwarded to database, then got a new state from database
 		register = testMap.getMVRegisterEntry(registerKey);
-		register.set("no");
-		register.set("maybe");
+		register.setValue("no");
+		register.setValue(ByteString.copyFromUtf8("maybe"));
 		assert(register.getValueList().contains("maybe")); // two local updates in a row
-		register.push();
-		register.readDatabase();
+		register.synchronize();
 		assert(register.getValueList().contains("maybe")); // two updates sent to database at the same time, order is preserved
-		register.set("");
+		register.setValue("");
 		register.push();
 		testMap.removeMVRegister(registerKey); 
 		testMap.push(); // everything set to initial situation
 	}
 	
-	@Test
+	@Test(timeout=500)
 	public void orSetTest() {
 		String setKey = "orSetKey";
 		AntidoteAWMap testMap = antidoteClient.readAWMap("testMapBestMap3", bucket);
@@ -291,11 +275,8 @@ public class AntidoteTest{
 		testMap.update(setKey, setUpdate);
 		List <String> setValueList = testMap.getORSetEntry(setKey).getValueList();
 		assert (setValueList.contains("yes")); //local value is "yes"
-		testMap.readDatabase(); //overwrite local content with database content
 		AntidoteMapORSetEntry set = testMap.getORSetEntry(setKey);
-		assert (set == null); //increment executed only locally, so map in database doesn't have the set
-		testMap.push();
-		testMap.readDatabase();
+		testMap.synchronize();
 		setValueList = testMap.getORSetEntry(setKey).getValueList();
 		assert(setValueList.contains("yes")); //update forwarded to database, then got a new state from database
 		set = testMap.getORSetEntry(setKey);
@@ -306,8 +287,7 @@ public class AntidoteTest{
 		set.removeElement(elements);
 		assert(! set.getValueList().contains("maybe"));
 		assert(set.getValueList().contains("no"));// 3 local updates in a row
-		set.push();
-		set.readDatabase();
+		set.synchronize();
 		assert(! set.getValueList().contains("maybe"));
 		assert(set.getValueList().contains("no"));// 3 local updates in a row
 		set.removeElement(set.getValueList());
@@ -316,7 +296,7 @@ public class AntidoteTest{
 		testMap.push(); // everything set to initial situation
 	}
 	
-	@Test
+	@Test(timeout=500)
 	public void rwSetTest() {
 		String setKey = "rwSetKey";
 		AntidoteAWMap testMap = antidoteClient.readAWMap("testMapBestMap3", bucket);
@@ -324,11 +304,8 @@ public class AntidoteTest{
 		testMap.update(setKey, setUpdate);
 		List <String> setValueList = testMap.getRWSetEntry(setKey).getValueList();
 		assert (setValueList.contains("yes")); //local value is "yes"
-		testMap.readDatabase(); //overwrite local content with database content
 		AntidoteMapRWSetEntry set = testMap.getRWSetEntry(setKey);
-		assert (set == null); //increment executed only locally, so map in database doesn't have the set
-		testMap.push();
-		testMap.readDatabase();
+		testMap.synchronize();
 		setValueList = testMap.getRWSetEntry(setKey).getValueList();
 		assert(setValueList.contains("yes")); //update fRWwarded to database, then got a new state from database
 		set = testMap.getRWSetEntry(setKey);
@@ -339,13 +316,40 @@ public class AntidoteTest{
 		set.removeElement(elements);
 		assert(! set.getValueList().contains("maybe"));
 		assert(set.getValueList().contains("no"));// 3 local updates in a row
-		set.push();
-		set.readDatabase();
+		set.synchronize();
 		assert(! set.getValueList().contains("maybe"));
 		assert(set.getValueList().contains("no"));// 3 local updates in a row
 		set.removeElement(set.getValueList());
 		set.push();
 		testMap.removeRWSet(setKey);
+		testMap.push(); // everything set to initial situation
+	}
+	
+	@Test(timeout=500)
+	public void rwSetTest2() {
+		String setKey = "rwSetKey";
+		AntidoteGMap testMap = antidoteClient.readGMap("testMapBestMap4", bucket);
+		AntidoteMapUpdate setUpdate = antidoteClient.createRWSetAdd("yes");
+		testMap.update(setKey, setUpdate);
+		List <String> setValueList = testMap.getRWSetEntry(setKey).getValueList();
+		assert (setValueList.contains("yes")); //local value is "yes"
+		AntidoteMapRWSetEntry set = testMap.getRWSetEntry(setKey);
+		testMap.synchronize();
+		setValueList = testMap.getRWSetEntry(setKey).getValueList();
+		assert(setValueList.contains("yes")); //update fRWwarded to database, then got a new state from database
+		set = testMap.getRWSetEntry(setKey);
+		set.addElement("no");
+		List<String> elements = new ArrayList<>();
+		elements.add("maybe");
+		set.addElement(elements);
+		set.removeElement(elements);
+		assert(! set.getValueList().contains("maybe"));
+		assert(set.getValueList().contains("no"));// 3 local updates in a row
+		set.synchronize();
+		assert(! set.getValueList().contains("maybe"));
+		assert(set.getValueList().contains("no"));// 3 local updates in a row
+		set.removeElement(set.getValueList());
+		set.push();
 		testMap.push(); // everything set to initial situation
 	}
 	
@@ -361,6 +365,7 @@ public class AntidoteTest{
 		String mvRegisterKey = "tempMVRegisterKey";
 		String innerAWMapKey = "tempAWMapKey";
 		String awMapKey = "awMapKey";
+		String gMapKey = "gMapKey";
 
 		AntidoteMapUpdate orSetUpdate = antidoteClient.createORSetAdd("yes");
 		AntidoteMapUpdate rwSetUpdate = antidoteClient.createRWSetAdd("yes");
@@ -369,6 +374,7 @@ public class AntidoteTest{
 		AntidoteMapUpdate registerUpdate = antidoteClient.createRegisterSet("yes");
 		AntidoteMapUpdate mvRegisterUpdate = antidoteClient.createMVRegisterSet("yes");
 		AntidoteMapUpdate innerAWMapUpdate = antidoteClient.createAWMapUpdate(orSetKey, orSetUpdate);
+		AntidoteMapUpdate gMapUpdate = antidoteClient.createGMapUpdate(orSetKey, orSetUpdate);
 
 		AntidoteMapUpdate awMapUpdate = antidoteClient.createAWMapUpdate(orSetKey, orSetUpdate);
 		testMap.update(awMapKey, awMapUpdate);
@@ -384,9 +390,10 @@ public class AntidoteTest{
 		testMap.update(awMapKey, awMapUpdate);
 		awMapUpdate = antidoteClient.createAWMapUpdate(innerAWMapKey, innerAWMapUpdate);
 		testMap.update(awMapKey, awMapUpdate);
+		awMapUpdate = antidoteClient.createAWMapUpdate(gMapKey, gMapUpdate);
+		testMap.update(awMapKey, awMapUpdate);
 		
-		testMap.push();
-		testMap.readDatabase();
+		testMap.synchronize();
 
 		AntidoteMapUpdate orSetRemove = antidoteClient.createMapORSetRemove(orSetKey);
 		AntidoteMapUpdate awSetRemove = antidoteClient.createMapRWSetRemove(rwSetKey);
@@ -395,6 +402,7 @@ public class AntidoteTest{
 		AntidoteMapUpdate registerRemove = antidoteClient.createMapRegisterRemove(registerKey);
 		AntidoteMapUpdate mvRegisterRemove = antidoteClient.createMapMVRegisterRemove(mvRegisterKey);
 		AntidoteMapUpdate awMapRemove = antidoteClient.createMapAWMapRemove(innerAWMapKey);
+		AntidoteMapUpdate gMapRemove = antidoteClient.createMapGMapRemove(gMapKey);
 
 		testMap.update(awMapKey, orSetRemove);
 		testMap.update(awMapKey, awSetRemove);
@@ -403,9 +411,9 @@ public class AntidoteTest{
 		testMap.update(awMapKey, registerRemove);
 		testMap.update(awMapKey, mvRegisterRemove);
 		testMap.update(awMapKey, awMapRemove);
+		testMap.update(awMapKey, gMapRemove);
 		
-		testMap.push();
-		testMap.readDatabase();
+		testMap.synchronize();
 
 		AntidoteMapAWMapEntry innerMap = testMap.getAWMapEntry(awMapKey);
 		

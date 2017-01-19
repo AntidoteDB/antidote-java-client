@@ -3,10 +3,12 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.protobuf.ByteString;
+
 /**
  * The Class AntidoteRegister.
  */
-public class AntidoteRegister extends AntidoteObject {
+public class AntidoteRegister extends AntidoteObject implements RegisterInterface{
 	
 	/** The value. */
 	private String value;
@@ -37,11 +39,28 @@ public class AntidoteRegister extends AntidoteObject {
 		return value;
 	}
 	
+	public ByteString getValueBS(){
+		return ByteString.copyFromUtf8(value);
+	}
+	
 	/**
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (updateList.size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		value = getClient().readRegister(getName(), getBucket()).getValue();
+	}
+	
+	public void rollBack(){
+		updateList.clear();
+		readDatabase();
+	}
+	
+	public void synchronize(){
+		push();
+		readDatabase();
 	}
 	
 	/**
@@ -49,16 +68,14 @@ public class AntidoteRegister extends AntidoteObject {
 	 *
 	 * @param element the element
 	 */
-	public void set(String element){
+	public void setValue(String element){
 		value = element;
 		updateList.add(element);
 	}
 	
-	/**
-	 * Clear update list.
-	 */
-	public void clearUpdateList(){
-		updateList.clear();
+	public void setValue(ByteString element){
+		value = element.toStringUtf8();
+		updateList.add(element.toStringUtf8());
 	}
 	
 	/**

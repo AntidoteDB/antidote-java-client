@@ -51,6 +51,10 @@ public class AntidoteMapEntry {
 		updateList = new ArrayList<>();
 	}
 	
+	protected void clearUpdateList(){
+		updateList.clear();
+	}
+	
 	/**
 	 * Update helper.
 	 *
@@ -116,14 +120,11 @@ public class AntidoteMapEntry {
 				getClient().updateAWMap(getName(), getBucket(), getPath().get(0), update.getValue());
 			}
 		}
-		clearUpdateList();
+		updateList.clear();
 	}
 	
-	/**
-	 * Clear update list.
-	 */
-	public void clearUpdateList(){
-		updateList.clear();
+	public List<Map.Entry<CRDT_type, List<ApbUpdateOperation>>> getUpdateList(){
+		return updateList;
 	}
 	
 	/**

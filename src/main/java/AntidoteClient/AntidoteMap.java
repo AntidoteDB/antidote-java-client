@@ -74,7 +74,7 @@ public class AntidoteMap extends AntidoteObject {
 	/**
 	 * Clear update list.
 	 */
-	public void clearUpdateList(){
+	protected void clearUpdateList(){
 		updateList.clear();
 	}
 	

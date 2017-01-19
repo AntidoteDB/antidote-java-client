@@ -8,7 +8,7 @@ import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 /**
  * The Class AntidoteMapGMapEntry.
  */
-public class AntidoteMapGMapEntry extends AntidoteMapMapEntry {
+public class AntidoteMapGMapEntry extends AntidoteMapMapEntry implements GMapInterface{
 	
 	/**
 	 * Instantiates a new antidote map G map entry.

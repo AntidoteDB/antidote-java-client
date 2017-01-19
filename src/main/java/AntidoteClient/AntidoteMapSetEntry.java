@@ -3,6 +3,7 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import com.google.protobuf.ByteString;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 
 /**
@@ -36,6 +37,14 @@ public class AntidoteMapSetEntry extends AntidoteMapEntry {
 	public List<String> getValueList(){
 		return valueList;
 	}
+	
+	public List<ByteString> getValueListBS(){
+		List<ByteString> valueListBS = new ArrayList<>();
+		for (String value : valueList){
+			valueListBS.add(ByteString.copyFromUtf8(value));
+		}
+		return valueListBS;
+	}
 
 	/**
 	 * Sets the value list.
@@ -44,6 +53,106 @@ public class AntidoteMapSetEntry extends AntidoteMapEntry {
 	 */
 	public void setValueList(List<String> valueList){
 		this.valueList = valueList;
+	}
+	
+	/**
+	 * Adds the element.
+	 *
+	 * @param element the element
+	 */
+	public void addElementBS(ByteString element){
+		List<ByteString> elementList = new ArrayList<ByteString>();
+		elementList.add(element);
+		addElementBS(elementList);
+	}
+	
+	/**
+	 * Adds the elements.
+	 *
+	 * @param elementList the element list
+	 */
+	public void addElementBS(List<ByteString> elementList){
+		List<String> stringElementList = new ArrayList<>();
+		for (ByteString elt : elementList){
+			stringElementList.add(elt.toStringUtf8());
+		}
+		addElementLocal(stringElementList);
+		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>(); 
+		setAdd.add(getClient().createORSetAddBS(elementList));
+		updateHelper(setAdd);
+	}
+	
+	/**
+	 * Removes the element.
+	 *
+	 * @param element the element
+	 */
+	public void removeElementBS(ByteString element){
+		List<ByteString> elementList = new ArrayList<ByteString>();
+		elementList.add(element);
+		removeElementBS(elementList);
+	}
+	
+	/**
+	 * Removes the elements.
+	 *
+	 * @param elementList the element list
+	 */
+	public void removeElementBS(List<ByteString> elementList){
+		List<String> stringElementList = new ArrayList<>();
+		for (ByteString elt : elementList){
+			stringElementList.add(elt.toStringUtf8());
+		}
+		removeElementLocal(stringElementList);
+		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>(); 
+		setRemove.add(getClient().createORSetRemoveBS(elementList));
+		updateHelper(setRemove);
+	}
+	
+	/**
+	 * Adds the element.
+	 *
+	 * @param element the element
+	 */
+	public void addElement(String element){
+		List<String> elementList = new ArrayList<String>();
+		elementList.add(element);
+		addElement(elementList);
+	}
+	
+	/**
+	 * Adds the elements.
+	 *
+	 * @param elementList the element list
+	 */
+	public void addElement(List<String> elementList){
+		addElementLocal(elementList);
+		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>(); 
+		setAdd.add(getClient().createORSetAdd(elementList));
+		updateHelper(setAdd);
+	}
+	
+	/**
+	 * Removes the element.
+	 *
+	 * @param element the element
+	 */
+	public void removeElement(String element){
+		List<String> elementList = new ArrayList<String>();
+		elementList.add(element);
+		removeElement(elementList);
+	}
+	
+	/**
+	 * Removes the elements.
+	 *
+	 * @param elementList the element list
+	 */
+	public void removeElement(List<String> elementList){
+		removeElementLocal(elementList);
+		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>(); 
+		setRemove.add(getClient().createORSetRemove(elementList));
+		updateHelper(setRemove);
 	}
 	
 	/**

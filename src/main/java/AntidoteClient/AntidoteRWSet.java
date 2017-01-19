@@ -1,14 +1,12 @@
 package main.java.AntidoteClient;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.AbstractMap.SimpleEntry;
 
 /**
  * The Class AntidoteRWSet.
  */
-public class AntidoteRWSet extends AntidoteSet{
+public class AntidoteRWSet extends AntidoteSet implements SetInterface{
 	
 	/**
 	 * Instantiates a new antidote RW set.
@@ -26,62 +24,20 @@ public class AntidoteRWSet extends AntidoteSet{
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (getUpdateList().size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		setValueList(getClient().readRWSet(getName(), getBucket()).getValueList());
 	}
 	
-	/**
-	 * Adds the element to the set.
-	 *
-	 * @param element the element
-	 */
-	public void add(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		add(elementList);
+	public void rollBack(){
+		clearUpdateList();
+		readDatabase();
 	}
 	
-	/**
-	 * Adds the elements to the set.
-	 *
-	 * @param elementList the elements
-	 */
-	public void add(List<String> elementList){
-		List<String> toAddList = new ArrayList<String>();
-		for (String s : elementList){
-			if (getValueList().contains(s)){
-				toAddList.add(s);
-			}
-		}
-		super.add(toAddList);
-		Map.Entry<Integer, List<String>> update = new SimpleEntry<>(1, elementList);
-		addUpdate(update);	}
-	
-	/**
-	 * Removes the element from the set.
-	 *
-	 * @param element the element
-	 */
-	public void remove(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		remove(elementList);
-	}
-	
-	/**
-	 * Removes the elements from the set.
-	 *
-	 * @param elementList the elements
-	 */
-	public void remove(List<String> elementList){
-		List<String> toRemoveList = new ArrayList<String>();
-		for (String s : elementList){
-			if (getValueList().contains(s)){
-				toRemoveList.add(s);
-			}
-		}
-		super.remove(toRemoveList);
-		Map.Entry<Integer, List<String>> update = new SimpleEntry<>(2, elementList);
-		addUpdate(update);
+	public void synchronize(){
+		push();
+		readDatabase();
 	}
 	
 	/**

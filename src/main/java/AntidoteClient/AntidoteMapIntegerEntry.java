@@ -8,7 +8,7 @@ import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 /**
  * The Class AntidoteMapIntegerEntry.
  */
-public class AntidoteMapIntegerEntry extends AntidoteMapEntry {
+public class AntidoteMapIntegerEntry extends AntidoteMapEntry implements IntegerInterface{
 	
 	/** The value. */
 	private int value;
@@ -28,6 +28,16 @@ public class AntidoteMapIntegerEntry extends AntidoteMapEntry {
 		this.value = value;
 	}
 	
+	public void rollBack(){
+		clearUpdateList();
+		readDatabase();
+	}
+	
+	public void synchronize(){
+		push();
+		readDatabase();
+	}
+	
 	/**
 	 * Gets the value.
 	 *
@@ -41,6 +51,9 @@ public class AntidoteMapIntegerEntry extends AntidoteMapEntry {
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (getUpdateList().size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		AntidoteMapIntegerEntry integer;
 		if (getOuterMapType() == CRDT_type.GMAP){
 			AntidoteGMap outerMap = getClient().readGMap(getName(), getBucket());
@@ -125,7 +138,7 @@ public class AntidoteMapIntegerEntry extends AntidoteMapEntry {
 	 *
 	 * @param value the new value
 	 */
-	public void set(int value){
+	public void setValue(int value){
 		setLocal(value);
 		List<AntidoteMapUpdate> integerSet = new ArrayList<AntidoteMapUpdate>(); 
 		integerSet.add(getClient().createIntegerSet(value));

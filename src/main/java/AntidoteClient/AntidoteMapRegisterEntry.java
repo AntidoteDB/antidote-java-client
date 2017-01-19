@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import com.google.protobuf.ByteString;
 
 /**
  * The Class AntidoteMapRegisterEntry.
  */
-public class AntidoteMapRegisterEntry extends AntidoteMapEntry {
+public class AntidoteMapRegisterEntry extends AntidoteMapEntry implements RegisterInterface{
 	
 	/** The value. */
 	private String value;
@@ -28,10 +29,23 @@ public class AntidoteMapRegisterEntry extends AntidoteMapEntry {
 		this.value = value;
 	}
 	
+	public void rollBack(){
+		clearUpdateList();
+		readDatabase();
+	}
+	
+	public void synchronize(){
+		push();
+		readDatabase();
+	}
+	
 	/**
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){	
+		if (getUpdateList().size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		AntidoteMapRegisterEntry register;
 		if (getOuterMapType() == CRDT_type.GMAP){
 			AntidoteGMap outerMap = getClient().readGMap(getName(), getBucket());
@@ -83,6 +97,10 @@ public class AntidoteMapRegisterEntry extends AntidoteMapEntry {
 		return value;
 	}
 	
+	public ByteString getValueBS(){
+		return ByteString.copyFromUtf8(value);
+	}
+	
 	/**
 	 * Locally set the register to a new value.
 	 *
@@ -97,10 +115,17 @@ public class AntidoteMapRegisterEntry extends AntidoteMapEntry {
 	 *
 	 * @param value the value
 	 */
-	public void set(String value){
+	public void setValue(String value){
 		setLocal(value);
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
 		registerSet.add(getClient().createRegisterSet(value));
+		updateHelper(registerSet);
+	}
+	
+	public void setValue(ByteString value){
+		setLocal(value.toStringUtf8());
+		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
+		registerSet.add(getClient().createRegisterSet(value.toStringUtf8()));
 		updateHelper(registerSet);
 	}
 }

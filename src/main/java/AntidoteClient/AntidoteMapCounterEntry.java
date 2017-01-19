@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * The Class AntidoteMapCounterEntry.
  */
-public class AntidoteMapCounterEntry extends AntidoteMapEntry {
+public class AntidoteMapCounterEntry extends AntidoteMapEntry implements CounterInterface{
 	
 	/** The value. */
 	private int value;
@@ -28,10 +28,23 @@ public class AntidoteMapCounterEntry extends AntidoteMapEntry {
 		this.value = value;
 	}
 	
+	public void rollBack(){
+		clearUpdateList();
+		readDatabase();
+	}
+	
+	public void synchronize(){
+		push();
+		readDatabase();
+	}	
+	
 	/**
 	 * Gets the most recent state from the database.
 	 */
-	public void readDatabase(){	
+	public void readDatabase(){
+		if (getUpdateList().size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		AntidoteMapCounterEntry counter;
 		if (getOuterMapType() == CRDT_type.GMAP){
 			AntidoteGMap outerMap = getClient().readGMap(getName(), getBucket());

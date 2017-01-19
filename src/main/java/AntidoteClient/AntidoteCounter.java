@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * The Class AntidoteCounter.
  */
-public class AntidoteCounter extends AntidoteObject {
+public class AntidoteCounter extends AntidoteObject implements CounterInterface{
 	
 	/** The value of the counter. */
 	private int value;
@@ -40,7 +40,20 @@ public class AntidoteCounter extends AntidoteObject {
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (updateList.size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		value = getClient().readCounter(getName(), getBucket()).getValue();
+	}
+	
+	public void rollBack(){
+		updateList.clear();
+		readDatabase();
+	}
+	
+	public void synchronize(){
+		push();
+		readDatabase();
 	}
 	
 	/**
@@ -48,13 +61,6 @@ public class AntidoteCounter extends AntidoteObject {
 	 */
 	public void increment(){
 		increment(1);
-	}
-	
-	/**
-	 * Clear update list.
-	 */
-	public void clearUpdateList(){
-		updateList.clear();
 	}
 	
 	/**

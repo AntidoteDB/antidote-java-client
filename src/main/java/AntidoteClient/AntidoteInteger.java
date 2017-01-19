@@ -8,7 +8,7 @@ import java.util.AbstractMap.SimpleEntry;
 /**
  * The Class AntidoteInteger.
  */
-public class AntidoteInteger extends AntidoteObject {
+public class AntidoteInteger extends AntidoteObject implements IntegerInterface{
 	
 	/** The value of the integer. */
 	private int value;
@@ -53,7 +53,20 @@ public class AntidoteInteger extends AntidoteObject {
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (updateList.size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		value = getClient().readInteger(getName(), getBucket()).getValue();
+	}
+	
+	public void rollBack(){
+		updateList.clear();
+		readDatabase();
+	}
+	
+	public void synchronize(){
+		push();
+		readDatabase();
 	}
 	
 	/**
@@ -71,13 +84,6 @@ public class AntidoteInteger extends AntidoteObject {
 	public void increment(int inc){
 		value = value + inc;
 		updateList.add(new SimpleEntry<>(2, inc));
-	}
-	
-	/**
-	 * Clear update list.
-	 */
-	public void clearUpdateList(){
-		updateList.clear();
 	}
 	
 	/**

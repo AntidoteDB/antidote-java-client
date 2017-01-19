@@ -11,7 +11,7 @@ import com.google.protobuf.ByteString;
 /**
  * The Class AntidoteGMap.
  */
-public class AntidoteGMap extends AntidoteMap {
+public class AntidoteGMap extends AntidoteMap implements GMapInterface{
 	
 	/**
 	 * Instantiates a new antidote G map.
@@ -29,7 +29,20 @@ public class AntidoteGMap extends AntidoteMap {
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (getUpdateList().size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		setEntryList(getClient().readGMap(getName(), getBucket()).getEntryList());
+	}
+	
+	public void rollBack(){
+		clearUpdateList();
+		readDatabase();
+	}
+	
+	public void synchronize(){
+		push();
+		readDatabase();
 	}
 
 	/**
@@ -80,12 +93,12 @@ public class AntidoteGMap extends AntidoteMap {
 	}
 	
 	/**
-	 * Execute updates.
+	 * Push locally executed updates to database.
 	 */
-	public void executeUpdates(){
+	public void push(){
 		for(Entry<List<ApbMapKey>, Entry<ApbMapKey, List<ApbUpdateOperation>>> update : getUpdateList()){
 			if(update.getValue().getKey() != null && update.getValue().getValue() != null){
-				getClient().updateAWMap(getName(), getBucket(), update.getValue().getKey(), update.getValue().getValue());
+				getClient().updateGMap(getName(), getBucket(), update.getValue().getKey(), update.getValue().getValue());
 			}		
 		}
 		clearUpdateList();

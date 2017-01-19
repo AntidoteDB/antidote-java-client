@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import com.google.protobuf.ByteString;
 
 /**
  * The Class AntidoteMapMVRegisterEntry.
  */
-public class AntidoteMapMVRegisterEntry extends AntidoteMapEntry {
+public class AntidoteMapMVRegisterEntry extends AntidoteMapEntry implements MVRegisterInterface{
 
 /** The value list. */
 private List<String> valueList;
@@ -28,10 +29,23 @@ private List<String> valueList;
 		this.valueList = valueList;
 	}
 	
+	public void rollBack(){
+		clearUpdateList();
+		readDatabase();
+	}
+	
+	public void synchronize(){
+		push();
+		readDatabase();
+	}
+	
 	/**
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){	
+		if (getUpdateList().size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		AntidoteMapMVRegisterEntry mvRegister;
 		if (getOuterMapType() == CRDT_type.GMAP){
 			AntidoteGMap outerMap = getClient().readGMap(getName(), getBucket());
@@ -83,6 +97,14 @@ private List<String> valueList;
 		return valueList;
 	}
 	
+	public List<ByteString> getValueListBS(){
+		List<ByteString> valueListBS = new ArrayList<>();
+		for (String value : valueList){
+			valueListBS.add(ByteString.copyFromUtf8(value));
+		}
+		return valueListBS;
+	}
+	
 	/**
 	 * Locally set the register to a new value.
 	 *
@@ -98,10 +120,17 @@ private List<String> valueList;
 	 *
 	 * @param value the value
 	 */
-	public void set(String value){
+	public void setValue(String value){
 		setLocal(value);
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
 		registerSet.add(getClient().createMVRegisterSet(value));
+		updateHelper(registerSet);
+	}
+	
+	public void setValue(ByteString value){
+		setLocal(value.toStringUtf8());
+		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
+		registerSet.add(getClient().createMVRegisterSet(value.toStringUtf8()));
 		updateHelper(registerSet);
 	}
 }

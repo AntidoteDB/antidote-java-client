@@ -3,10 +3,12 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.protobuf.ByteString;
+
 /**
  * The Class AntidoteMVRegister.
  */
-public class AntidoteMVRegister extends AntidoteObject {
+public class AntidoteMVRegister extends AntidoteObject implements MVRegisterInterface{
 	
 	/** The value list. */
 	private List<String> valueList;
@@ -38,11 +40,32 @@ public class AntidoteMVRegister extends AntidoteObject {
 		return valueList;
 	}
 	
+	public List<ByteString> getValueListBS(){
+		List<ByteString> valueListBS = new ArrayList<>();
+		for (String value : valueList){
+			valueListBS.add(ByteString.copyFromUtf8(value));
+		}
+		return valueListBS;
+	}
+	
 	/**
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (updateList.size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		valueList = getClient().readMVRegister(getName(), getBucket()).getValueList();
+	}
+	
+	public void rollBack(){
+		updateList.clear();
+		readDatabase();
+	}
+	
+	public void synchronize(){
+		push();
+		readDatabase();
 	}
 	
 	/**
@@ -50,17 +73,16 @@ public class AntidoteMVRegister extends AntidoteObject {
 	 *
 	 * @param element the element
 	 */
-	public void set(String element){
+	public void setValue(String element){
 		valueList.clear();
 		valueList.add(element);
 		updateList.add(element);
 	}
 	
-	/**
-	 * Clear update list.
-	 */
-	public void clearUpdateList(){
-		updateList.clear();
+	public void setValue(ByteString element){
+		valueList.clear();
+		valueList.add(element.toStringUtf8());
+		updateList.add(element.toStringUtf8());
 	}
 	
 	/**
