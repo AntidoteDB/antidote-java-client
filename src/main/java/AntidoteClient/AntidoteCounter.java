@@ -2,6 +2,8 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.protobuf.ByteString;
+
 /**
  * The Class AntidoteCounter.
  */
@@ -10,7 +12,7 @@ public class AntidoteCounter extends AntidoteObject implements CounterInterface{
 	/** The value of the counter. */
 	private int value;
 	
-	/** The list of locally but not yet pushed operations. */
+	/** The list of locally executed but not yet pushed operations. */
 	private List<Integer> updateList;
 	
 	/**
@@ -46,11 +48,17 @@ public class AntidoteCounter extends AntidoteObject implements CounterInterface{
 		value = getClient().readCounter(getName(), getBucket()).getValue();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.CounterInterface#rollBack()
+	 */
 	public void rollBack(){
 		updateList.clear();
 		readDatabase();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.CounterInterface#synchronize()
+	 */
 	public void synchronize(){
 		push();
 		readDatabase();
@@ -64,12 +72,15 @@ public class AntidoteCounter extends AntidoteObject implements CounterInterface{
 	}
 	
 	/**
-	 * Push locally executed updates to database.
+	 * Push locally executed updates to database. Uses a transaction.
 	 */
 	public void push(){
+		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
+		ByteString descriptor = antidoteTransaction.startTransaction();
 		for(int u : updateList){
-			getClient().updateCounter(getName(), getBucket(), u);
+			antidoteTransaction.updateCounterTransaction(getName(), getBucket(), u, descriptor);
 		}
+		antidoteTransaction.commitTransaction(descriptor);
 		updateList.clear();
 	}
 	

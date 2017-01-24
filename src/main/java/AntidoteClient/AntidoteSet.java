@@ -13,7 +13,7 @@ import java.util.AbstractMap.SimpleEntry;
  */
 public class AntidoteSet extends AntidoteObject {
 	
-	/** The update list. */
+	/** The list of locally executed but not yet pushed operations. */
 	private List<Map.Entry<Integer, List<String>>> updateList;	
 	
 	/** The value list. */
@@ -42,6 +42,11 @@ public class AntidoteSet extends AntidoteObject {
 		return valueList;
 	}
 	
+	/**
+	 * Gets the value list as ByteStrings.
+	 *
+	 * @return the value list BS
+	 */
 	public List<ByteString> getValueListBS(){
 		List<ByteString> valueListBS = new ArrayList<>();
 		for (String value : valueList){
@@ -113,7 +118,7 @@ public class AntidoteSet extends AntidoteObject {
 	}
 	
 	/**
-	 * Removes the element from the set.
+	 * Removes the element, given as ByteString, from the set.
 	 *
 	 * @param element the element
 	 */
@@ -124,7 +129,7 @@ public class AntidoteSet extends AntidoteObject {
 	}
 	
 	/**
-	 * Removes the elements from the set.
+	 * Removes the elements, given as ByteStrings, from the set.
 	 *
 	 * @param elementList the elements
 	 */
@@ -144,7 +149,7 @@ public class AntidoteSet extends AntidoteObject {
 	}
 	
 	/**
-	 * Adds the element to the set.
+	 * Adds the element, given as ByteString, to the set.
 	 *
 	 * @param element the element
 	 */
@@ -155,7 +160,7 @@ public class AntidoteSet extends AntidoteObject {
 	}
 	
 	/**
-	 * Adds the elements to the set.
+	 * Adds the elements, given as ByteStrings to the set.
 	 *
 	 * @param elementList the elements
 	 */

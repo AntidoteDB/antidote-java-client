@@ -29,11 +29,17 @@ public class AntidoteMapRegisterEntry extends AntidoteMapEntry implements Regist
 		this.value = value;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#rollBack()
+	 */
 	public void rollBack(){
 		clearUpdateList();
 		readDatabase();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#synchronize()
+	 */
 	public void synchronize(){
 		push();
 		readDatabase();
@@ -97,6 +103,9 @@ public class AntidoteMapRegisterEntry extends AntidoteMapEntry implements Regist
 		return value;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#getValueBS()
+	 */
 	public ByteString getValueBS(){
 		return ByteString.copyFromUtf8(value);
 	}
@@ -122,7 +131,10 @@ public class AntidoteMapRegisterEntry extends AntidoteMapEntry implements Regist
 		updateHelper(registerSet);
 	}
 	
-	public void setValue(ByteString value){
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#setValue(com.google.protobuf.ByteString)
+	 */
+	public void setValueBS(ByteString value){
 		setLocal(value.toStringUtf8());
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
 		registerSet.add(getClient().createRegisterSet(value.toStringUtf8()));

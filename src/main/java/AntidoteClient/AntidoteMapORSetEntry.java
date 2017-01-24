@@ -23,11 +23,17 @@ public class AntidoteMapORSetEntry extends AntidoteMapSetEntry implements SetInt
 		super(valueList, antidoteClient, name, bucket, path, outerMapType);
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.SetInterface#rollBack()
+	 */
 	public void rollBack(){
 		clearUpdateList();
 		readDatabase();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.SetInterface#synchronize()
+	 */
 	public void synchronize(){
 		push();
 		readDatabase();

@@ -35,11 +35,17 @@ public class AntidoteGMap extends AntidoteMap implements GMapInterface{
 		setEntryList(getClient().readGMap(getName(), getBucket()).getEntryList());
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.GMapInterface#rollBack()
+	 */
 	public void rollBack(){
 		clearUpdateList();
 		readDatabase();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.GMapInterface#synchronize()
+	 */
 	public void synchronize(){
 		push();
 		readDatabase();
@@ -93,14 +99,18 @@ public class AntidoteGMap extends AntidoteMap implements GMapInterface{
 	}
 	
 	/**
-	 * Push locally executed updates to database.
+	 * Push locally executed updates to database. Uses a transaction.
 	 */
 	public void push(){
+		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
+		ByteString descriptor = antidoteTransaction.startTransaction();		
 		for(Entry<List<ApbMapKey>, Entry<ApbMapKey, List<ApbUpdateOperation>>> update : getUpdateList()){
 			if(update.getValue().getKey() != null && update.getValue().getValue() != null){
-				getClient().updateGMap(getName(), getBucket(), update.getValue().getKey(), update.getValue().getValue());
+				antidoteTransaction.updateGMapTransaction(
+						getName(), getBucket(), update.getValue().getKey(), update.getValue().getValue(), descriptor);
 			}		
 		}
+		antidoteTransaction.commitTransaction(descriptor);
 		clearUpdateList();
 	}
 }

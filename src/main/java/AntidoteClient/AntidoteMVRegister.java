@@ -13,7 +13,7 @@ public class AntidoteMVRegister extends AntidoteObject implements MVRegisterInte
 	/** The value list. */
 	private List<String> valueList;
 	
-	/** The list of locally but not yet pushed operations. */
+	/** The list of locally executed but not yet pushed operations. */
 	private List<String> updateList;
 
 	
@@ -40,6 +40,9 @@ public class AntidoteMVRegister extends AntidoteObject implements MVRegisterInte
 		return valueList;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.MVRegisterInterface#getValueListBS()
+	 */
 	public List<ByteString> getValueListBS(){
 		List<ByteString> valueListBS = new ArrayList<>();
 		for (String value : valueList){
@@ -58,11 +61,17 @@ public class AntidoteMVRegister extends AntidoteObject implements MVRegisterInte
 		valueList = getClient().readMVRegister(getName(), getBucket()).getValueList();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.MVRegisterInterface#rollBack()
+	 */
 	public void rollBack(){
 		updateList.clear();
 		readDatabase();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.MVRegisterInterface#synchronize()
+	 */
 	public void synchronize(){
 		push();
 		readDatabase();
@@ -79,19 +88,25 @@ public class AntidoteMVRegister extends AntidoteObject implements MVRegisterInte
 		updateList.add(element);
 	}
 	
-	public void setValue(ByteString element){
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.MVRegisterInterface#setValue(com.google.protobuf.ByteString)
+	 */
+	public void setValueBS(ByteString element){
 		valueList.clear();
 		valueList.add(element.toStringUtf8());
 		updateList.add(element.toStringUtf8());
 	}
 	
 	/**
-	 * Push locally executed updates to database.
+	 * Push locally executed updates to database. Uses a transaction.
 	 */
 	public void push(){
+		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
+		ByteString descriptor = antidoteTransaction.startTransaction();
 		for(String update : updateList){
-			getClient().updateMVRegister(getName(), getBucket(), update);	
+			antidoteTransaction.updateMVRegisterTransaction(getName(), getBucket(), update, descriptor);
 		}
+		antidoteTransaction.commitTransaction(descriptor);
 		updateList.clear();
 	}
 }

@@ -19,6 +19,7 @@ public abstract class AntidoteObject {
      *
      * @param name the name
      * @param bucket the bucket
+     * @param antidoteClient the antidote client
      */
     public AntidoteObject(String name, String bucket, AntidoteClient antidoteClient) {
         this.name = name;

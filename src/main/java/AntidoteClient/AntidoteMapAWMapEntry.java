@@ -67,6 +67,12 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry implements AWMapI
 	}
 
 
+	/**
+	 * Removes a list of entries with the same type.
+	 *
+	 * @param keyList the key list
+	 * @param type the type
+	 */
 	private void remove(List<String> keyList, CRDT_type type) {
 		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
 		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
@@ -138,7 +144,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry implements AWMapI
 	}
 	
 	/**
-	 * Removes the counter.
+	 * Removes the counters.
 	 *
 	 * @param keyList the key list
 	 */
@@ -158,7 +164,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry implements AWMapI
 	}
 	
 	/**
-	 * Removes the RW set.
+	 * Removes the RW sets.
 	 *
 	 * @param keyList the key list
 	 */
@@ -178,7 +184,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry implements AWMapI
 	}
 	
 	/**
-	 * Removes the OR set.
+	 * Removes the OR sets.
 	 *
 	 * @param keyList the key list
 	 */
@@ -198,7 +204,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry implements AWMapI
 	}
 	
 	/**
-	 * Removes the register.
+	 * Removes the registers.
 	 *
 	 * @param keyList the key list
 	 */
@@ -218,7 +224,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry implements AWMapI
 	}
 	
 	/**
-	 * Removes the MV register.
+	 * Removes the MV registers.
 	 *
 	 * @param keyList the key list
 	 */
@@ -238,7 +244,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry implements AWMapI
 	}
 	
 	/**
-	 * Removes the integer.
+	 * Removes the integers.
 	 *
 	 * @param keyList the key list
 	 */
@@ -258,7 +264,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry implements AWMapI
 	}
 	
 	/**
-	 * Removes the AW map.
+	 * Removes the AW maps.
 	 *
 	 * @param keyList the key list
 	 */
@@ -278,7 +284,7 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry implements AWMapI
 	}
 	
 	/**
-	 * Removes the G map.
+	 * Removes the G maps.
 	 *
 	 * @param keyList the key list
 	 */

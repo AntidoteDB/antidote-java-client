@@ -19,7 +19,7 @@ import com.google.protobuf.ByteString;
  */
 public class AntidoteMap extends AntidoteObject {
 	
-	/** The list of locally but not yet pushed operations. */
+	/** The list of locally executed but not yet pushed operations. */
 	// first Map.Entry for removes, second Map.Entry for updates. We need to use one list so the order of the operations is preserved when pushing to the database
 	private List<Map.Entry<List<ApbMapKey>, Map.Entry<ApbMapKey, List<ApbUpdateOperation>>>> updateList;	
 	

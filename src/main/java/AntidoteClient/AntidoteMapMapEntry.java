@@ -110,11 +110,17 @@ public class AntidoteMapMapEntry extends AntidoteMapEntry {
 		entryList = innerMap.getEntryList();
 	}
 	
+	/**
+	 * Roll back.
+	 */
 	public void rollBack(){
 		clearUpdateList();
 		readDatabase();
 	}
 	
+	/**
+	 * Synchronize.
+	 */
 	public void synchronize(){
 		push();
 		readDatabase();

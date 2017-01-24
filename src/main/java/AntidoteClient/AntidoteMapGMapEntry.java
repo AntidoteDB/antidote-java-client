@@ -40,7 +40,7 @@ public class AntidoteMapGMapEntry extends AntidoteMapMapEntry implements GMapInt
 	 * Update the entry with the given key with multiple updates.
 	 *
 	 * @param mapKey the map key
-	 * @param update the update
+	 * @param updateList the update list
 	 */
 	public void update(String mapKey, List<AntidoteMapUpdate> updateList){
 		updateLocal(mapKey, updateList);

@@ -3,6 +3,8 @@ package main.java.AntidoteClient;
 import java.util.List;
 import java.util.Map;
 
+import com.google.protobuf.ByteString;
+
 /**
  * The Class AntidoteORSet.
  */
@@ -30,28 +32,37 @@ public class AntidoteORSet extends AntidoteSet implements SetInterface{
 		setValueList(getClient().readORSet(getName(), getBucket()).getValueList());
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.SetInterface#rollBack()
+	 */
 	public void rollBack(){
 		clearUpdateList();
 		readDatabase();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.SetInterface#synchronize()
+	 */
 	public void synchronize(){
 		push();
 		readDatabase();
 	}	
 	
 	/**
-	 * Push locally executed updates to database.
+	 * Push locally executed updates to database. Uses a transaction.
 	 */
 	public void push(){
+		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
+		ByteString descriptor = antidoteTransaction.startTransaction();
 		for(Map.Entry<Integer, List<String>> update : getUpdateList()){
 			if(update.getKey() == 1){
-				getClient().addORSetElement(getName(), getBucket(), update.getValue());
+				antidoteTransaction.addORSetElementTransaction(getName(), getBucket(), update.getValue(), descriptor);
 			}
 			else if(update.getKey() == 2){
-				getClient().removeORSetElement(getName(), getBucket(), update.getValue());
+				antidoteTransaction.removeORSetElementTransaction(getName(), getBucket(), update.getValue(), descriptor);
 			}
 		}
+		antidoteTransaction.commitTransaction(descriptor);
 		clearUpdateList();
 	}
 }

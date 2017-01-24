@@ -7,15 +7,58 @@ import java.util.ArrayList;
 import org.junit.Test;
 
 import com.google.protobuf.ByteString;
+
+/**
+ * The Class AntidoteTest.
+ */
 public class AntidoteTest{
+	
+	/** The antidote client. */
 	AntidoteClient antidoteClient = new AntidoteClient("192.168.99.100", 8087);
+	
+	/** The bucket. */
 	String bucket = nextSessionId();
-	  
+	
+	/** The antidote transaction. */
+	AntidoteTransaction antidoteTransaction = new AntidoteTransaction(antidoteClient);  
+	
+	/**
+	 * Next session id.
+	 *
+	 * @return the string
+	 */
 	public String nextSessionId() {
 		SecureRandom random = new SecureRandom();
 	    return new BigInteger(130, random).toString(32);
 	}
 	
+	/**
+	 * Commit transaction.
+	 */
+	@Test(timeout=10000)
+	public void commitTransaction() {
+
+		AntidoteCounter counter1old = antidoteClient.readCounter("testCounter5",bucket);
+		int oldValue1 = counter1old.getValue();
+		AntidoteCounter counter2old = antidoteClient.readCounter("testCounter3",bucket);
+		int oldValue2 = counter2old.getValue();
+		ByteString descriptor = antidoteTransaction.startTransaction();
+		antidoteTransaction.updateCounterTransaction("testCounter5",bucket, 5, descriptor);
+		antidoteTransaction.updateCounterTransaction("testCounter3",bucket, 3, descriptor);
+		antidoteTransaction.readCounterTransaction("testCounter5",bucket, descriptor);
+		antidoteTransaction.readCounterTransaction("testCounter3",bucket, descriptor);
+		antidoteTransaction.commitTransaction(descriptor);
+		AntidoteCounter counter1new = antidoteClient.readCounter("testCounter5",bucket);
+		AntidoteCounter counter2new = antidoteClient.readCounter("testCounter3",bucket);
+		int newValue1 = counter1new.getValue();
+		assert (newValue1 == oldValue1+5);
+		int newValue2 = counter2new.getValue();
+		assert (newValue2 == oldValue2+3);
+	}	
+	
+	/**
+	 * Inc by 2 test.
+	 */
 	@Test(timeout=1000) 
 	public void incBy2Test() {					
 		AntidoteCounter counter = antidoteClient.readCounter("testCounter5", bucket);
@@ -30,6 +73,9 @@ public class AntidoteTest{
 		assert(newValue == oldValue+2);	
 	}
 	
+	/**
+	 * Decrement to zero test.
+	 */
 	@Test(timeout=500)
 	public void decrementToZeroTest() {
 		AntidoteCounter testCounter = antidoteClient.readCounter("testCounter", bucket);
@@ -40,6 +86,9 @@ public class AntidoteTest{
 		assert(testCounter.getValue() == 0); //operation executed in the data base
 	}
 	
+	/**
+	 * Inc by 5 test.
+	 */
 	@Test(timeout=500)
 	public void incBy5Test(){					
 		AntidoteCounter counter = antidoteClient.readCounter("testCounter5", bucket);
@@ -53,6 +102,9 @@ public class AntidoteTest{
 		assert(newValue == oldValue+5);		
 	}
 	
+	/**
+	 * Adds the elem test.
+	 */
 	@Test(timeout=500)
 	public void addElemTest() {
 		AntidoteORSet testSet = antidoteClient.readORSet("testSet3", bucket);
@@ -63,6 +115,9 @@ public class AntidoteTest{
 		assert(testSet.getValueList().contains("element"));
 	}
 	
+	/**
+	 * Rem elem test.
+	 */
 	@Test(timeout=500)
 	public void remElemTest() {
 		List<String> elements = new ArrayList<String>();
@@ -79,6 +134,9 @@ public class AntidoteTest{
 		assert(testSet.getValueList().contains("Bye"));
 	}
 	
+	/**
+	 * Adds the elems test.
+	 */
 	@Test(timeout=500)
 	public void addElemsTest() {
 		List<String> elements = new ArrayList<String>();
@@ -92,6 +150,9 @@ public class AntidoteTest{
 		assert(testSet.getValueList().contains("Ball"));
 	}
 	
+	/**
+	 * Rem elems test.
+	 */
 	@Test(timeout=500)
 	public void remElemsTest() {
 		List<String> elements = new ArrayList<String>();
@@ -110,6 +171,9 @@ public class AntidoteTest{
 		assert(testSet.getValueList().contains("Bye"));
 	}
 	
+	/**
+	 * Update reg test.
+	 */
 	@Test(timeout=500)
 	public void updateRegTest() {
         AntidoteRegister testReg = antidoteClient.readRegister("testReg", bucket);
@@ -120,6 +184,9 @@ public class AntidoteTest{
         assert(! testReg.getValue().equals("hi"));
 	}
 	
+	/**
+	 * Update MV reg test.
+	 */
 	@Test(timeout=500)
 	public void updateMVRegTest() {
 		AntidoteMVRegister testReg = antidoteClient.readMVRegister("testMVReg", bucket);
@@ -130,6 +197,9 @@ public class AntidoteTest{
         assert(! testReg.getValueList().contains("hi"));
 	}
 	
+	/**
+	 * Inc int by 1 test.
+	 */
 	@Test(timeout=500)
 	public void incIntBy1Test() {
 		AntidoteInteger integer = antidoteClient.readInteger("testInteger", bucket);
@@ -143,6 +213,9 @@ public class AntidoteTest{
 		assert(oldValue+1 == newValue);
 	}
 	
+	/**
+	 * Dec by 5 test.
+	 */
 	@Test(timeout=500)
 	public void decBy5Test() {
 		AntidoteInteger integer = antidoteClient.readInteger("testInteger", bucket);
@@ -156,6 +229,9 @@ public class AntidoteTest{
 		assert(oldValue-5 == newValue);
 	}
 	
+	/**
+	 * Sets the int test.
+	 */
 	@Test(timeout=500)
 	public void setIntTest() {					
 		AntidoteInteger integer = antidoteClient.readInteger("testInteger", bucket);
@@ -166,6 +242,9 @@ public class AntidoteTest{
 		assert(integer.getValue() == 42);	
 	}
 
+	/**
+	 * Counter test.
+	 */
 	@Test(timeout=1000)
 	public void counterTest() {
 		String counterKey = "counterKey";
@@ -191,6 +270,9 @@ public class AntidoteTest{
 		testMap.push(); // everything set to initial situation
 	}
 	
+	/**
+	 * Integer test.
+	 */
 	@Test(timeout=500)
 	public void integerTest() {
 		String integerKey = "integerKey";
@@ -219,6 +301,9 @@ public class AntidoteTest{
 		testMap.push(); // everything set to initial situation
 	}
 	
+	/**
+	 * Register test.
+	 */
 	@Test(timeout=500)
 	public void registerTest() {
 		String registerKey = "registerKey";
@@ -243,6 +328,9 @@ public class AntidoteTest{
 		testMap.push(); // everything set to initial situation
 	}
 	
+	/**
+	 * Mv register test.
+	 */
 	@Test(timeout=500)
 	public void mvRegisterTest() {
 		String registerKey = "mvRegisterKey";
@@ -257,7 +345,7 @@ public class AntidoteTest{
 		assert(registerValueList.contains("yes")); //update forwarded to database, then got a new state from database
 		register = testMap.getMVRegisterEntry(registerKey);
 		register.setValue("no");
-		register.setValue(ByteString.copyFromUtf8("maybe"));
+		register.setValueBS(ByteString.copyFromUtf8("maybe"));
 		assert(register.getValueList().contains("maybe")); // two local updates in a row
 		register.synchronize();
 		assert(register.getValueList().contains("maybe")); // two updates sent to database at the same time, order is preserved
@@ -267,6 +355,9 @@ public class AntidoteTest{
 		testMap.push(); // everything set to initial situation
 	}
 	
+	/**
+	 * Or set test.
+	 */
 	@Test(timeout=500)
 	public void orSetTest() {
 		String setKey = "orSetKey";
@@ -296,6 +387,9 @@ public class AntidoteTest{
 		testMap.push(); // everything set to initial situation
 	}
 	
+	/**
+	 * Rw set test.
+	 */
 	@Test(timeout=500)
 	public void rwSetTest() {
 		String setKey = "rwSetKey";
@@ -325,6 +419,9 @@ public class AntidoteTest{
 		testMap.push(); // everything set to initial situation
 	}
 	
+	/**
+	 * Rw set test 2.
+	 */
 	@Test(timeout=500)
 	public void rwSetTest2() {
 		String setKey = "rwSetKey";
@@ -353,6 +450,9 @@ public class AntidoteTest{
 		testMap.push(); // everything set to initial situation
 	}
 	
+	/**
+	 * Creates the remove test.
+	 */
 	@Test(timeout=500)
 	public void createRemoveTest() {
 		AntidoteAWMap testMap = antidoteClient.readAWMap("emptyMapBestMap", bucket);

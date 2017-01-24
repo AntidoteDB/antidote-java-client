@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.AbstractMap.SimpleEntry;
+
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import com.google.protobuf.ByteString;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class AntidoteMapEntry.
  */
@@ -30,7 +31,7 @@ public class AntidoteMapEntry {
 	/** The type of the outer Map. */
 	private CRDT_type outerMapType;
 	
-	/** The list of locally but not yet pushed operations. */
+	/** The list of locally executed but not yet pushed operations. */
 	private List<Map.Entry<CRDT_type, List<ApbUpdateOperation>>> updateList; 
 	
 	/**
@@ -51,6 +52,9 @@ public class AntidoteMapEntry {
 		updateList = new ArrayList<>();
 	}
 	
+	/**
+	 * Clear update list.
+	 */
 	protected void clearUpdateList(){
 		updateList.clear();
 	}
@@ -109,20 +113,30 @@ public class AntidoteMapEntry {
 	
 	
 	/**
-	 * Push locally executed updates to database.
+	 * Push locally executed updates to database. Uses a transaction.
 	 */
 	public void push(){
+		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
+		ByteString descriptor = antidoteTransaction.startTransaction();		
 		for(Map.Entry<CRDT_type, List<ApbUpdateOperation>> update : updateList){
 			if(update.getKey() == CRDT_type.GMAP){
-				getClient().updateGMap(getName(), getBucket(), getPath().get(0), update.getValue());
+				antidoteTransaction.updateGMapTransaction(
+						getName(), getBucket(), getPath().get(0), update.getValue(), descriptor);
 			}
 			else if(update.getKey() == CRDT_type.AWMAP){
-				getClient().updateAWMap(getName(), getBucket(), getPath().get(0), update.getValue());
+				antidoteTransaction.updateAWMapTransaction(
+						getName(), getBucket(), getPath().get(0), update.getValue(), descriptor);
 			}
 		}
+		antidoteTransaction.commitTransaction(descriptor);
 		updateList.clear();
 	}
 	
+	/**
+	 * Gets the update list.
+	 *
+	 * @return the update list
+	 */
 	public List<Map.Entry<CRDT_type, List<ApbUpdateOperation>>> getUpdateList(){
 		return updateList;
 	}

@@ -13,7 +13,7 @@ public class AntidoteRegister extends AntidoteObject implements RegisterInterfac
 	/** The value. */
 	private String value;
 	
-	/** The update list. */
+	/** The list of locally executed but not yet pushed operations. */
 	private List<String> updateList;
 
 	/**
@@ -39,6 +39,9 @@ public class AntidoteRegister extends AntidoteObject implements RegisterInterfac
 		return value;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#getValueBS()
+	 */
 	public ByteString getValueBS(){
 		return ByteString.copyFromUtf8(value);
 	}
@@ -53,11 +56,17 @@ public class AntidoteRegister extends AntidoteObject implements RegisterInterfac
 		value = getClient().readRegister(getName(), getBucket()).getValue();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#rollBack()
+	 */
 	public void rollBack(){
 		updateList.clear();
 		readDatabase();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#synchronize()
+	 */
 	public void synchronize(){
 		push();
 		readDatabase();
@@ -73,18 +82,24 @@ public class AntidoteRegister extends AntidoteObject implements RegisterInterfac
 		updateList.add(element);
 	}
 	
-	public void setValue(ByteString element){
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#setValue(com.google.protobuf.ByteString)
+	 */
+	public void setValueBS(ByteString element){
 		value = element.toStringUtf8();
 		updateList.add(element.toStringUtf8());
 	}
 	
 	/**
-	 * Push locally executed updates to database.
+	 * Push locally executed updates to database. Uses a transaction.
 	 */
 	public void push(){
+		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
+		ByteString descriptor = antidoteTransaction.startTransaction();
 		for(String update : updateList){
-			getClient().updateRegister(getName(), getBucket(), update);	
+			antidoteTransaction.updateRegisterTransaction(getName(), getBucket(), update, descriptor);
 		}
+		antidoteTransaction.commitTransaction(descriptor);
 		updateList.clear();
 	}
 }

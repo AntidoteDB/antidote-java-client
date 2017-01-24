@@ -3,6 +3,8 @@ package main.java.AntidoteClient;
 import java.util.List;
 import java.util.Map;
 
+import com.google.protobuf.ByteString;
+
 /**
  * The Class AntidoteRWSet.
  */
@@ -30,28 +32,37 @@ public class AntidoteRWSet extends AntidoteSet implements SetInterface{
 		setValueList(getClient().readRWSet(getName(), getBucket()).getValueList());
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.SetInterface#rollBack()
+	 */
 	public void rollBack(){
 		clearUpdateList();
 		readDatabase();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.SetInterface#synchronize()
+	 */
 	public void synchronize(){
 		push();
 		readDatabase();
 	}
 	
 	/**
-	 * Push locally executed updates to database.
+	 * Push locally executed updates to database. Uses a transaction.
 	 */
 	public void push(){
+		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
+		ByteString descriptor = antidoteTransaction.startTransaction();
 		for(Map.Entry<Integer, List<String>> update : getUpdateList()){
 			if(update.getKey() == 1){
-				getClient().addRWSetElement(getName(), getBucket(), update.getValue());
+				antidoteTransaction.addRWSetElementTransaction(getName(), getBucket(), update.getValue(), descriptor);
 			}
 			else if(update.getKey() == 2){
-				getClient().removeRWSetElement(getName(), getBucket(), update.getValue());
+				antidoteTransaction.removeRWSetElementTransaction(getName(), getBucket(), update.getValue(), descriptor);
 			}
 		}
+		antidoteTransaction.commitTransaction(descriptor);
 		clearUpdateList();
 	}
 }

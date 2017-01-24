@@ -38,6 +38,11 @@ public class AntidoteMapSetEntry extends AntidoteMapEntry {
 		return valueList;
 	}
 	
+	/**
+	 * Gets the value list as ByteString.
+	 *
+	 * @return the value list as ByteString
+	 */
 	public List<ByteString> getValueListBS(){
 		List<ByteString> valueListBS = new ArrayList<>();
 		for (String value : valueList){
@@ -56,7 +61,7 @@ public class AntidoteMapSetEntry extends AntidoteMapEntry {
 	}
 	
 	/**
-	 * Adds the element.
+	 * Adds the element, given as ByteString.
 	 *
 	 * @param element the element
 	 */
@@ -67,7 +72,7 @@ public class AntidoteMapSetEntry extends AntidoteMapEntry {
 	}
 	
 	/**
-	 * Adds the elements.
+	 * Adds the elements, given as ByteStrings.
 	 *
 	 * @param elementList the element list
 	 */
@@ -83,7 +88,7 @@ public class AntidoteMapSetEntry extends AntidoteMapEntry {
 	}
 	
 	/**
-	 * Removes the element.
+	 * Removes the elements, given as ByteString.
 	 *
 	 * @param element the element
 	 */
@@ -94,7 +99,7 @@ public class AntidoteMapSetEntry extends AntidoteMapEntry {
 	}
 	
 	/**
-	 * Removes the elements.
+	 * Removes the elements, given as ByteStrings.
 	 *
 	 * @param elementList the element list
 	 */

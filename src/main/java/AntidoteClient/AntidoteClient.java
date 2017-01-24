@@ -65,6 +65,14 @@ public class AntidoteClient {
 
     //methods for updating and reading from the database
     
+    /**
+     * Update helper.
+     *
+     * @param operation the operation
+     * @param name the name
+     * @param bucket the bucket
+     * @param type the type
+     */
     public void updateHelper(ApbUpdateOperation.Builder operation, String name, String bucket, CRDT_type type){
     	ApbStaticUpdateObjects.Builder updateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
     	
@@ -95,11 +103,19 @@ public class AntidoteClient {
         }
     }
     
+    /**
+     * Read helper.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param type the type
+     * @return the apb static read objects resp
+     */
     public ApbStaticReadObjectsResp readHelper(String name, String bucket, CRDT_type type){
-    	ApbBoundObject.Builder counterObject = ApbBoundObject.newBuilder(); // The object in the message
-        counterObject.setKey(ByteString.copyFromUtf8(name));
-        counterObject.setType(type);
-        counterObject.setBucket(ByteString.copyFromUtf8(bucket));
+    	ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message
+        object.setKey(ByteString.copyFromUtf8(name));
+        object.setType(type);
+        object.setBucket(ByteString.copyFromUtf8(bucket));
 
         ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
 
@@ -108,7 +124,7 @@ public class AntidoteClient {
 
         ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
         readMessage.setTransaction(readTransaction);
-        readMessage.addObjects(counterObject);
+        readMessage.addObjects(object);
 
         ApbStaticReadObjects readMessageObject = readMessage.build();
         AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
@@ -312,6 +328,14 @@ public class AntidoteClient {
         updateRegisterHelper(name, bucket, value, CRDT_type.MVREG);
     }
     
+    /**
+     * Update register helper.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param value the value
+     * @param type the type
+     */
     public void updateRegisterHelper(String name, String bucket, String value, CRDT_type type){
         ApbRegUpdate.Builder regUpdateInstruction = ApbRegUpdate.newBuilder(); // The specific instruction in update instructions
         regUpdateInstruction.setValue(ByteString.copyFromUtf8(value));
@@ -377,7 +401,7 @@ public class AntidoteClient {
     }
     
     /**
-     * Helper method for the common part of the two preceding methods
+     * Helper method for the common part of the two preceding methods.
      *
      * @param name the name
      * @param bucket the bucket
@@ -851,6 +875,14 @@ public class AntidoteClient {
 		return createSetRemoveHelper(bsElementList, CRDT_type.RWSET, AntidoteSetOpType.SetRemove);
 	}
 	
+	/**
+	 * Creates the set remove helper.
+	 *
+	 * @param elementList the element list
+	 * @param type the type
+	 * @param opNumber the op number
+	 * @return the antidote map update
+	 */
 	public AntidoteMapUpdate createSetRemoveHelper(List<ByteString> elementList, CRDT_type type, int opNumber){
 		ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
     	ApbSetUpdate.Builder upBuilder = ApbSetUpdate.newBuilder();
@@ -912,6 +944,13 @@ public class AntidoteClient {
 		return createRegisterSetHelper(ByteString.copyFromUtf8(value), CRDT_type.MVREG);
 	}
 	
+	/**
+	 * Creates the register set helper.
+	 *
+	 * @param value the value
+	 * @param type the type
+	 * @return the antidote map update
+	 */
 	public AntidoteMapUpdate createRegisterSetHelper(ByteString value, CRDT_type type){
 		ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
     	ApbRegUpdate.Builder upBuilder = ApbRegUpdate.newBuilder();
@@ -990,7 +1029,7 @@ public class AntidoteClient {
 	/**
 	 * Creates the AW-Map update.
 	 *
-	 * @param the key of the entry to be updated
+	 * @param key the key
 	 * @param updateList the list of updates which are executed on a particular entry of the map
 	 * @return the antidote map update
 	 */
@@ -1026,6 +1065,13 @@ public class AntidoteClient {
 		return new AntidoteMapUpdate(CRDT_type.AWMAP, op);
 	}
 	
+    /**
+     * Creates the map remove.
+     *
+     * @param keyList the key list
+     * @param type the type
+     * @return the antidote map update
+     */
     public AntidoteMapUpdate createMapRemove(List<String> keyList, CRDT_type type){
     	List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
 		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
@@ -1055,6 +1101,12 @@ public class AntidoteClient {
 		return createMapRemove(keyList, CRDT_type.COUNTER);		
 	}
 	
+	/**
+	 * Creates the map counter remove.
+	 *
+	 * @param keyList the key list
+	 * @return the antidote map update
+	 */
 	public AntidoteMapUpdate createMapCounterRemove(List<String> keyList) {
 		return createMapRemove(keyList, CRDT_type.COUNTER);		
 	}
@@ -1071,6 +1123,12 @@ public class AntidoteClient {
 		return createMapRemove(keyList, CRDT_type.INTEGER);		
 	}
 	
+	/**
+	 * Creates the map integer remove.
+	 *
+	 * @param keyList the key list
+	 * @return the antidote map update
+	 */
 	public AntidoteMapUpdate createMapIntegerRemove(List<String> keyList) {
 		return createMapRemove(keyList, CRDT_type.INTEGER);			
 	}

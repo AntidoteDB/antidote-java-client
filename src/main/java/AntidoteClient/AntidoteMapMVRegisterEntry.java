@@ -29,11 +29,17 @@ private List<String> valueList;
 		this.valueList = valueList;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.MVRegisterInterface#rollBack()
+	 */
 	public void rollBack(){
 		clearUpdateList();
 		readDatabase();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.MVRegisterInterface#synchronize()
+	 */
 	public void synchronize(){
 		push();
 		readDatabase();
@@ -97,6 +103,9 @@ private List<String> valueList;
 		return valueList;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.MVRegisterInterface#getValueListBS()
+	 */
 	public List<ByteString> getValueListBS(){
 		List<ByteString> valueListBS = new ArrayList<>();
 		for (String value : valueList){
@@ -127,7 +136,10 @@ private List<String> valueList;
 		updateHelper(registerSet);
 	}
 	
-	public void setValue(ByteString value){
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.MVRegisterInterface#setValue(com.google.protobuf.ByteString)
+	 */
+	public void setValueBS(ByteString value){
 		setLocal(value.toStringUtf8());
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
 		registerSet.add(getClient().createMVRegisterSet(value.toStringUtf8()));

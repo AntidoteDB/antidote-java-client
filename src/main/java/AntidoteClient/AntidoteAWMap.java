@@ -35,11 +35,17 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 		setEntryList(getClient().readAWMap(getName(), getBucket()).getEntryList());
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.AWMapInterface#rollBack()
+	 */
 	public void rollBack(){
 		clearUpdateList();
 		readDatabase();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.AWMapInterface#synchronize()
+	 */
 	public void synchronize(){
 		push();
 		readDatabase();
@@ -108,9 +114,10 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	}
 
 	/**
-	 * Removes an entry locally.
+	 * Removes a list of entries of the same type.
 	 *
 	 * @param keyList the key list
+	 * @param type the type
 	 */
 	private void remove(List<String> keyList, CRDT_type type){
 		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
@@ -130,11 +137,6 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	 *
 	 * @param key the key
 	 */
-	/**
-	 * Removes the counter.
-	 *
-	 * @param key the key
-	 */
 	public void removeCounter(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
@@ -142,7 +144,7 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	}
 	
 	/**
-	 * Removes the counter.
+	 * Removes the counters.
 	 *
 	 * @param keyList the key list
 	 */
@@ -162,7 +164,7 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	}
 	
 	/**
-	 * Removes the RW set.
+	 * Removes the RW sets.
 	 *
 	 * @param keyList the key list
 	 */
@@ -182,7 +184,7 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	}
 	
 	/**
-	 * Removes the OR set.
+	 * Removes the OR sets.
 	 *
 	 * @param keyList the key list
 	 */
@@ -202,7 +204,7 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	}
 	
 	/**
-	 * Removes the register.
+	 * Removes the registers.
 	 *
 	 * @param keyList the key list
 	 */
@@ -222,7 +224,7 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	}
 	
 	/**
-	 * Removes the MV register.
+	 * Removes the MV registers.
 	 *
 	 * @param keyList the key list
 	 */
@@ -242,7 +244,7 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	}
 	
 	/**
-	 * Removes the integer.
+	 * Removes the integers.
 	 *
 	 * @param keyList the key list
 	 */
@@ -262,7 +264,7 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	}
 	
 	/**
-	 * Removes the AW map.
+	 * Removes the AW maps.
 	 *
 	 * @param keyList the key list
 	 */
@@ -282,7 +284,7 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	}
 	
 	/**
-	 * Removes the G map.
+	 * Removes the G maps.
 	 *
 	 * @param keyList the key list
 	 */
@@ -291,17 +293,21 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	}
 	
 	/**
-	 * Push locally executed updates to database.
+	 * Push locally executed updates to database. Uses a transaction.
 	 */
 	public void push(){
+		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
+		ByteString descriptor = antidoteTransaction.startTransaction();		
 		for(Entry<List<ApbMapKey>, Entry<ApbMapKey, List<ApbUpdateOperation>>> update : getUpdateList()){
 			if(update.getKey() != null){
-				getClient().removeAWMapEntry(getName(), getBucket(), update.getKey());
+				antidoteTransaction.removeAWMapEntryTransaction(getName(), getBucket(), update.getKey(), descriptor);
 			}
 			else if(update.getValue().getKey() != null && update.getValue().getValue() != null){
-				getClient().updateAWMap(getName(), getBucket(), update.getValue().getKey(), update.getValue().getValue());
+				antidoteTransaction.updateAWMapTransaction(
+						getName(), getBucket(), update.getValue().getKey(), update.getValue().getValue(), descriptor);
 			}
 		}
+		antidoteTransaction.commitTransaction(descriptor);
 		clearUpdateList();
 	}
 }

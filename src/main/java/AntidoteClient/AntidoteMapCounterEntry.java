@@ -28,11 +28,17 @@ public class AntidoteMapCounterEntry extends AntidoteMapEntry implements Counter
 		this.value = value;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.CounterInterface#rollBack()
+	 */
 	public void rollBack(){
 		clearUpdateList();
 		readDatabase();
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.CounterInterface#synchronize()
+	 */
 	public void synchronize(){
 		push();
 		readDatabase();
@@ -116,7 +122,7 @@ public class AntidoteMapCounterEntry extends AntidoteMapEntry implements Counter
 	}
 	
 	/**
-	 * Execute increment locally
+	 * Execute increment locally.
 	 *
 	 * @param inc the increment
 	 */
