@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.AbstractMap.SimpleEntry;
-
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
@@ -32,7 +30,7 @@ public class AntidoteMapEntry {
 	private CRDT_type outerMapType;
 	
 	/** The list of locally executed but not yet pushed operations. */
-	private List<Map.Entry<CRDT_type, List<ApbUpdateOperation>>> updateList; 
+	private List<Map.Entry<CRDT_type, List<AntidoteMapUpdate>>> updateList; 
 	
 	/**
 	 * Instantiates a new antidote map entry.
@@ -65,17 +63,22 @@ public class AntidoteMapEntry {
 	 * @param innerUpdate the inner update
 	 */
 	public void updateHelper(List<AntidoteMapUpdate> innerUpdate){
-		AntidoteMapUpdate mapUpdate;
+		AntidoteMapUpdate mapUpdate = null;
 		List<AntidoteMapUpdate> mapUpdateList = new ArrayList<AntidoteMapUpdate>();
 		ApbMapKey apbKey;
 		for (int i = getPath().size()-1; i>0; i--){
 			apbKey = getPath().get(i);
 			if (i == getPath().size()-1){
-				mapUpdate = getClient().createAWMapUpdate(apbKey.getKey().toStringUtf8(), innerUpdate);
+				if (getPath().get(i-1).getType() == CRDT_type.GMAP){
+					mapUpdate = getClient().createGMapUpdate(apbKey.getKey().toStringUtf8(), innerUpdate);
+				}
+				else{
+					mapUpdate = getClient().createAWMapUpdate(apbKey.getKey().toStringUtf8(), innerUpdate);
+				}
 				mapUpdateList.add(mapUpdate);
 			}
 			else{
-				if (getPath().get(i).getType() == CRDT_type.GMAP){
+				if (getPath().get(i-1).getType() == CRDT_type.GMAP){
 					mapUpdate = getClient().createGMapUpdate(apbKey.getKey().toStringUtf8(), mapUpdateList);
 				}
 				else{
@@ -86,27 +89,19 @@ public class AntidoteMapEntry {
 			}
 		}
 		if (getPath().size()>1){
-			List<ApbUpdateOperation> apbMapUpdateList = new ArrayList<ApbUpdateOperation>();
-			for (AntidoteMapUpdate u : mapUpdateList){
-				apbMapUpdateList.add(u.getOperation());
-			}
 			if (getOuterMapType() == CRDT_type.GMAP){
-				updateList.add(new SimpleEntry<>(CRDT_type.GMAP, apbMapUpdateList));
+				updateList.add(new SimpleEntry<>(CRDT_type.GMAP, mapUpdateList));
 			}
 			else if (getOuterMapType() == CRDT_type.AWMAP){
-				updateList.add(new SimpleEntry<>(CRDT_type.AWMAP, apbMapUpdateList));
+				updateList.add(new SimpleEntry<>(CRDT_type.AWMAP, mapUpdateList));
 			}
 		}
 		else if (getPath().size()==1){
-			List<ApbUpdateOperation> apbInnerUpdate = new ArrayList<ApbUpdateOperation>();
-			for (AntidoteMapUpdate u : innerUpdate){
-				apbInnerUpdate.add(u.getOperation());
-			}
 			if (getOuterMapType() == CRDT_type.GMAP){
-				updateList.add(new SimpleEntry<>(CRDT_type.GMAP, apbInnerUpdate));
+				updateList.add(new SimpleEntry<>(CRDT_type.GMAP, innerUpdate));
 			}
 			else if (getOuterMapType() == CRDT_type.AWMAP){
-				updateList.add(new SimpleEntry<>(CRDT_type.AWMAP, apbInnerUpdate));
+				updateList.add(new SimpleEntry<>(CRDT_type.AWMAP, innerUpdate));
 			}
 		}
 	}
@@ -118,14 +113,12 @@ public class AntidoteMapEntry {
 	public void push(){
 		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
 		ByteString descriptor = antidoteTransaction.startTransaction();		
-		for(Map.Entry<CRDT_type, List<ApbUpdateOperation>> update : updateList){
+		for(Map.Entry<CRDT_type, List<AntidoteMapUpdate>> update : updateList){
 			if(update.getKey() == CRDT_type.GMAP){
-				antidoteTransaction.updateGMapTransaction(
-						getName(), getBucket(), getPath().get(0), update.getValue(), descriptor);
+				antidoteTransaction.updateGMapTransaction(getName(), getBucket(), new AntidoteMapKey(getPath().get(0)), update.getValue(), descriptor);
 			}
 			else if(update.getKey() == CRDT_type.AWMAP){
-				antidoteTransaction.updateAWMapTransaction(
-						getName(), getBucket(), getPath().get(0), update.getValue(), descriptor);
+				antidoteTransaction.updateAWMapTransaction(getName(), getBucket(), new AntidoteMapKey(getPath().get(0)), update.getValue(), descriptor);
 			}
 		}
 		antidoteTransaction.commitTransaction(descriptor);
@@ -137,7 +130,7 @@ public class AntidoteMapEntry {
 	 *
 	 * @return the update list
 	 */
-	public List<Map.Entry<CRDT_type, List<ApbUpdateOperation>>> getUpdateList(){
+	public List<Map.Entry<CRDT_type, List<AntidoteMapUpdate>>> getUpdateList(){
 		return updateList;
 	}
 	

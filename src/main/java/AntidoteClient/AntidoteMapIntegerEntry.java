@@ -67,7 +67,13 @@ public class AntidoteMapIntegerEntry extends AntidoteMapEntry implements Integer
 				integer = outerMap.getIntegerEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
-				AntidoteMapMapEntry innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				AntidoteMapMapEntry innerMap = null;
+				if (getPath().get(0).getType()==CRDT_type.AWMAP){
+					innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
+				else if (getPath().get(0).getType()==CRDT_type.GMAP){
+					innerMap = outerMap.getGMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
 				for (int i = 1; i<getPath().size()-1; i++){
 					if (getPath().get(i).getType()==CRDT_type.AWMAP){
 						innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
@@ -87,7 +93,13 @@ public class AntidoteMapIntegerEntry extends AntidoteMapEntry implements Integer
 				integer = outerMap.getIntegerEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
-				AntidoteMapMapEntry innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				AntidoteMapMapEntry innerMap = null;
+				if (getPath().get(0).getType()==CRDT_type.AWMAP){
+					innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
+				else if (getPath().get(0).getType()==CRDT_type.GMAP){
+					innerMap = outerMap.getGMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
 				for (int i = 1; i<getPath().size()-1; i++){
 					if (getPath().get(i).getType()==CRDT_type.AWMAP){
 						innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());

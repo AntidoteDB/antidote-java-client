@@ -1,8 +1,10 @@
 package main.java.AntidoteClient;
 
+import java.util.ArrayList;
 import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import com.google.protobuf.ByteString;
 
 /**
  * The Class AntidoteMapORSetEntry.
@@ -40,6 +42,106 @@ public class AntidoteMapORSetEntry extends AntidoteMapSetEntry implements SetInt
 	}
 
 	/**
+	 * Adds the element, given as ByteString.
+	 *
+	 * @param element the element
+	 */
+	public void addElementBS(ByteString element){
+		List<ByteString> elementList = new ArrayList<ByteString>();
+		elementList.add(element);
+		addElementBS(elementList);
+	}
+	
+	/**
+	 * Adds the elements, given as ByteStrings.
+	 *
+	 * @param elementList the element list
+	 */
+	public void addElementBS(List<ByteString> elementList){
+		List<String> stringElementList = new ArrayList<>();
+		for (ByteString elt : elementList){
+			stringElementList.add(elt.toStringUtf8());
+		}
+		addElementLocal(stringElementList);
+		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>(); 
+		setAdd.add(getClient().createORSetAddBS(elementList));
+		updateHelper(setAdd);
+	}
+	
+	/**
+	 * Removes the elements, given as ByteString.
+	 *
+	 * @param element the element
+	 */
+	public void removeElementBS(ByteString element){
+		List<ByteString> elementList = new ArrayList<ByteString>();
+		elementList.add(element);
+		removeElementBS(elementList);
+	}
+	
+	/**
+	 * Removes the elements, given as ByteStrings.
+	 *
+	 * @param elementList the element list
+	 */
+	public void removeElementBS(List<ByteString> elementList){
+		List<String> stringElementList = new ArrayList<>();
+		for (ByteString elt : elementList){
+			stringElementList.add(elt.toStringUtf8());
+		}
+		removeElementLocal(stringElementList);
+		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>(); 
+		setRemove.add(getClient().createORSetRemoveBS(elementList));
+		updateHelper(setRemove);
+	}
+	
+	/**
+	 * Adds the element.
+	 *
+	 * @param element the element
+	 */
+	public void addElement(String element){
+		List<String> elementList = new ArrayList<String>();
+		elementList.add(element);
+		addElement(elementList);
+	}
+	
+	/**
+	 * Adds the elements.
+	 *
+	 * @param elementList the element list
+	 */
+	public void addElement(List<String> elementList){
+		addElementLocal(elementList);
+		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>(); 
+		setAdd.add(getClient().createORSetAdd(elementList));
+		updateHelper(setAdd);
+	}
+	
+	/**
+	 * Removes the element.
+	 *
+	 * @param element the element
+	 */
+	public void removeElement(String element){
+		List<String> elementList = new ArrayList<String>();
+		elementList.add(element);
+		removeElement(elementList);
+	}
+	
+	/**
+	 * Removes the elements.
+	 *
+	 * @param elementList the element list
+	 */
+	public void removeElement(List<String> elementList){
+		removeElementLocal(elementList);
+		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>(); 
+		setRemove.add(getClient().createORSetRemove(elementList));
+		updateHelper(setRemove);
+	}
+	
+	/**
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
@@ -53,7 +155,13 @@ public class AntidoteMapORSetEntry extends AntidoteMapSetEntry implements SetInt
 				set = outerMap.getORSetEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
-				AntidoteMapMapEntry innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				AntidoteMapMapEntry innerMap = null;
+				if (getPath().get(0).getType()==CRDT_type.AWMAP){
+					innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
+				else if (getPath().get(0).getType()==CRDT_type.GMAP){
+					innerMap = outerMap.getGMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
 				for (int i = 1; i<getPath().size()-1; i++){
 					if (getPath().get(i).getType()==CRDT_type.AWMAP){
 						innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
@@ -73,7 +181,13 @@ public class AntidoteMapORSetEntry extends AntidoteMapSetEntry implements SetInt
 				set = outerMap.getORSetEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
-				AntidoteMapMapEntry innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				AntidoteMapMapEntry innerMap = null;
+				if (getPath().get(0).getType()==CRDT_type.AWMAP){
+					innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
+				else if (getPath().get(0).getType()==CRDT_type.GMAP){
+					innerMap = outerMap.getGMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
 				for (int i = 1; i<getPath().size()-1; i++){
 					if (getPath().get(i).getType()==CRDT_type.AWMAP){
 						innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());

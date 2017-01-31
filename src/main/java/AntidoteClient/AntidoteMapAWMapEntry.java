@@ -3,7 +3,6 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
@@ -107,27 +106,19 @@ public class AntidoteMapAWMapEntry extends AntidoteMapMapEntry implements AWMapI
 			}
 		}
 		if (getPath().size()>1){
-			List<ApbUpdateOperation> apbMapUpdateList = new ArrayList<ApbUpdateOperation>();
-			for (AntidoteMapUpdate u : mapUpdateList){
-				apbMapUpdateList.add(u.getOperation());
-			}
 			if(getOuterMapType() == CRDT_type.AWMAP){
-				getClient().updateAWMap(getName(), getBucket(), getPath().get(0), apbMapUpdateList);
+				getClient().updateAWMap(getName(), getBucket(), new AntidoteMapKey(getPath().get(0).getType(), getPath().get(0).getKey()), mapUpdateList);
 			}
 			else{
-				getClient().updateGMap(getName(), getBucket(), getPath().get(0), apbMapUpdateList);
+				getClient().updateGMap(getName(), getBucket(), new AntidoteMapKey(getPath().get(0).getType(), getPath().get(0).getKey()), mapUpdateList);
 			}
 		}
 		else if (getPath().size()==1){
-			List<ApbUpdateOperation> apbInnerMapUpdate = new ArrayList<ApbUpdateOperation>();
-			for (AntidoteMapUpdate u : innerMapUpdate){
-				apbInnerMapUpdate.add(u.getOperation());
-			}
 			if(getOuterMapType() == CRDT_type.AWMAP){
-				getClient().updateAWMap(getName(), getBucket(), getPath().get(0), apbInnerMapUpdate);
+				getClient().updateAWMap(getName(), getBucket(), new AntidoteMapKey(getPath().get(0).getType(), getPath().get(0).getKey()), innerMapUpdate);
 			}
 			else{
-				getClient().updateGMap(getName(), getBucket(), getPath().get(0), apbInnerMapUpdate);
+				getClient().updateGMap(getName(), getBucket(), new AntidoteMapKey(getPath().get(0).getType(), getPath().get(0).getKey()), innerMapUpdate);
 			}
 		}		
 	}

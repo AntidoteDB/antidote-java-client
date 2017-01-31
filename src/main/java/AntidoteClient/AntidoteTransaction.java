@@ -79,7 +79,7 @@ public class AntidoteTransaction {
      * @param type the type
      * @param descriptor the descriptor
      */
-    public void updateHelper(ApbUpdateOperation.Builder operation, String name, String bucket, CRDT_type type, ByteString descriptor){
+    private void updateHelper(ApbUpdateOperation.Builder operation, String name, String bucket, CRDT_type type, ByteString descriptor){
     	ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message to update
     	object.setKey(ByteString.copyFromUtf8(name));
     	object.setType(type);
@@ -106,7 +106,7 @@ public class AntidoteTransaction {
      * @param descriptor the descriptor
      * @return the apb read objects resp
      */
-    public ApbReadObjectsResp readHelper(String name, String bucket, CRDT_type type, ByteString descriptor){
+    private ApbReadObjectsResp readHelper(String name, String bucket, CRDT_type type, ByteString descriptor){
     	
     	ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message to update
     	object.setKey(ByteString.copyFromUtf8(name));
@@ -283,7 +283,7 @@ public class AntidoteTransaction {
      * @param setUpdateInstruction the set update instruction
      * @param descriptor the descriptor
      */
-    public void updateORSetHelper(String name, String bucket, ApbSetUpdate.Builder setUpdateInstruction, ByteString descriptor){
+    private void updateORSetHelper(String name, String bucket, ApbSetUpdate.Builder setUpdateInstruction, ByteString descriptor){
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setSetop(setUpdateInstruction);
         updateHelper(updateOperation, name, bucket, CRDT_type.ORSET, descriptor);   
@@ -425,7 +425,7 @@ public class AntidoteTransaction {
      * @param setUpdateInstruction the set update instruction
      * @param descriptor the descriptor
      */
-    public void updateRWSetHelper(String name, String bucket, ApbSetUpdate.Builder setUpdateInstruction, ByteString descriptor){
+    private void updateRWSetHelper(String name, String bucket, ApbSetUpdate.Builder setUpdateInstruction, ByteString descriptor){
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setSetop(setUpdateInstruction);
 
@@ -489,7 +489,7 @@ public class AntidoteTransaction {
      * @param type the type
      * @param descriptor the descriptor
      */
-    public void updateRegisterHelper(String name, String bucket, ByteString value, CRDT_type type, ByteString descriptor){
+    private void updateRegisterHelper(String name, String bucket, ByteString value, CRDT_type type, ByteString descriptor){
         ApbRegUpdate.Builder regUpdateInstruction = ApbRegUpdate.newBuilder(); // The specific instruction in update instructions
         regUpdateInstruction.setValue(value);
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
@@ -506,7 +506,7 @@ public class AntidoteTransaction {
      * @param type the type
      * @param descriptor the descriptor
      */
-    public void updateRegisterHelper(String name, String bucket, String value, CRDT_type type, ByteString descriptor){
+    private void updateRegisterHelper(String name, String bucket, String value, CRDT_type type, ByteString descriptor){
         ApbRegUpdate.Builder regUpdateInstruction = ApbRegUpdate.newBuilder(); // The specific instruction in update instructions
         regUpdateInstruction.setValue(ByteString.copyFromUtf8(value));
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
@@ -550,7 +550,7 @@ public class AntidoteTransaction {
      * @param intUpdateInstruction the int update instruction
      * @param descriptor the descriptor
      */
-    public void updateIntegerHelper(String name, String bucket, ApbIntegerUpdate.Builder intUpdateInstruction, ByteString descriptor) {
+    private void updateIntegerHelper(String name, String bucket, ApbIntegerUpdate.Builder intUpdateInstruction, ByteString descriptor) {
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setIntegerop(intUpdateInstruction);
         updateHelper(updateOperation, name, bucket, CRDT_type.INTEGER, descriptor);
@@ -562,26 +562,41 @@ public class AntidoteTransaction {
      * @param name the name
      * @param bucket the bucket
      * @param mapKey the map key
+     * @param update the update
+     * @param descriptor the descriptor
+     */
+    public void updateAWMapTransaction(String name, String bucket, AntidoteMapKey mapKey, AntidoteMapUpdate update, ByteString descriptor) {
+    	List<AntidoteMapUpdate> updates = new ArrayList<>();
+    	updates.add(update);
+    	updateMapTransactionHelper(name, bucket, mapKey, updates, CRDT_type.AWMAP, descriptor);
+    }
+
+	/**
+	 * Update G map.
+	 *
+	 * @param name the name
+	 * @param bucket the bucket
+	 * @param mapKey the map key
+	 * @param update the update
+	 * @param descriptor the descriptor
+	 */
+	public void updateGMapTransaction(String name, String bucket, AntidoteMapKey mapKey, AntidoteMapUpdate update, ByteString descriptor) { 
+		List<AntidoteMapUpdate> updates = new ArrayList<>();
+    	updates.add(update);
+        updateMapTransactionHelper(name, bucket, mapKey, updates, CRDT_type.GMAP, descriptor);
+    }
+    
+    /**
+     * Update AW map.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param mapKey the map key
      * @param updates the updates
      * @param descriptor the descriptor
      */
-    public void updateAWMapTransaction(String name, String bucket, ApbMapKey mapKey, List<ApbUpdateOperation> updates, ByteString descriptor) {
-        ApbMapNestedUpdate.Builder mapNestedUpdateBuilder = ApbMapNestedUpdate.newBuilder(); // The specific instruction in update instruction
-        List<ApbMapNestedUpdate> mapNestedUpdateList = new ArrayList<ApbMapNestedUpdate>();
-        ApbMapNestedUpdate mapNestedUpdate;
-        for (ApbUpdateOperation update : updates){
-        	mapNestedUpdateBuilder.setUpdate(update);
-        	mapNestedUpdateBuilder.setKey(mapKey);
-        	mapNestedUpdate = mapNestedUpdateBuilder.build();
-        	mapNestedUpdateList.add(mapNestedUpdate);
-        }
-        ApbMapUpdate.Builder mapUpdateInstruction = ApbMapUpdate.newBuilder(); // The specific instruction in update instruction
-        mapUpdateInstruction.addAllUpdates(mapNestedUpdateList);
-        
-        ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
-        updateOperation.setMapop(mapUpdateInstruction);
-        
-        updateHelper(updateOperation, name, bucket, CRDT_type.AWMAP, descriptor);
+    public void updateAWMapTransaction(String name, String bucket, AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates, ByteString descriptor) {
+    	updateMapTransactionHelper(name, bucket, mapKey, updates, CRDT_type.AWMAP, descriptor);
     }
 
 	/**
@@ -593,13 +608,17 @@ public class AntidoteTransaction {
 	 * @param updates the updates
 	 * @param descriptor the descriptor
 	 */
-	public void updateGMapTransaction(String name, String bucket, ApbMapKey mapKey, List<ApbUpdateOperation> updates, ByteString descriptor) { 
+	public void updateGMapTransaction(String name, String bucket, AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates, ByteString descriptor) { 
+        updateMapTransactionHelper(name, bucket, mapKey, updates, CRDT_type.GMAP, descriptor);
+    }
+	
+	public void updateMapTransactionHelper(String name, String bucket, AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates, CRDT_type mapType, ByteString descriptor) { 
         ApbMapNestedUpdate.Builder mapNestedUpdateBuilder = ApbMapNestedUpdate.newBuilder(); // The specific instruction in update instruction
         List<ApbMapNestedUpdate> mapNestedUpdateList = new ArrayList<ApbMapNestedUpdate>();
         ApbMapNestedUpdate mapNestedUpdate; 
-        for (ApbUpdateOperation update : updates){
-        	mapNestedUpdateBuilder.setUpdate(update);
-        	mapNestedUpdateBuilder.setKey(mapKey);
+        for (AntidoteMapUpdate update : updates){
+        	mapNestedUpdateBuilder.setUpdate(update.getOperation());
+        	mapNestedUpdateBuilder.setKey(mapKey.getApbKey());
         	mapNestedUpdate = mapNestedUpdateBuilder.build();
         	mapNestedUpdateList.add(mapNestedUpdate);
         }
@@ -609,7 +628,7 @@ public class AntidoteTransaction {
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setMapop(mapUpdateInstruction);
         
-        updateHelper(updateOperation, name, bucket, CRDT_type.GMAP, descriptor);
+        updateHelper(updateOperation, name, bucket, mapType, descriptor);
     }
     
     /**
@@ -620,10 +639,11 @@ public class AntidoteTransaction {
      * @param keys the keys
      * @param descriptor the descriptor
      */
-    public void removeAWMapEntryTransaction(String name, String bucket, List<ApbMapKey> keys, ByteString descriptor) {
+    public void removeAWMapEntryTransaction(String name, String bucket, List<AntidoteMapKey> keys, ByteString descriptor) {
         ApbMapUpdate.Builder mapUpdateInstruction = ApbMapUpdate.newBuilder(); // The specific instruction in update instruction
-        mapUpdateInstruction.addAllRemovedKeys(keys);      
-        
+        for (AntidoteMapKey key : keys){
+        	mapUpdateInstruction.addRemovedKeys(key.getApbKey());
+        }    
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setMapop(mapUpdateInstruction);
         updateHelper(updateOperation, name, bucket, CRDT_type.AWMAP, descriptor);

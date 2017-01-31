@@ -3,8 +3,6 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
@@ -80,21 +78,14 @@ public class AntidoteGMap extends AntidoteMap implements GMapInterface{
 	 * @param updateList updates which are executed on that entry
 	 */
 	public void update(String key, List<AntidoteMapUpdate> updateList){
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
 		CRDT_type type = updateList.get(0).getType();
 		for (AntidoteMapUpdate u : updateList){
 			if (!(type.equals(u.getType()))){
 				throw new  IllegalArgumentException("Different types detected, only one type allowed");
 			}
 		}
-		apbKeyBuilder.setType(type);
-		apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-		ApbMapKey apbKey = apbKeyBuilder.build();
-		List<ApbUpdateOperation> apbUpdateList = new ArrayList<ApbUpdateOperation>();
-		for (AntidoteMapUpdate u : updateList){
-			apbUpdateList.add(u.getOperation());
-		}	
-		addUpdateToList(apbKey, apbUpdateList);
+		AntidoteMapKey mapKey = new AntidoteMapKey(type, key);
+		addUpdateToList(mapKey, updateList);
 		updateLocal(key, updateList);		
 	}
 	
@@ -104,7 +95,7 @@ public class AntidoteGMap extends AntidoteMap implements GMapInterface{
 	public void push(){
 		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
 		ByteString descriptor = antidoteTransaction.startTransaction();		
-		for(Entry<List<ApbMapKey>, Entry<ApbMapKey, List<ApbUpdateOperation>>> update : getUpdateList()){
+		for(Entry<List<AntidoteMapKey>, Entry<AntidoteMapKey, List<AntidoteMapUpdate>>> update : getUpdateList()){
 			if(update.getValue().getKey() != null && update.getValue().getValue() != null){
 				antidoteTransaction.updateGMapTransaction(
 						getName(), getBucket(), update.getValue().getKey(), update.getValue().getValue(), descriptor);

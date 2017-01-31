@@ -3,8 +3,6 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
@@ -80,21 +78,14 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	 * @param updateList updates which are executed on that entry
 	 */
 	public void update(String key, List<AntidoteMapUpdate> updateList){
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
 		CRDT_type type = updateList.get(0).getType();
 		for (AntidoteMapUpdate u : updateList){
 			if (!(type.equals(u.getType()))){
 				throw new  IllegalArgumentException("Different types detected, only one type allowed");
 			}
 		}
-		apbKeyBuilder.setType(type);
-		apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-		ApbMapKey apbKey = apbKeyBuilder.build();
-		List<ApbUpdateOperation> apbUpdateList = new ArrayList<ApbUpdateOperation>();
-		for (AntidoteMapUpdate u : updateList){
-			apbUpdateList.add(u.getOperation());
-		}	
-		addUpdateToList(apbKey, apbUpdateList);
+		AntidoteMapKey mapKey = new AntidoteMapKey(type, key);
+		addUpdateToList(mapKey, updateList);
 		updateLocal(key, updateList);		
 	}
 	
@@ -103,10 +94,10 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	 *
 	 * @param keyList the key list
 	 */
-	private void removeLocal(List<ApbMapKey> keyList){
+	private void removeLocal(List<AntidoteMapKey> keyList){
 		List<AntidoteMapEntry> entriesValid = new ArrayList<AntidoteMapEntry>();		
 		for (AntidoteMapEntry e : getEntryList()){
-			if (! keyList.contains(e.getPath().get(e.getPath().size()-1))){
+			if (! keyList.contains(new AntidoteMapKey(e.getPath().get(e.getPath().size()-1)))){
 				entriesValid.add(e);
 			}
 		}
@@ -120,16 +111,12 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	 * @param type the type
 	 */
 	private void remove(List<String> keyList, CRDT_type type){
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setType(type);
+		List<AntidoteMapKey> mapKeyList = new ArrayList<AntidoteMapKey>();
 		for (String key : keyList){
-			apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-			ApbMapKey apbKey = apbKeyBuilder.build();
-			apbKeyList.add(apbKey);
+			mapKeyList.add(new AntidoteMapKey(type, key));
 		}
-		removeLocal(apbKeyList);
-		addRemoveToList(apbKeyList);
+		removeLocal(mapKeyList);
+		addRemoveToList(mapKeyList);
 	}
 	
 	/**
@@ -298,7 +285,7 @@ public class AntidoteAWMap extends AntidoteMap implements AWMapInterface{
 	public void push(){
 		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
 		ByteString descriptor = antidoteTransaction.startTransaction();		
-		for(Entry<List<ApbMapKey>, Entry<ApbMapKey, List<ApbUpdateOperation>>> update : getUpdateList()){
+		for(Entry<List<AntidoteMapKey>, Entry<AntidoteMapKey, List<AntidoteMapUpdate>>> update : getUpdateList()){
 			if(update.getKey() != null){
 				antidoteTransaction.removeAWMapEntryTransaction(getName(), getBucket(), update.getKey(), descriptor);
 			}
