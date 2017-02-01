@@ -1,5 +1,6 @@
 package main.java.AntidoteClient;
 
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -62,7 +63,10 @@ public class ConnectionPool {
 
     private synchronized boolean openAndPoolConnection() {
         try {
-            Socket s = new Socket(host, port);
+
+            Socket s = new Socket();
+            s.setSoTimeout(200);
+            s.connect(new InetSocketAddress(host, port), 200);
             pool.offer(s);
             currentPoolSize++;
             this.healthy = true;

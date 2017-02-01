@@ -8,12 +8,21 @@ import org.junit.Test;
 import com.google.protobuf.ByteString;
 
 public class AntidoteTest{
-	
-	AntidoteClient antidoteClient = new AntidoteClient("192.168.99.100", 8087);
 
-	String bucket = nextSessionId();
-	
-	AntidoteTransaction antidoteTransaction = new AntidoteTransaction(antidoteClient);  
+	PoolManager antidotePoolManager;
+	AntidoteClient antidoteClient;
+	String bucket;
+	AntidoteTransaction antidoteTransaction;
+
+	public AntidoteTest() {
+		List<Host> hosts = new LinkedList<Host>();
+		hosts.add(new Host("192.168.99.100", 8087));
+		hosts.add(new Host("localhost", 8087));
+		antidotePoolManager = new PoolManager(20, 5, hosts);
+		antidoteClient = new AntidoteClient(antidotePoolManager);
+		bucket = nextSessionId();
+		antidoteTransaction = new AntidoteTransaction(antidoteClient);
+	}
 	
 	public String nextSessionId() {
 		SecureRandom random = new SecureRandom();

@@ -11,29 +11,34 @@ public class PoolManager {
     private int retries = 0;
 
     public PoolManager(int maxPoolSize, int initialPoolSize, List<Host> hosts) {
-        for(Host h : hosts) {
+        for (Host h : hosts) {
             pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
         }
     }
 
     public Connection getConnection() {
-        for(ConnectionPool pool : pools) {
-            if (pool.isHealthy()) {
-                try {
-                    Socket s = pool.getConnection();
-                    if (s != null) {
-                        return new Connection(pool, s);
+        int selectedIndex = 0;
+        List<ConnectionPool> healthyPools = getHealthyPools();
+        if (healthyPools.size() > 0) {
+            do {
+                for (int i = 0; i < healthyPools.size(); i++) {
+                    selectedIndex = (int) (Math.random() * healthyPools.size());
+
+                    ConnectionPool p = healthyPools.get(selectedIndex);
+                    if (p.isHealthy()) {
+                        try {
+                            Socket s = p.getConnection();
+                            if (s != null) {
+                                return new Connection(p, s);
+                            }
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
                     }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
                 }
-            }
+            } while (++retries < 3);
         }
-        if (++retries < 3) {
-            return getConnection();
-        } else {
-            throw new RuntimeException("Cannot open connection");
-        }
+        throw new RuntimeException("Cannot open connection");
     }
 
     public AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
@@ -59,5 +64,15 @@ public class PoolManager {
         } finally {
             c.returnConnection();
         }
+    }
+
+    private List<ConnectionPool> getHealthyPools() {
+        List<ConnectionPool> healthyPools = new LinkedList<ConnectionPool>();
+        for (ConnectionPool p: pools) {
+            if(p.isHealthy()) {
+                healthyPools.add(p);
+            }
+        }
+        return healthyPools;
     }
 }

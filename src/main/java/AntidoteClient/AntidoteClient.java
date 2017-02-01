@@ -10,25 +10,16 @@ import java.net.Socket;
  * The Class AntidoteClient.
  */
 public class AntidoteClient {
-    
-    /** The socket. */
-    private Socket socket;
-    
-    /** The host. */
-    private String host;
-
-    /** The port. */
-    private int port;
+    /** Pool Manager */
+    private PoolManager poolManager;
 
     /**
      * Instantiates a new antidote client.
      *
-     * @param host the host
-     * @param port the port
+     * @param poolManager the pool manager object
      */
-    public AntidoteClient(String host, int port) {
-        this.host = host;
-        this.port = port;
+    public AntidoteClient(PoolManager poolManager) {
+        this.poolManager = poolManager;
     }
     
     /**
@@ -38,29 +29,7 @@ public class AntidoteClient {
      * @return the response
      */
     protected AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
-        try {
-            socket = new Socket(host, port);
-            DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-            dataOutputStream.writeInt(requestMessage.getLength());
-            dataOutputStream.writeByte(requestMessage.getCode());
-            requestMessage.getMessage().writeTo(dataOutputStream);
-            dataOutputStream.flush();
-
-            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-            int responseLength = dataInputStream.readInt();
-            int responseCode = dataInputStream.readByte();
-
-            byte[] messageData = new byte[responseLength - 1];
-            dataInputStream.readFully(messageData, 0, responseLength - 1);
-
-            socket.close();
-
-            return new AntidoteMessage(responseLength, responseCode, messageData);
-
-        } catch (Exception e) {
-            System.out.println(e);
-            return null;
-        }
+        return poolManager.sendMessage(requestMessage);
     }
 
     //methods for updating and reading from the database
@@ -632,7 +601,7 @@ public class AntidoteClient {
 	 * @param name the name
 	 * @param bucket the bucket
 	 * @param mapKey the map key
-	 * @param updates the updates executed in that AW-Map
+	 * @param update the updates executed in that AW-Map
 	 */
 	public void updateAWMap(String name, String bucket, AntidoteMapKey mapKey, AntidoteMapUpdate update) {
         List<AntidoteMapUpdate> updates = new ArrayList<>();
