@@ -3,15 +3,17 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.protobuf.ByteString;
+
 /**
  * The Class AntidoteMVRegister.
  */
-public class AntidoteMVRegister extends AntidoteObject {
+public class AntidoteMVRegister extends AntidoteObject implements MVRegisterInterface{
 	
 	/** The value list. */
 	private List<String> valueList;
 	
-	/** The list of locally but not yet pushed operations. */
+	/** The list of locally executed but not yet pushed operations. */
 	private List<String> updateList;
 
 	
@@ -38,11 +40,41 @@ public class AntidoteMVRegister extends AntidoteObject {
 		return valueList;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.MVRegisterInterface#getValueListBS()
+	 */
+	public List<ByteString> getValueListBS(){
+		List<ByteString> valueListBS = new ArrayList<>();
+		for (String value : valueList){
+			valueListBS.add(ByteString.copyFromUtf8(value));
+		}
+		return valueListBS;
+	}
+	
 	/**
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (updateList.size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		valueList = getClient().readMVRegister(getName(), getBucket()).getValueList();
+	}
+	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.MVRegisterInterface#rollBack()
+	 */
+	public void rollBack(){
+		updateList.clear();
+		readDatabase();
+	}
+	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.MVRegisterInterface#synchronize()
+	 */
+	public void synchronize(){
+		push();
+		readDatabase();
 	}
 	
 	/**
@@ -50,26 +82,31 @@ public class AntidoteMVRegister extends AntidoteObject {
 	 *
 	 * @param element the element
 	 */
-	public void set(String element){
+	public void setValue(String element){
 		valueList.clear();
 		valueList.add(element);
 		updateList.add(element);
 	}
 	
-	/**
-	 * Clear update list.
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.MVRegisterInterface#setValue(com.google.protobuf.ByteString)
 	 */
-	public void clearUpdateList(){
-		updateList.clear();
+	public void setValueBS(ByteString element){
+		valueList.clear();
+		valueList.add(element.toStringUtf8());
+		updateList.add(element.toStringUtf8());
 	}
 	
 	/**
-	 * Push locally executed updates to database.
+	 * Push locally executed updates to database. Uses a transaction.
 	 */
 	public void push(){
+		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
+		ByteString descriptor = antidoteTransaction.startTransaction();
 		for(String update : updateList){
-			getClient().updateMVRegister(getName(), getBucket(), update);	
+			antidoteTransaction.updateMVRegisterTransaction(getName(), getBucket(), update, descriptor);
 		}
+		antidoteTransaction.commitTransaction(descriptor);
 		updateList.clear();
 	}
 }

@@ -3,15 +3,17 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.protobuf.ByteString;
+
 /**
  * The Class AntidoteRegister.
  */
-public class AntidoteRegister extends AntidoteObject {
+public class AntidoteRegister extends AntidoteObject implements RegisterInterface{
 	
 	/** The value. */
 	private String value;
 	
-	/** The update list. */
+	/** The list of locally executed but not yet pushed operations. */
 	private List<String> updateList;
 
 	/**
@@ -37,11 +39,37 @@ public class AntidoteRegister extends AntidoteObject {
 		return value;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#getValueBS()
+	 */
+	public ByteString getValueBS(){
+		return ByteString.copyFromUtf8(value);
+	}
+	
 	/**
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (updateList.size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		value = getClient().readRegister(getName(), getBucket()).getValue();
+	}
+	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#rollBack()
+	 */
+	public void rollBack(){
+		updateList.clear();
+		readDatabase();
+	}
+	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#synchronize()
+	 */
+	public void synchronize(){
+		push();
+		readDatabase();
 	}
 	
 	/**
@@ -49,25 +77,29 @@ public class AntidoteRegister extends AntidoteObject {
 	 *
 	 * @param element the element
 	 */
-	public void set(String element){
+	public void setValue(String element){
 		value = element;
 		updateList.add(element);
 	}
 	
-	/**
-	 * Clear update list.
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#setValue(com.google.protobuf.ByteString)
 	 */
-	public void clearUpdateList(){
-		updateList.clear();
+	public void setValueBS(ByteString element){
+		value = element.toStringUtf8();
+		updateList.add(element.toStringUtf8());
 	}
 	
 	/**
-	 * Push locally executed updates to database.
+	 * Push locally executed updates to database. Uses a transaction.
 	 */
 	public void push(){
+		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
+		ByteString descriptor = antidoteTransaction.startTransaction();
 		for(String update : updateList){
-			getClient().updateRegister(getName(), getBucket(), update);	
+			antidoteTransaction.updateRegisterTransaction(getName(), getBucket(), update, descriptor);
 		}
+		antidoteTransaction.commitTransaction(descriptor);
 		updateList.clear();
 	}
 }

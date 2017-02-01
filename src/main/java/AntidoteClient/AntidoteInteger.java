@@ -5,15 +5,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.AbstractMap.SimpleEntry;
 
+import com.google.protobuf.ByteString;
+
 /**
  * The Class AntidoteInteger.
  */
-public class AntidoteInteger extends AntidoteObject {
+public class AntidoteInteger extends AntidoteObject implements IntegerInterface{
 	
 	/** The value of the integer. */
 	private int value;
 	
-	/** The list of locally but not yet pushed operations. */
+	/** The list of locally executed but not yet pushed operations. */
 	private List<Map.Entry<Integer, Integer>> updateList;	
 
 	/**
@@ -53,7 +55,26 @@ public class AntidoteInteger extends AntidoteObject {
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (updateList.size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		value = getClient().readInteger(getName(), getBucket()).getValue();
+	}
+	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.IntegerInterface#rollBack()
+	 */
+	public void rollBack(){
+		updateList.clear();
+		readDatabase();
+	}
+	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.IntegerInterface#synchronize()
+	 */
+	public void synchronize(){
+		push();
+		readDatabase();
 	}
 	
 	/**
@@ -74,24 +95,20 @@ public class AntidoteInteger extends AntidoteObject {
 	}
 	
 	/**
-	 * Clear update list.
-	 */
-	public void clearUpdateList(){
-		updateList.clear();
-	}
-	
-	/**
-	 * Push locally executed updates to database.
+	 * Push locally executed updates to database. Uses a transaction.
 	 */
 	public void push(){
+		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
+		ByteString descriptor = antidoteTransaction.startTransaction();
 		for(Map.Entry<Integer, Integer> update : updateList){
 			if(update.getKey() == 1){
-				getClient().setInteger(getName(), getBucket(), update.getValue());
+				antidoteTransaction.setIntegerTransaction(getName(), getBucket(), update.getValue(), descriptor);
 			}
 			else if(update.getKey() == 2){
-				getClient().incrementInteger(getName(), getBucket(), update.getValue());
+				antidoteTransaction.incrementIntegerTransaction(getName(), getBucket(), update.getValue(), descriptor);
 			}
 		}
+		antidoteTransaction.commitTransaction(descriptor);
 		updateList.clear();
 	}
 }

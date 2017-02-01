@@ -8,7 +8,7 @@ import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 /**
  * The Class AntidoteMapIntegerEntry.
  */
-public class AntidoteMapIntegerEntry extends AntidoteMapEntry {
+public class AntidoteMapIntegerEntry extends AntidoteMapEntry implements IntegerInterface{
 	
 	/** The value. */
 	private int value;
@@ -28,6 +28,22 @@ public class AntidoteMapIntegerEntry extends AntidoteMapEntry {
 		this.value = value;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.IntegerInterface#rollBack()
+	 */
+	public void rollBack(){
+		clearUpdateList();
+		readDatabase();
+	}
+	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.IntegerInterface#synchronize()
+	 */
+	public void synchronize(){
+		push();
+		readDatabase();
+	}
+	
 	/**
 	 * Gets the value.
 	 *
@@ -41,6 +57,9 @@ public class AntidoteMapIntegerEntry extends AntidoteMapEntry {
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (getUpdateList().size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		AntidoteMapIntegerEntry integer;
 		if (getOuterMapType() == CRDT_type.GMAP){
 			AntidoteGMap outerMap = getClient().readGMap(getName(), getBucket());
@@ -48,7 +67,13 @@ public class AntidoteMapIntegerEntry extends AntidoteMapEntry {
 				integer = outerMap.getIntegerEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
-				AntidoteMapMapEntry innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				AntidoteMapMapEntry innerMap = null;
+				if (getPath().get(0).getType()==CRDT_type.AWMAP){
+					innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
+				else if (getPath().get(0).getType()==CRDT_type.GMAP){
+					innerMap = outerMap.getGMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
 				for (int i = 1; i<getPath().size()-1; i++){
 					if (getPath().get(i).getType()==CRDT_type.AWMAP){
 						innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
@@ -68,7 +93,13 @@ public class AntidoteMapIntegerEntry extends AntidoteMapEntry {
 				integer = outerMap.getIntegerEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
-				AntidoteMapMapEntry innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				AntidoteMapMapEntry innerMap = null;
+				if (getPath().get(0).getType()==CRDT_type.AWMAP){
+					innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
+				else if (getPath().get(0).getType()==CRDT_type.GMAP){
+					innerMap = outerMap.getGMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
 				for (int i = 1; i<getPath().size()-1; i++){
 					if (getPath().get(i).getType()==CRDT_type.AWMAP){
 						innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
@@ -84,7 +115,7 @@ public class AntidoteMapIntegerEntry extends AntidoteMapEntry {
 	}
 	
 	/**
-	 * Execute increment locally
+	 * Execute increment locally.
 	 *
 	 * @param inc the increment
 	 */
@@ -125,7 +156,7 @@ public class AntidoteMapIntegerEntry extends AntidoteMapEntry {
 	 *
 	 * @param value the new value
 	 */
-	public void set(int value){
+	public void setValue(int value){
 		setLocal(value);
 		List<AntidoteMapUpdate> integerSet = new ArrayList<AntidoteMapUpdate>(); 
 		integerSet.add(getClient().createIntegerSet(value));

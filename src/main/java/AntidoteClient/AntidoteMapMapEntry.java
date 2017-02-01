@@ -87,6 +87,9 @@ public class AntidoteMapMapEntry extends AntidoteMapEntry {
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){	
+		if (getUpdateList().size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		AntidoteMapMapEntry innerMap = null;
 		if (getOuterMapType() == CRDT_type.GMAP){
 			AntidoteGMap outerMap = getClient().readGMap(getName(), getBucket());
@@ -108,7 +111,23 @@ public class AntidoteMapMapEntry extends AntidoteMapEntry {
 	}
 	
 	/**
-	 * Execute updat locally.
+	 * Roll back.
+	 */
+	public void rollBack(){
+		clearUpdateList();
+		readDatabase();
+	}
+	
+	/**
+	 * Synchronize.
+	 */
+	public void synchronize(){
+		push();
+		readDatabase();
+	}
+	
+	/**
+	 * Execute update locally.
 	 *
 	 * @param key the key
 	 * @param updateList the update list

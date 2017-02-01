@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * The Class AntidoteMapCounterEntry.
  */
-public class AntidoteMapCounterEntry extends AntidoteMapEntry {
+public class AntidoteMapCounterEntry extends AntidoteMapEntry implements CounterInterface{
 	
 	/** The value. */
 	private int value;
@@ -28,10 +28,29 @@ public class AntidoteMapCounterEntry extends AntidoteMapEntry {
 		this.value = value;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.CounterInterface#rollBack()
+	 */
+	public void rollBack(){
+		clearUpdateList();
+		readDatabase();
+	}
+	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.CounterInterface#synchronize()
+	 */
+	public void synchronize(){
+		push();
+		readDatabase();
+	}	
+	
 	/**
 	 * Gets the most recent state from the database.
 	 */
-	public void readDatabase(){	
+	public void readDatabase(){
+		if (getUpdateList().size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		AntidoteMapCounterEntry counter;
 		if (getOuterMapType() == CRDT_type.GMAP){
 			AntidoteGMap outerMap = getClient().readGMap(getName(), getBucket());
@@ -39,7 +58,13 @@ public class AntidoteMapCounterEntry extends AntidoteMapEntry {
 				counter = outerMap.getCounterEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
-				AntidoteMapMapEntry innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				AntidoteMapMapEntry innerMap = null;
+				if (getPath().get(0).getType()==CRDT_type.AWMAP){
+					innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
+				else if (getPath().get(0).getType()==CRDT_type.GMAP){
+					innerMap = outerMap.getGMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
 				for (int i = 1; i<getPath().size()-1; i++){
 					if (getPath().get(i).getType()==CRDT_type.AWMAP){
 						innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
@@ -58,8 +83,14 @@ public class AntidoteMapCounterEntry extends AntidoteMapEntry {
 				counter = outerMap.getCounterEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
-				AntidoteMapMapEntry innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
-				for (int i = 1; i<getPath().size()-1; i++){ // hei hunn ech op 1 gesaat
+				AntidoteMapMapEntry innerMap = null;
+				if (getPath().get(0).getType()==CRDT_type.AWMAP){
+					innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
+				else if (getPath().get(0).getType()==CRDT_type.GMAP){
+					innerMap = outerMap.getGMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
+				for (int i = 1; i<getPath().size()-1; i++){
 					if (getPath().get(i).getType()==CRDT_type.AWMAP){
 						innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
 					}
@@ -67,7 +98,6 @@ public class AntidoteMapCounterEntry extends AntidoteMapEntry {
 						innerMap = innerMap.getGMapEntry(getPath().get(i).getKey().toStringUtf8());
 					}
 				}
-				System.out.println(innerMap);
 				counter = innerMap.getCounterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
 			}		
 			value = counter.getValue();
@@ -103,7 +133,7 @@ public class AntidoteMapCounterEntry extends AntidoteMapEntry {
 	}
 	
 	/**
-	 * Execute increment locally
+	 * Execute increment locally.
 	 *
 	 * @param inc the increment
 	 */

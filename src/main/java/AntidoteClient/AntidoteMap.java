@@ -6,11 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Map.Entry;
-
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.ApbMapNestedUpdate;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
@@ -19,9 +16,9 @@ import com.google.protobuf.ByteString;
  */
 public class AntidoteMap extends AntidoteObject {
 	
-	/** The list of locally but not yet pushed operations. */
+	/** The list of locally executed but not yet pushed operations. */
 	// first Map.Entry for removes, second Map.Entry for updates. We need to use one list so the order of the operations is preserved when pushing to the database
-	private List<Map.Entry<List<ApbMapKey>, Map.Entry<ApbMapKey, List<ApbUpdateOperation>>>> updateList;	
+	private List<Map.Entry<List<AntidoteMapKey>, Map.Entry<AntidoteMapKey, List<AntidoteMapUpdate>>>> updateList;	
 	
 	/** The map's entries. */
 	private List<AntidoteMapEntry> entryList;
@@ -45,7 +42,7 @@ public class AntidoteMap extends AntidoteObject {
 	 *
 	 * @return the update list
 	 */
-	public List<Entry<List<ApbMapKey>, Entry<ApbMapKey, List<ApbUpdateOperation>>>> getUpdateList(){
+	public List<Map.Entry<List<AntidoteMapKey>, Map.Entry<AntidoteMapKey, List<AntidoteMapUpdate>>>> getUpdateList(){
 		return updateList;
 	}
 	
@@ -54,9 +51,9 @@ public class AntidoteMap extends AntidoteObject {
 	 *
 	 * @param remove the remove
 	 */
-	public void addRemoveToList(List<ApbMapKey> remove){
-		Map.Entry<ApbMapKey, List<ApbUpdateOperation>> notNeededPart = null;
-		Map.Entry<List<ApbMapKey>, Map.Entry<ApbMapKey, List<ApbUpdateOperation>>> completeRemove = new SimpleEntry<>(remove, notNeededPart);
+	public void addRemoveToList(List<AntidoteMapKey> remove){
+		Map.Entry<AntidoteMapKey, List<AntidoteMapUpdate>> notNeededPart = null;
+		Map.Entry<List<AntidoteMapKey>, Map.Entry<AntidoteMapKey, List<AntidoteMapUpdate>>> completeRemove = new SimpleEntry<>(remove, notNeededPart);
 		updateList.add(completeRemove);
 	}
 	
@@ -66,15 +63,15 @@ public class AntidoteMap extends AntidoteObject {
 	 * @param mapKey the map key
 	 * @param update the update
 	 */
-	public void addUpdateToList(ApbMapKey mapKey, List<ApbUpdateOperation> update){
-		Map.Entry<ApbMapKey, List<ApbUpdateOperation>> updatePart = new SimpleEntry<>(mapKey, update);
-		Map.Entry<List<ApbMapKey>, Map.Entry<ApbMapKey, List<ApbUpdateOperation>>> completeUpdate = new SimpleEntry<>(null, updatePart);
+	public void addUpdateToList(AntidoteMapKey mapKey, List<AntidoteMapUpdate> update){
+		Map.Entry<AntidoteMapKey, List<AntidoteMapUpdate>> updatePart = new SimpleEntry<>(mapKey, update);
+		Map.Entry<List<AntidoteMapKey>, Map.Entry<AntidoteMapKey, List<AntidoteMapUpdate>>> completeUpdate = new SimpleEntry<>(null, updatePart);
 		updateList.add(completeUpdate);	}
 	
 	/**
 	 * Clear update list.
 	 */
-	public void clearUpdateList(){
+	protected void clearUpdateList(){
 		updateList.clear();
 	}
 	

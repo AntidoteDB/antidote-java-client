@@ -3,15 +3,13 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
 /**
  * The Class AntidoteGMap.
  */
-public class AntidoteGMap extends AntidoteMap {
+public class AntidoteGMap extends AntidoteMap implements GMapInterface{
 	
 	/**
 	 * Instantiates a new antidote G map.
@@ -29,7 +27,26 @@ public class AntidoteGMap extends AntidoteMap {
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){
+		if (getUpdateList().size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		setEntryList(getClient().readGMap(getName(), getBucket()).getEntryList());
+	}
+	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.GMapInterface#rollBack()
+	 */
+	public void rollBack(){
+		clearUpdateList();
+		readDatabase();
+	}
+	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.GMapInterface#synchronize()
+	 */
+	public void synchronize(){
+		push();
+		readDatabase();
 	}
 
 	/**
@@ -61,33 +78,30 @@ public class AntidoteGMap extends AntidoteMap {
 	 * @param updateList updates which are executed on that entry
 	 */
 	public void update(String key, List<AntidoteMapUpdate> updateList){
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
 		CRDT_type type = updateList.get(0).getType();
 		for (AntidoteMapUpdate u : updateList){
 			if (!(type.equals(u.getType()))){
 				throw new  IllegalArgumentException("Different types detected, only one type allowed");
 			}
 		}
-		apbKeyBuilder.setType(type);
-		apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-		ApbMapKey apbKey = apbKeyBuilder.build();
-		List<ApbUpdateOperation> apbUpdateList = new ArrayList<ApbUpdateOperation>();
-		for (AntidoteMapUpdate u : updateList){
-			apbUpdateList.add(u.getOperation());
-		}	
-		addUpdateToList(apbKey, apbUpdateList);
+		AntidoteMapKey mapKey = new AntidoteMapKey(type, key);
+		addUpdateToList(mapKey, updateList);
 		updateLocal(key, updateList);		
 	}
 	
 	/**
-	 * Execute updates.
+	 * Push locally executed updates to database. Uses a transaction.
 	 */
-	public void executeUpdates(){
-		for(Entry<List<ApbMapKey>, Entry<ApbMapKey, List<ApbUpdateOperation>>> update : getUpdateList()){
+	public void push(){
+		AntidoteTransaction antidoteTransaction = new AntidoteTransaction(getClient());  
+		ByteString descriptor = antidoteTransaction.startTransaction();		
+		for(Entry<List<AntidoteMapKey>, Entry<AntidoteMapKey, List<AntidoteMapUpdate>>> update : getUpdateList()){
 			if(update.getValue().getKey() != null && update.getValue().getValue() != null){
-				getClient().updateAWMap(getName(), getBucket(), update.getValue().getKey(), update.getValue().getValue());
+				antidoteTransaction.updateGMapTransaction(
+						getName(), getBucket(), update.getValue().getKey(), update.getValue().getValue(), descriptor);
 			}		
 		}
+		antidoteTransaction.commitTransaction(descriptor);
 		clearUpdateList();
 	}
 }

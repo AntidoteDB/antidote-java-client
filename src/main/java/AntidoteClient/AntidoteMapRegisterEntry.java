@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import com.google.protobuf.ByteString;
 
 /**
  * The Class AntidoteMapRegisterEntry.
  */
-public class AntidoteMapRegisterEntry extends AntidoteMapEntry {
+public class AntidoteMapRegisterEntry extends AntidoteMapEntry implements RegisterInterface{
 	
 	/** The value. */
 	private String value;
@@ -28,10 +29,29 @@ public class AntidoteMapRegisterEntry extends AntidoteMapEntry {
 		this.value = value;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#rollBack()
+	 */
+	public void rollBack(){
+		clearUpdateList();
+		readDatabase();
+	}
+	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#synchronize()
+	 */
+	public void synchronize(){
+		push();
+		readDatabase();
+	}
+	
 	/**
 	 * Gets the most recent state from the database.
 	 */
 	public void readDatabase(){	
+		if (getUpdateList().size() > 0){
+			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
+		}
 		AntidoteMapRegisterEntry register;
 		if (getOuterMapType() == CRDT_type.GMAP){
 			AntidoteGMap outerMap = getClient().readGMap(getName(), getBucket());
@@ -39,7 +59,13 @@ public class AntidoteMapRegisterEntry extends AntidoteMapEntry {
 				register = outerMap.getRegisterEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
-				AntidoteMapMapEntry innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				AntidoteMapMapEntry innerMap = null;
+				if (getPath().get(0).getType()==CRDT_type.AWMAP){
+					innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
+				else if (getPath().get(0).getType()==CRDT_type.GMAP){
+					innerMap = outerMap.getGMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
 				for (int i = 1; i<getPath().size()-1; i++){
 					if (getPath().get(i).getType()==CRDT_type.AWMAP){
 						innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
@@ -59,7 +85,13 @@ public class AntidoteMapRegisterEntry extends AntidoteMapEntry {
 				register = outerMap.getRegisterEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
-				AntidoteMapMapEntry innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				AntidoteMapMapEntry innerMap = null;
+				if (getPath().get(0).getType()==CRDT_type.AWMAP){
+					innerMap = outerMap.getAWMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
+				else if (getPath().get(0).getType()==CRDT_type.GMAP){
+					innerMap = outerMap.getGMapEntry(getPath().get(0).getKey().toStringUtf8());
+				}
 				for (int i = 1; i<getPath().size()-1; i++){
 					if (getPath().get(i).getType()==CRDT_type.AWMAP){
 						innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
@@ -83,6 +115,13 @@ public class AntidoteMapRegisterEntry extends AntidoteMapEntry {
 		return value;
 	}
 	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#getValueBS()
+	 */
+	public ByteString getValueBS(){
+		return ByteString.copyFromUtf8(value);
+	}
+	
 	/**
 	 * Locally set the register to a new value.
 	 *
@@ -97,10 +136,20 @@ public class AntidoteMapRegisterEntry extends AntidoteMapEntry {
 	 *
 	 * @param value the value
 	 */
-	public void set(String value){
+	public void setValue(String value){
 		setLocal(value);
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
 		registerSet.add(getClient().createRegisterSet(value));
+		updateHelper(registerSet);
+	}
+	
+	/* (non-Javadoc)
+	 * @see main.java.AntidoteClient.RegisterInterface#setValue(com.google.protobuf.ByteString)
+	 */
+	public void setValueBS(ByteString value){
+		setLocal(value.toStringUtf8());
+		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
+		registerSet.add(getClient().createRegisterSet(value.toStringUtf8()));
 		updateHelper(registerSet);
 	}
 }

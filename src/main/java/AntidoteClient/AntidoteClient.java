@@ -10,8 +10,6 @@ import java.net.Socket;
  * The Class AntidoteClient.
  */
 public class AntidoteClient {
-
-    private PoolManager poolManager;
     
     /** The socket. */
     private Socket socket;
@@ -28,8 +26,9 @@ public class AntidoteClient {
      * @param host the host
      * @param port the port
      */
-    public AntidoteClient(PoolManager pm) {
-        this.poolManager = pm;
+    public AntidoteClient(String host, int port) {
+        this.host = host;
+        this.port = port;
     }
     
     /**
@@ -38,11 +37,107 @@ public class AntidoteClient {
      * @param requestMessage the update message
      * @return the response
      */
-    public AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
-        return poolManager.sendMessage(requestMessage);
+    protected AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
+        try {
+            socket = new Socket(host, port);
+            DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+            dataOutputStream.writeInt(requestMessage.getLength());
+            dataOutputStream.writeByte(requestMessage.getCode());
+            requestMessage.getMessage().writeTo(dataOutputStream);
+            dataOutputStream.flush();
+
+            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            int responseLength = dataInputStream.readInt();
+            int responseCode = dataInputStream.readByte();
+
+            byte[] messageData = new byte[responseLength - 1];
+            dataInputStream.readFully(messageData, 0, responseLength - 1);
+
+            socket.close();
+
+            return new AntidoteMessage(responseLength, responseCode, messageData);
+
+        } catch (Exception e) {
+            System.out.println(e);
+            return null;
+        }
     }
 
     //methods for updating and reading from the database
+    
+    /**
+     * Update helper.
+     *
+     * @param operation the operation
+     * @param name the name
+     * @param bucket the bucket
+     * @param type the type
+     */
+    private void updateHelper(ApbUpdateOperation.Builder operation, String name, String bucket, CRDT_type type){
+    	ApbStaticUpdateObjects.Builder updateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
+    	
+        ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message
+        object.setKey(ByteString.copyFromUtf8(name));
+        object.setType(type);
+        object.setBucket(ByteString.copyFromUtf8(bucket));
+    	
+    	ApbUpdateOp.Builder updateInstruction = ApbUpdateOp.newBuilder();
+        updateInstruction.setBoundobject(object);
+        updateInstruction.setOperation(operation);
+
+        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
+
+        ApbStartTransaction.Builder writeTransaction = ApbStartTransaction.newBuilder();
+        writeTransaction.setProperties(transactionProperties);
+
+        updateMessage.setTransaction(writeTransaction);
+        updateMessage.addUpdates(updateInstruction);
+
+        ApbStaticUpdateObjects counterUpdateMessageObject = updateMessage.build();
+        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, counterUpdateMessageObject));
+        try {
+            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
+            System.out.println(commitResponse);
+        } catch (Exception e ) {
+            System.out.println(e);
+        }
+    }
+    
+    /**
+     * Read helper.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param type the type
+     * @return the apb static read objects resp
+     */
+    private ApbStaticReadObjectsResp readHelper(String name, String bucket, CRDT_type type){
+    	ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message
+        object.setKey(ByteString.copyFromUtf8(name));
+        object.setType(type);
+        object.setBucket(ByteString.copyFromUtf8(bucket));
+
+        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
+
+        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
+        readTransaction.setProperties(transactionProperties);
+
+        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
+        readMessage.setTransaction(readTransaction);
+        readMessage.addObjects(object);
+
+        ApbStaticReadObjects readMessageObject = readMessage.build();
+        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
+        
+        ApbStaticReadObjectsResp readResponse = null;
+		try {
+			readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
+		} catch (InvalidProtocolBufferException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return readResponse;
+    }
     
     /**
      * Update counter in database.
@@ -52,42 +147,13 @@ public class AntidoteClient {
      * @param inc the increment, by which the counter shall be incremented
      */
     public void updateCounter(String name, String bucket, int inc) {
-
-        ApbStaticUpdateObjects.Builder counterUpdateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
-
-        ApbBoundObject.Builder counterObject = ApbBoundObject.newBuilder(); // The object in the message
-        counterObject.setKey(ByteString.copyFromUtf8(name));
-        counterObject.setType(CRDT_type.COUNTER);
-        counterObject.setBucket(ByteString.copyFromUtf8(bucket));
-
         ApbCounterUpdate.Builder counterUpdateInstruction = ApbCounterUpdate.newBuilder(); // The specific instruction in update instructions
         counterUpdateInstruction.setInc(inc); // Set increment
-
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
-        updateOperation.setCounterop(counterUpdateInstruction);
-
-        ApbUpdateOp.Builder updateInstruction = ApbUpdateOp.newBuilder();
-        updateInstruction.setBoundobject(counterObject);
-        updateInstruction.setOperation(updateOperation);
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder writeTransaction = ApbStartTransaction.newBuilder();
-        writeTransaction.setProperties(transactionProperties);
-
-        counterUpdateMessage.setTransaction(writeTransaction);
-        counterUpdateMessage.addUpdates(updateInstruction);
-
-        ApbStaticUpdateObjects counterUpdateMessageObject = counterUpdateMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, counterUpdateMessageObject));
-        try {
-            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-            System.out.println(commitResponse);
-        } catch (Exception e ) {
-            System.out.println(e);
-        }
+        updateOperation.setCounterop(counterUpdateInstruction);     
+        updateHelper(updateOperation, name, bucket, CRDT_type.COUNTER);
     }
-
+    
     /**
      * Read counter from database.
      *
@@ -96,32 +162,91 @@ public class AntidoteClient {
      * @return the antidote counter
      */
     public AntidoteCounter readCounter(String name, String bucket) {
+        ApbGetCounterResp counter = readHelper(name, bucket, CRDT_type.COUNTER).getObjects().getObjects(0).getCounter();
+        AntidoteCounter antidoteCounter = new AntidoteCounter(name, bucket, counter.getValue(), this);
+        return antidoteCounter;
+    }
+    
+    /**
+     * Removes the OR-Set element, given as ByteString, from database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param element the element to be removed
+     */
+    public void removeORSetElementBS(String name, String bucket, ByteString element){
+    	List<ByteString> elements = new ArrayList<>();
+        elements.add(element);
+        removeORSetElementBS(name, bucket, elements);
+    }
 
-        ApbBoundObject.Builder counterObject = ApbBoundObject.newBuilder(); // The object in the message
-        counterObject.setKey(ByteString.copyFromUtf8(name));
-        counterObject.setType(CRDT_type.COUNTER);
-        counterObject.setBucket(ByteString.copyFromUtf8(bucket));
+    /**
+     * Adds the OR-Set element, given as ByteString, to database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param element the element to be added
+     */
+    public void addORSetElementBS(String name, String bucket, ByteString element){
+        List<ByteString> elements = new ArrayList<>();
+        elements.add(element);
+        addORSetElementBS(name, bucket, elements);
+    }
+    
+    /**
+     * Removes the OR-Set elements from database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param element the element to be removed
+     */
+    public void removeORSetElement(String name, String bucket, String element){
+    	List<String> elements = new ArrayList<>();
+        elements.add(element);
+        removeORSetElement(name, bucket, elements);
+    }
+    
+    /**
+     * Adds the OR-Set element to database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param element the element to be added
+     */
+    public void addORSetElement(String name, String bucket, String element){
+        List<String> elements = new ArrayList<>();
+        elements.add(element);
+        addORSetElement(name, bucket, elements);
+    }
+    
+    /**
+     * Removes the OR-Set elements, given as ByteStrings, in database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param elements the elements to be removed
+     */
+    public void removeORSetElementBS(String name, String bucket, List<ByteString> elements){
+        ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
+        ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
+        setUpdateInstruction.setOptype(opType);
+        setUpdateInstruction.addAllRems(elements);
+        updateORSetHelper(name, bucket, setUpdateInstruction);
+    }
 
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
-        readTransaction.setProperties(transactionProperties);
-
-        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
-        readMessage.setTransaction(readTransaction);
-        readMessage.addObjects(counterObject);
-
-        ApbStaticReadObjects readMessageObject = readMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
-        try {
-            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
-            ApbGetCounterResp counter = readResponse.getObjects().getObjects(0).getCounter();
-            AntidoteCounter antidoteCounter = new AntidoteCounter(name, bucket, counter.getValue(), this);
-            return antidoteCounter;
-        } catch (Exception e ) {
-            System.out.println(e);
-            return null;
-        }
+    /**
+     * Adds the OR-Set elements in database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param elements the elements to be added
+     */
+    public void addORSetElementBS(String name, String bucket, List<ByteString> elements){
+        ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
+        ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(1);
+        setUpdateInstruction.setOptype(opType);
+        setUpdateInstruction.addAllAdds(elements);
+        updateORSetHelper(name, bucket, setUpdateInstruction);
     }
     
     /**
@@ -169,77 +294,110 @@ public class AntidoteClient {
      * @param bucket the bucket
      * @param setUpdateInstruction the set update instruction
      */
-    public void updateORSetHelper(String name, String bucket, ApbSetUpdate.Builder setUpdateInstruction){
-        ApbStaticUpdateObjects.Builder setUpdateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
-
-        ApbBoundObject.Builder setObject = ApbBoundObject.newBuilder(); // The object in the message
-        setObject.setKey(ByteString.copyFromUtf8(name));
-        setObject.setType(CRDT_type.ORSET);
-        setObject.setBucket(ByteString.copyFromUtf8(bucket));
-
+    private void updateORSetHelper(String name, String bucket, ApbSetUpdate.Builder setUpdateInstruction){
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setSetop(setUpdateInstruction);
 
-        ApbUpdateOp.Builder updateInstruction = ApbUpdateOp.newBuilder();
-        updateInstruction.setBoundobject(setObject);
-        updateInstruction.setOperation(updateOperation);
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder writeTransaction = ApbStartTransaction.newBuilder();
-        writeTransaction.setProperties(transactionProperties);
-
-        setUpdateMessage.setTransaction(writeTransaction);
-        setUpdateMessage.addUpdates(updateInstruction);
-
-        ApbStaticUpdateObjects setUpdateMessageObject = setUpdateMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, setUpdateMessageObject));
-        try {
-            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-            System.out.println(commitResponse);
-        } catch (Exception e ) {
-            System.out.println(e);
-        }
+        updateHelper(updateOperation, name, bucket, CRDT_type.ORSET);
     }
     
     /**
-     * Read OR-Set from database.
+     * Read RW-Set from database.
      *
      * @param name the name
      * @param bucket the bucket
-     * @return the antidote OR-Set
+     * @return the antidote RW-Set
      */
     public AntidoteORSet readORSet(String name, String bucket) {
+        ApbGetSetResp set = readHelper(name, bucket, CRDT_type.ORSET).getObjects().getObjects(0).getSet();
+        List<String> entriesList = new ArrayList<String>();
+        for (ByteString e : set.getValueList()){
+          	entriesList.add(e.toStringUtf8());
+        }
+        AntidoteORSet antidoteSet = new AntidoteORSet(name, bucket, entriesList, this);
+        return antidoteSet;
+    }
+    
+    /**
+     * Removes the RW-Set element, given as ByteString, from database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param element the element to be removed
+     */
+    public void removeRWSetElementBS(String name, String bucket, ByteString element){
+    	List<ByteString> elements = new ArrayList<>();
+        elements.add(element);
+        removeRWSetElementBS(name, bucket, elements);
+    }
 
-        ApbBoundObject.Builder setObject = ApbBoundObject.newBuilder(); // The object in the message
-        setObject.setKey(ByteString.copyFromUtf8(name));
-        setObject.setType(CRDT_type.ORSET);
-        setObject.setBucket(ByteString.copyFromUtf8(bucket));
+    /**
+     * Adds the RW-Set element, given as ByteString, to database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param element the element to be added
+     */
+    public void addRWSetElementBS(String name, String bucket, ByteString element){
+        List<ByteString> elements = new ArrayList<>();
+        elements.add(element);
+        addRWSetElementBS(name, bucket, elements);
+    }
+    
+    /**
+     * Removes the RW-Set elements from database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param element the element to be removed
+     */
+    public void removeRWSetElement(String name, String bucket, String element){
+    	List<String> elements = new ArrayList<>();
+        elements.add(element);
+        removeRWSetElement(name, bucket, elements);
+    }
+    
+    /**
+     * Adds the RW-Set element to database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param element the element to be added
+     */
+    public void addRWSetElement(String name, String bucket, String element){
+        List<String> elements = new ArrayList<>();
+        elements.add(element);
+        addRWSetElement(name, bucket, elements);
+    }
+    
+    /**
+     * Removes the RW-Set elements, given as ByteStrings, in database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param elements the elements to be removed
+     */
+    public void removeRWSetElementBS(String name, String bucket, List<ByteString> elements){
+        ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
+        ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
+        setUpdateInstruction.setOptype(opType);
+        setUpdateInstruction.addAllRems(elements);
+        updateRWSetHelper(name, bucket, setUpdateInstruction);
+    }
 
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
-        readTransaction.setProperties(transactionProperties);
-
-        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
-        readMessage.setTransaction(readTransaction);
-        readMessage.addObjects(setObject);
-
-        ApbStaticReadObjects readMessageObject = readMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
-        try {
-            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
-            ApbGetSetResp set = readResponse.getObjects().getObjects(0).getSet();
-            List<String> entriesList = new ArrayList<String>();
-            for (ByteString e : set.getValueList()){
-            	entriesList.add(e.toStringUtf8());
-            }
-            AntidoteORSet antidoteSet = new AntidoteORSet(name, bucket, entriesList, this);
-            return antidoteSet;
-        } catch (Exception e ) {
-            System.out.println(e);
-            return null;
-        }     
+    /**
+     * Adds the RW-Set elements in database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param elements the elements to be added
+     */
+    public void addRWSetElementBS(String name, String bucket, List<ByteString> elements){
+        ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
+        ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(1);
+        setUpdateInstruction.setOptype(opType);
+        setUpdateInstruction.addAllAdds(elements);
+        updateRWSetHelper(name, bucket, setUpdateInstruction);
     }
     
     /**
@@ -287,37 +445,10 @@ public class AntidoteClient {
      * @param bucket the bucket
      * @param setUpdateInstruction the set update instruction
      */
-    public void updateRWSetHelper(String name, String bucket, ApbSetUpdate.Builder setUpdateInstruction){
-        ApbStaticUpdateObjects.Builder setUpdateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
-
-        ApbBoundObject.Builder setObject = ApbBoundObject.newBuilder(); // The object in the message
-        setObject.setKey(ByteString.copyFromUtf8(name));
-        setObject.setType(CRDT_type.RWSET);
-        setObject.setBucket(ByteString.copyFromUtf8(bucket));
-
+    private void updateRWSetHelper(String name, String bucket, ApbSetUpdate.Builder setUpdateInstruction){
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setSetop(setUpdateInstruction);
-
-        ApbUpdateOp.Builder updateInstruction = ApbUpdateOp.newBuilder();
-        updateInstruction.setBoundobject(setObject);
-        updateInstruction.setOperation(updateOperation);
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder writeTransaction = ApbStartTransaction.newBuilder();
-        writeTransaction.setProperties(transactionProperties);
-
-        setUpdateMessage.setTransaction(writeTransaction);
-        setUpdateMessage.addUpdates(updateInstruction);
-
-        ApbStaticUpdateObjects setUpdateMessageObject = setUpdateMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, setUpdateMessageObject));
-        try {
-            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-            System.out.println(commitResponse);
-        } catch (Exception e ) {
-            System.out.println(e);
-        }
+        updateHelper(updateOperation, name, bucket, CRDT_type.RWSET);
     }
     
     /**
@@ -328,36 +459,13 @@ public class AntidoteClient {
      * @return the antidote RW-Set
      */
     public AntidoteRWSet readRWSet(String name, String bucket) {
-
-        ApbBoundObject.Builder setObject = ApbBoundObject.newBuilder(); // The object in the message
-        setObject.setKey(ByteString.copyFromUtf8(name));
-        setObject.setType(CRDT_type.RWSET);
-        setObject.setBucket(ByteString.copyFromUtf8(bucket));
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
-        readTransaction.setProperties(transactionProperties);
-
-        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
-        readMessage.setTransaction(readTransaction);
-        readMessage.addObjects(setObject);
-
-        ApbStaticReadObjects readMessageObject = readMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
-        try {
-            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
-            ApbGetSetResp set = readResponse.getObjects().getObjects(0).getSet();
-            List<String> entriesList = new ArrayList<String>();
-            for (ByteString e : set.getValueList()){
-            	entriesList.add(e.toStringUtf8());
-            }
-            AntidoteRWSet antidoteSet = new AntidoteRWSet(name, bucket, entriesList, this);
-            return antidoteSet;
-        } catch (Exception e ) {
-            System.out.println(e);
-            return null;
-        }     
+        ApbGetSetResp set = readHelper(name, bucket, CRDT_type.RWSET).getObjects().getObjects(0).getSet();
+        List<String> entriesList = new ArrayList<String>();
+        for (ByteString e : set.getValueList()){
+           	entriesList.add(e.toStringUtf8());
+        }
+        AntidoteRWSet antidoteSet = new AntidoteRWSet(name, bucket, entriesList, this);
+        return antidoteSet;  
     }
     
     /**
@@ -368,13 +476,7 @@ public class AntidoteClient {
      * @param value the new register value
      */
     public void updateRegister(String name, String bucket, String value){
-
-        ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
-        regObject.setKey(ByteString.copyFromUtf8(name));
-        regObject.setType(CRDT_type.LWWREG);
-        regObject.setBucket(ByteString.copyFromUtf8(bucket));
-        updateRegisterHelper(name, bucket, value, regObject);
-
+        updateRegisterHelper(name, bucket, value, CRDT_type.LWWREG);
     }
     
     /**
@@ -385,50 +487,63 @@ public class AntidoteClient {
      * @param value the new register value
      */
     public void updateMVRegister(String name, String bucket, String value){
-    	
-        ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
-        regObject.setKey(ByteString.copyFromUtf8(name));
-        regObject.setType(CRDT_type.MVREG);
-        regObject.setBucket(ByteString.copyFromUtf8(bucket));
-        updateRegisterHelper(name, bucket, value, regObject);
+        updateRegisterHelper(name, bucket, value, CRDT_type.MVREG);
     }
     
     /**
-     * Helper method for the common part of the two preceding methods
+     * Update register helper.
      *
      * @param name the name
      * @param bucket the bucket
      * @param value the value
-     * @param regObject the reg object
+     * @param type the type
      */
-    public void updateRegisterHelper(String name, String bucket, String value, ApbBoundObject.Builder regObject){
-        ApbStaticUpdateObjects.Builder regUpdateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
+    private void updateRegisterHelper(String name, String bucket, String value, CRDT_type type){
         ApbRegUpdate.Builder regUpdateInstruction = ApbRegUpdate.newBuilder(); // The specific instruction in update instructions
         regUpdateInstruction.setValue(ByteString.copyFromUtf8(value));
 
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setRegop(regUpdateInstruction);
+        updateHelper(updateOperation, name, bucket, type);
+    }
+    
+    /**
+     * Update register in database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param value the new register value
+     */
+    public void updateRegisterBS(String name, String bucket, ByteString value){
+        updateRegisterHelperBS(name, bucket, value, CRDT_type.LWWREG);
+    }
+    
+    /**
+     * Update MV register in database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param value the new register value
+     */
+    public void updateMVRegisterBS(String name, String bucket, ByteString value){
+        updateRegisterHelperBS(name, bucket, value, CRDT_type.MVREG);
+    }
+    
+    /**
+     * Update register helper.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param value the value
+     * @param type the type
+     */
+    private void updateRegisterHelperBS(String name, String bucket, ByteString value, CRDT_type type){
+        ApbRegUpdate.Builder regUpdateInstruction = ApbRegUpdate.newBuilder(); // The specific instruction in update instructions
+        regUpdateInstruction.setValue(value);
 
-        ApbUpdateOp.Builder updateInstruction = ApbUpdateOp.newBuilder();
-        updateInstruction.setBoundobject(regObject);
-        updateInstruction.setOperation(updateOperation);
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder writeTransaction = ApbStartTransaction.newBuilder();
-        writeTransaction.setProperties(transactionProperties);
-
-        regUpdateMessage.setTransaction(writeTransaction);
-        regUpdateMessage.addUpdates(updateInstruction);
-
-        ApbStaticUpdateObjects regUpdateMessageObject = regUpdateMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, regUpdateMessageObject));
-        try {
-            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-            System.out.println(commitResponse);
-        } catch (Exception e ) {
-            System.out.println(e);
-        }
+        ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
+        updateOperation.setRegop(regUpdateInstruction);
+        updateHelper(updateOperation, name, bucket, type);
     }
     
     /**
@@ -439,30 +554,8 @@ public class AntidoteClient {
      * @return the antidote register
      */
     public AntidoteRegister readRegister(String name, String bucket) {
-
-        ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
-        regObject.setKey(ByteString.copyFromUtf8(name));
-        regObject.setType(CRDT_type.LWWREG);
-        regObject.setBucket(ByteString.copyFromUtf8(bucket));
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
-        readTransaction.setProperties(transactionProperties);
-
-        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
-        readMessage.setTransaction(readTransaction);
-        readMessage.addObjects(regObject);
-
-        ApbStaticReadObjects readMessageObject = readMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
-        try {
-            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
-            ApbGetRegResp reg = readResponse.getObjects().getObjects(0).getReg();
-            return new AntidoteRegister(name, bucket, reg.getValue().toStringUtf8(), this);
-        } catch (Exception e ) {
-            System.out.println(e);
-            return null;
-        }   
+        ApbGetRegResp reg = readHelper(name, bucket, CRDT_type.LWWREG).getObjects().getObjects(0).getReg();
+        return new AntidoteRegister(name, bucket, reg.getValue().toStringUtf8(), this); 
     }
     
     /**
@@ -473,36 +566,13 @@ public class AntidoteClient {
      * @return the antidote MV-Register
      */
     public AntidoteMVRegister readMVRegister(String name, String bucket) {
-    	
-    	ApbBoundObject.Builder regObject = ApbBoundObject.newBuilder(); // The object in the message
-        regObject.setKey(ByteString.copyFromUtf8(name));
-        regObject.setType(CRDT_type.MVREG);
-        regObject.setBucket(ByteString.copyFromUtf8(bucket));
-        
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
-        readTransaction.setProperties(transactionProperties);
-
-        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
-        readMessage.setTransaction(readTransaction);
-        readMessage.addObjects(regObject);
-
-        ApbStaticReadObjects readMessageObject = readMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
-        try {
-            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
-            ApbGetMVRegResp reg = readResponse.getObjects().getObjects(0).getMvreg();         
-            List<String> entriesList = new ArrayList<String>();
-            for (ByteString e : reg.getValuesList()){
-            	entriesList.add(e.toStringUtf8());
-            }
-            AntidoteMVRegister antidoteMVRegister = new AntidoteMVRegister(name, bucket, entriesList, this);
-            return antidoteMVRegister;
-        } catch (Exception e ) {
-            System.out.println(e);
-            return null;
-        }   
+        ApbGetMVRegResp reg = readHelper(name, bucket, CRDT_type.MVREG).getObjects().getObjects(0).getMvreg();         
+        List<String> entriesList = new ArrayList<String>();
+        for (ByteString e : reg.getValuesList()){
+          	entriesList.add(e.toStringUtf8());
+        }
+        AntidoteMVRegister antidoteMVRegister = new AntidoteMVRegister(name, bucket, entriesList, this);
+        return antidoteMVRegister;  
     }
     
     /**
@@ -532,44 +602,16 @@ public class AntidoteClient {
     }
     
     /**
-     * Helper method for the common part of the two preceding methods
+     * Helper method for the common part of the two preceding methods.
      *
      * @param name the name
      * @param bucket the bucket
      * @param intUpdateInstruction the int update instruction
      */
-    public void updateIntegerHelper(String name, String bucket, ApbIntegerUpdate.Builder intUpdateInstruction) {
-
-        ApbStaticUpdateObjects.Builder intUpdateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
-
-        ApbBoundObject.Builder intObject = ApbBoundObject.newBuilder(); // The object in the message
-        intObject.setKey(ByteString.copyFromUtf8(name));
-        intObject.setType(CRDT_type.INTEGER);
-        intObject.setBucket(ByteString.copyFromUtf8(bucket));
-
+    private void updateIntegerHelper(String name, String bucket, ApbIntegerUpdate.Builder intUpdateInstruction) {
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setIntegerop(intUpdateInstruction);
-
-        ApbUpdateOp.Builder updateInstruction = ApbUpdateOp.newBuilder();
-        updateInstruction.setBoundobject(intObject);
-        updateInstruction.setOperation(updateOperation);
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder writeTransaction = ApbStartTransaction.newBuilder();
-        writeTransaction.setProperties(transactionProperties);
-
-        intUpdateMessage.setTransaction(writeTransaction);
-        intUpdateMessage.addUpdates(updateInstruction);
-
-        ApbStaticUpdateObjects intUpdateMessageObject = intUpdateMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, intUpdateMessageObject));
-        try {
-            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-            System.out.println(commitResponse);
-        } catch (Exception e ) {
-            System.out.println(e);
-        }
+        updateHelper(updateOperation, name, bucket, CRDT_type.INTEGER);
     }
     
     /**
@@ -580,33 +622,24 @@ public class AntidoteClient {
      * @return the antidote integer
      */
     public AntidoteInteger readInteger(String name, String bucket) {
-
-        ApbBoundObject.Builder intObject = ApbBoundObject.newBuilder(); // The object in the message
-        intObject.setKey(ByteString.copyFromUtf8(name));
-        intObject.setType(CRDT_type.INTEGER);
-        intObject.setBucket(ByteString.copyFromUtf8(bucket));
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
-        readTransaction.setProperties(transactionProperties);
-
-        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
-        readMessage.setTransaction(readTransaction);
-        readMessage.addObjects(intObject);
-
-        ApbStaticReadObjects readMessageObject = readMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
-        try {
-            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
-            ApbGetIntegerResp number = readResponse.getObjects().getObjects(0).getInt();
-            return new AntidoteInteger(name, bucket, toIntExact(number.getValue()), this);
-        } catch (Exception e ) {
-            System.out.println(e);
-            return null;
-        }   
+        ApbGetIntegerResp number = readHelper(name, bucket, CRDT_type.INTEGER).getObjects().getObjects(0).getInt();
+        return new AntidoteInteger(name, bucket, toIntExact(number.getValue()), this);  
     }
    
+    /**
+	 * Update AW-Map in database.
+	 *
+	 * @param name the name
+	 * @param bucket the bucket
+	 * @param mapKey the map key
+	 * @param updates the updates executed in that AW-Map
+	 */
+	public void updateAWMap(String name, String bucket, AntidoteMapKey mapKey, AntidoteMapUpdate update) {
+        List<AntidoteMapUpdate> updates = new ArrayList<>();
+        updates.add(update);
+        updateAWMap(name, bucket, mapKey, updates);
+    }
+    
 	/**
 	 * Update AW-Map in database.
 	 *
@@ -615,54 +648,14 @@ public class AntidoteClient {
 	 * @param mapKey the map key
 	 * @param updates the updates executed in that AW-Map
 	 */
-	public void updateAWMap(String name, String bucket, ApbMapKey mapKey, List<ApbUpdateOperation> updates) {
-
-        ApbStaticUpdateObjects.Builder mapUpdateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
-
-        ApbBoundObject.Builder mapObject = ApbBoundObject.newBuilder(); // The object in the message
-        mapObject.setKey(ByteString.copyFromUtf8(name));
-        mapObject.setType(CRDT_type.AWMAP);
-        mapObject.setBucket(ByteString.copyFromUtf8(bucket));
-        
-        ApbMapNestedUpdate.Builder mapNestedUpdateBuilder = ApbMapNestedUpdate.newBuilder(); // The specific instruction in update instruction
-        List<ApbMapNestedUpdate> mapNestedUpdateList = new ArrayList<ApbMapNestedUpdate>();
-        ApbMapNestedUpdate mapNestedUpdate;
-        
-        int i=0;
-        for (ApbUpdateOperation update : updates){
-        	mapNestedUpdateBuilder.setUpdate(update);
-        	mapNestedUpdateBuilder.setKey(mapKey);
-        	mapNestedUpdate = mapNestedUpdateBuilder.build();
-        	mapNestedUpdateList.add(i, mapNestedUpdate);
-        	i++;
-        }
-
-        ApbMapUpdate.Builder mapUpdateInstruction = ApbMapUpdate.newBuilder(); // The specific instruction in update instruction
-        mapUpdateInstruction.addAllUpdates(mapNestedUpdateList);
-            
-        ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
-        updateOperation.setMapop(mapUpdateInstruction);
-
-        ApbUpdateOp.Builder updateInstruction = ApbUpdateOp.newBuilder();
-        updateInstruction.setBoundobject(mapObject);
-        updateInstruction.setOperation(updateOperation);
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder writeTransaction = ApbStartTransaction.newBuilder();
-        writeTransaction.setProperties(transactionProperties);
-
-        mapUpdateMessage.setTransaction(writeTransaction);
-        mapUpdateMessage.addUpdates(updateInstruction);
-
-        ApbStaticUpdateObjects mapUpdateMessageObject = mapUpdateMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, mapUpdateMessageObject));
-        try {
-            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-            System.out.println(commitResponse);
-        } catch (Exception e ) {
-            System.out.println(e);
-        }        
+	public void updateAWMap(String name, String bucket, AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates) {
+        updateMapHelper(name, bucket, mapKey, updates, CRDT_type.AWMAP);
+    }
+	
+	public void updateGMap(String name, String bucket, AntidoteMapKey mapKey, AntidoteMapUpdate update) {
+        List<AntidoteMapUpdate> updates = new ArrayList<>();
+        updates.add(update);
+        updateGMap(name, bucket, mapKey, updates);
     }
 	
 	/**
@@ -673,54 +666,40 @@ public class AntidoteClient {
 	 * @param mapKey the map key
 	 * @param updates the updates executed in that G-Map
 	 */
-	public void updateGMap(String name, String bucket, ApbMapKey mapKey, List<ApbUpdateOperation> updates) {
-
-        ApbStaticUpdateObjects.Builder mapUpdateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
-
-        ApbBoundObject.Builder mapObject = ApbBoundObject.newBuilder(); // The object in the message
-        mapObject.setKey(ByteString.copyFromUtf8(name));
-        mapObject.setType(CRDT_type.GMAP);
-        mapObject.setBucket(ByteString.copyFromUtf8(bucket));
-        
+	public void updateGMap(String name, String bucket, AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates) { 
+        updateMapHelper(name, bucket, mapKey, updates, CRDT_type.GMAP);
+    }
+	
+	public void updateMapHelper(String name, String bucket, AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates, CRDT_type mapType) { 
         ApbMapNestedUpdate.Builder mapNestedUpdateBuilder = ApbMapNestedUpdate.newBuilder(); // The specific instruction in update instruction
         List<ApbMapNestedUpdate> mapNestedUpdateList = new ArrayList<ApbMapNestedUpdate>();
-        ApbMapNestedUpdate mapNestedUpdate;
-        
-        int i=0;
-        for (ApbUpdateOperation update : updates){
-        	mapNestedUpdateBuilder.setUpdate(update);
-        	mapNestedUpdateBuilder.setKey(mapKey);
+        ApbMapNestedUpdate mapNestedUpdate; 
+        for (AntidoteMapUpdate update : updates){
+        	mapNestedUpdateBuilder.setUpdate(update.getOperation());
+        	mapNestedUpdateBuilder.setKey(mapKey.getApbKey());
         	mapNestedUpdate = mapNestedUpdateBuilder.build();
-        	mapNestedUpdateList.add(i, mapNestedUpdate);
-        	i++;
+        	mapNestedUpdateList.add(mapNestedUpdate);
         }
-
         ApbMapUpdate.Builder mapUpdateInstruction = ApbMapUpdate.newBuilder(); // The specific instruction in update instruction
         mapUpdateInstruction.addAllUpdates(mapNestedUpdateList);
             
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setMapop(mapUpdateInstruction);
-
-        ApbUpdateOp.Builder updateInstruction = ApbUpdateOp.newBuilder();
-        updateInstruction.setBoundobject(mapObject);
-        updateInstruction.setOperation(updateOperation);
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder writeTransaction = ApbStartTransaction.newBuilder();
-        writeTransaction.setProperties(transactionProperties);
-
-        mapUpdateMessage.setTransaction(writeTransaction);
-        mapUpdateMessage.addUpdates(updateInstruction);
-
-        ApbStaticUpdateObjects mapUpdateMessageObject = mapUpdateMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, mapUpdateMessageObject));
-        try {
-            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-            System.out.println(commitResponse);
-        } catch (Exception e ) {
-            System.out.println(e);
-        }        
+        
+        updateHelper(updateOperation, name, bucket, mapType);
+    }
+	
+	/**
+     * Removes the AW-Map entry in database.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param key the key of the element in that Map which is removed
+     */
+    public void removeAWMapEntry(String name, String bucket, AntidoteMapKey key) {
+        List<AntidoteMapKey> keys = new ArrayList<>();
+        keys.add(key);
+        removeAWMapEntry(name, bucket, keys);
     }
     
     /**
@@ -730,41 +709,20 @@ public class AntidoteClient {
      * @param bucket the bucket
      * @param keys the keys of all elements in that Map which are removed
      */
-    public void removeAWMapEntry(String name, String bucket, List<ApbMapKey> keys) {
-
-        ApbStaticUpdateObjects.Builder mapUpdateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
-
-        ApbBoundObject.Builder mapObject = ApbBoundObject.newBuilder(); // The object in the message
-        mapObject.setKey(ByteString.copyFromUtf8(name));
-        mapObject.setType(CRDT_type.AWMAP);
-        mapObject.setBucket(ByteString.copyFromUtf8(bucket));
-
+    public void removeAWMapEntry(String name, String bucket, List<AntidoteMapKey> keys) {
         ApbMapUpdate.Builder mapUpdateInstruction = ApbMapUpdate.newBuilder(); // The specific instruction in update instruction
-        mapUpdateInstruction.addAllRemovedKeys(keys);        
-            
+        List<ApbMapKey> apbKeys = new ArrayList<>();
+        ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
+        apbKeyBuilder.setType(keys.get(0).getType());
+        for (AntidoteMapKey key : keys){
+        	apbKeyBuilder.setKey(key.getKeyBS());
+        	apbKeys.add(apbKeyBuilder.build());
+        }
+        mapUpdateInstruction.addAllRemovedKeys(apbKeys);      
+        
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setMapop(mapUpdateInstruction);
-
-        ApbUpdateOp.Builder updateInstruction = ApbUpdateOp.newBuilder();
-        updateInstruction.setBoundobject(mapObject);
-        updateInstruction.setOperation(updateOperation);
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder writeTransaction = ApbStartTransaction.newBuilder();
-        writeTransaction.setProperties(transactionProperties);
-
-        mapUpdateMessage.setTransaction(writeTransaction);
-        mapUpdateMessage.addUpdates(updateInstruction);
-
-        ApbStaticUpdateObjects mapUpdateMessageObject = mapUpdateMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, mapUpdateMessageObject));
-        try {
-            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-            System.out.println(commitResponse);
-        } catch (Exception e ) {
-            System.out.println(e);
-        }  	       
+        updateHelper(updateOperation, name, bucket, CRDT_type.AWMAP);
     }
     
 	/**
@@ -775,36 +733,13 @@ public class AntidoteClient {
 	 * @return the antidote AW-Map
 	 */
 	public AntidoteAWMap readAWMap(String name, String bucket) {
-
-        ApbBoundObject.Builder intObject = ApbBoundObject.newBuilder(); // The object in the message
-        intObject.setKey(ByteString.copyFromUtf8(name));
-        intObject.setType(CRDT_type.AWMAP);
-        intObject.setBucket(ByteString.copyFromUtf8(bucket));
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
-        readTransaction.setProperties(transactionProperties);
-
-        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
-        readMessage.setTransaction(readTransaction);
-        readMessage.addObjects(intObject);
-
-        ApbStaticReadObjects readMessageObject = readMessage.build();
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
-        try {
-            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
-            ApbGetMapResp map = readResponse.getObjects().getObjects(0).getMap();
-            List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
-            apbEntryList = map.getEntriesList();
-            List<AntidoteMapEntry> antidoteEntryList = new ArrayList<AntidoteMapEntry>();
-    		List<ApbMapKey> path = new ArrayList<ApbMapKey>();
-            antidoteEntryList = readMapHelper(name, bucket, path, apbEntryList, CRDT_type.AWMAP);     
-            return new AntidoteAWMap(name, bucket, antidoteEntryList, this);
-        } catch (Exception e ) {
-            System.out.println(e);
-            return null;
-        }      
+        ApbGetMapResp map = readHelper(name, bucket, CRDT_type.AWMAP).getObjects().getObjects(0).getMap();
+        List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
+        apbEntryList = map.getEntriesList();
+        List<AntidoteMapEntry> antidoteEntryList = new ArrayList<AntidoteMapEntry>();
+    	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
+        antidoteEntryList = readMapHelper(name, bucket, path, apbEntryList, CRDT_type.AWMAP);     
+        return new AntidoteAWMap(name, bucket, antidoteEntryList, this);   
     }
 	
 	/**
@@ -815,36 +750,13 @@ public class AntidoteClient {
 	 * @return the antidote G-Map
 	 */
 	public AntidoteGMap readGMap(String name, String bucket) {
-
-        ApbBoundObject.Builder intObject = ApbBoundObject.newBuilder(); // The object in the message
-        intObject.setKey(ByteString.copyFromUtf8(name));
-        intObject.setType(CRDT_type.GMAP);
-        intObject.setBucket(ByteString.copyFromUtf8(bucket));
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
-        readTransaction.setProperties(transactionProperties);
-
-        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
-        readMessage.setTransaction(readTransaction);
-        readMessage.addObjects(intObject);
-
-        ApbStaticReadObjects readMessageObject = readMessage.build();        
-        AntidoteMessage responseMessage = sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
-        try {
-            ApbStaticReadObjectsResp readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage()); // TODO: This doesn't work
-            ApbGetMapResp map = readResponse.getObjects().getObjects(0).getMap();
-            List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
-            apbEntryList = map.getEntriesList();
-            List<AntidoteMapEntry> antidoteEntryList = new ArrayList<AntidoteMapEntry>();
-    		List<ApbMapKey> path = new ArrayList<ApbMapKey>();
-            antidoteEntryList = readMapHelper(name, bucket, path, apbEntryList, CRDT_type.GMAP);     
-            return new AntidoteGMap(name, bucket, antidoteEntryList, this);
-        } catch (Exception e ) {
-            System.out.println(e);
-            return null;
-        }              
+        ApbGetMapResp map = readHelper(name, bucket, CRDT_type.GMAP).getObjects().getObjects(0).getMap();
+        List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
+        apbEntryList = map.getEntriesList();
+        List<AntidoteMapEntry> antidoteEntryList = new ArrayList<AntidoteMapEntry>();
+        List<ApbMapKey> path = new ArrayList<ApbMapKey>();
+        antidoteEntryList = readMapHelper(name, bucket, path, apbEntryList, CRDT_type.GMAP);     
+        return new AntidoteGMap(name, bucket, antidoteEntryList, this);             
     }
 	
 	/**
@@ -859,7 +771,7 @@ public class AntidoteClient {
 	 * not stored in the path
 	 * @return the list of AntidoteMapEntries
 	 */
-	public List<AntidoteMapEntry> readMapHelper(String name, String bucket, List<ApbMapKey> path, List<ApbMapEntry> apbEntryList, CRDT_type outerMapType){
+	private List<AntidoteMapEntry> readMapHelper(String name, String bucket, List<ApbMapKey> path, List<ApbMapEntry> apbEntryList, CRDT_type outerMapType){
 		List<AntidoteMapEntry> antidoteEntryList = new ArrayList<AntidoteMapEntry>();
 		path.add(null);
 		for (ApbMapEntry e: apbEntryList){
@@ -1004,10 +916,99 @@ public class AntidoteClient {
 	 * @param element the element that is added
 	 * @return the antidote map update
 	 */
-	public AntidoteMapUpdate createORSetAdd(String element){
-		List<String> elementList = new ArrayList<String>();
+	public AntidoteMapUpdate createORSetAddBS(ByteString element){
+		List<ByteString> elementList = new ArrayList<>();
 		elementList.add(element);
-		return createORSetAdd(elementList);
+		return createSetRemoveHelper(elementList, CRDT_type.ORSET, AntidoteSetOpType.SetAdd);
+	}
+	
+	/**
+	 * Creates the OR-Set add.
+	 *
+	 * @param elementList the elements that are added
+	 * @return the antidote map update
+	 */
+	public AntidoteMapUpdate createORSetAddBS(List<ByteString> elementList){
+		return createSetRemoveHelper(elementList, CRDT_type.ORSET, AntidoteSetOpType.SetAdd);
+	}
+	
+	/**
+	 * Creates the OR-Set remove.
+	 *
+	 * @param element the element that is removed
+	 * @return the antidote map update
+	 */
+	public AntidoteMapUpdate createORSetRemoveBS(ByteString element){
+		List<ByteString> elementList = new ArrayList<>();
+		elementList.add(element);
+		return createSetRemoveHelper(elementList, CRDT_type.ORSET, AntidoteSetOpType.SetRemove);
+
+	}
+	
+	/**
+	 * Creates the OR-Set remove.
+	 *
+	 * @param elementList the elements that are removed
+	 * @return the antidote map update
+	 */
+	public AntidoteMapUpdate createORSetRemoveBS(List<ByteString> elementList){
+		return createSetRemoveHelper(elementList, CRDT_type.ORSET, AntidoteSetOpType.SetRemove);
+	}
+	
+	/**
+	 * Creates the RW-Set add.
+	 *
+	 * @param element the element that is added
+	 * @return the antidote map update
+	 */
+	public AntidoteMapUpdate createRWSetAddBS(ByteString element){
+		List<ByteString> elementList = new ArrayList<>();
+		elementList.add(element);
+		return createSetRemoveHelper(elementList, CRDT_type.RWSET, AntidoteSetOpType.SetAdd);
+	}
+	
+	/**
+	 * Creates the RW-Set add.
+	 *
+	 * @param elementList the elements that are added
+	 * @return the antidote map update
+	 */
+	public AntidoteMapUpdate createRWSetAddBS(List<ByteString> elementList){
+		return createSetRemoveHelper(elementList, CRDT_type.RWSET, AntidoteSetOpType.SetAdd);
+	}
+	
+	/**
+	 * Creates the RW-Set remove.
+	 *
+	 * @param element the element that is removed
+	 * @return the antidote map update
+	 */
+	public AntidoteMapUpdate createRWSetRemoveBS(ByteString element){
+		List<ByteString> elementList = new ArrayList<>();
+		elementList.add(element);
+		return createSetRemoveHelper(elementList, CRDT_type.RWSET, AntidoteSetOpType.SetRemove);
+	}
+	
+	/**
+	 * Creates the RW-Set remove.
+	 *
+	 * @param elementList the elements that are removed
+	 * @return the antidote map update
+	 */
+	public AntidoteMapUpdate createRWSetRemoveBS(List<ByteString> elementList){
+		return createSetRemoveHelper(elementList, CRDT_type.RWSET, AntidoteSetOpType.SetRemove);
+	}
+	
+	/**
+	 * Creates the OR-Set add.
+	 *
+	 * @param element the element that is added
+	 * @return the antidote map update
+	 */
+	public AntidoteMapUpdate createORSetAdd(String element){
+		List<ByteString> elementList = new ArrayList<>();
+		elementList.add(ByteString.copyFromUtf8(element));
+		return createSetRemoveHelper(elementList, CRDT_type.ORSET, AntidoteSetOpType.SetAdd);
 	}
 	
 	/**
@@ -1017,18 +1018,11 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createORSetAdd(List<String> elementList){
-		ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
-    	ApbSetUpdate.Builder upBuilder = ApbSetUpdate.newBuilder();
-    	
-    	ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(1);
-    	for (String element : elementList){
-    		upBuilder.addAdds(ByteString.copyFromUtf8(element));
-    	}
-    	upBuilder.setOptype(opType);
-    	ApbSetUpdate up = upBuilder.build();
-    	opBuilder.setSetop(up);
-    	ApbUpdateOperation op = opBuilder.build();
-		return new AntidoteMapUpdate(CRDT_type.ORSET, op);
+		List<ByteString> bsElementList = new ArrayList<>();
+		for (String element : elementList){
+	    	bsElementList.add(ByteString.copyFromUtf8(element));
+	    }
+		return createSetRemoveHelper(bsElementList, CRDT_type.ORSET, AntidoteSetOpType.SetAdd);
 	}
 	
 	/**
@@ -1038,9 +1032,10 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createORSetRemove(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		return createORSetRemove(elementList);
+		List<ByteString> elementList = new ArrayList<>();
+		elementList.add(ByteString.copyFromUtf8(element));
+		return createSetRemoveHelper(elementList, CRDT_type.ORSET, AntidoteSetOpType.SetRemove);
+
 	}
 	
 	/**
@@ -1050,17 +1045,12 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createORSetRemove(List<String> elementList){
-		ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
-    	ApbSetUpdate.Builder upBuilder = ApbSetUpdate.newBuilder();
-    	ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
-    	for (String element : elementList){
-    		upBuilder.addRems(ByteString.copyFromUtf8(element));
-    	}
-    	upBuilder.setOptype(opType);
-    	ApbSetUpdate up = upBuilder.build();
-    	opBuilder.setSetop(up);
-    	ApbUpdateOperation op = opBuilder.build();
-		return new AntidoteMapUpdate(CRDT_type.ORSET, op);
+		List<ByteString> bsElementList = new ArrayList<>();
+		for (String element : elementList){
+	    	bsElementList.add(ByteString.copyFromUtf8(element));
+	    }
+		return createSetRemoveHelper(bsElementList, CRDT_type.ORSET, AntidoteSetOpType.SetRemove);
+
 	}
 	
 	/**
@@ -1070,9 +1060,9 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createRWSetAdd(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		return createRWSetAdd(elementList);
+		List<ByteString> elementList = new ArrayList<>();
+		elementList.add(ByteString.copyFromUtf8(element));
+		return createSetRemoveHelper(elementList, CRDT_type.RWSET, AntidoteSetOpType.SetAdd);
 	}
 	
 	/**
@@ -1082,18 +1072,11 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createRWSetAdd(List<String> elementList){
-		ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
-    	ApbSetUpdate.Builder upBuilder = ApbSetUpdate.newBuilder();
-    	
-    	ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(1);
-    	for (String element : elementList){
-    		upBuilder.addAdds(ByteString.copyFromUtf8(element));
-    	}
-    	upBuilder.setOptype(opType);
-    	ApbSetUpdate up = upBuilder.build();
-    	opBuilder.setSetop(up);
-    	ApbUpdateOperation op = opBuilder.build();
-		return new AntidoteMapUpdate(CRDT_type.RWSET, op);
+		List<ByteString> bsElementList = new ArrayList<>();
+		for (String element : elementList){
+	    	bsElementList.add(ByteString.copyFromUtf8(element));
+	    }
+		return createSetRemoveHelper(bsElementList, CRDT_type.RWSET, AntidoteSetOpType.SetAdd);
 	}
 	
 	/**
@@ -1103,9 +1086,9 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createRWSetRemove(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		return createRWSetRemove(elementList);
+		List<ByteString> elementList = new ArrayList<>();
+		elementList.add(ByteString.copyFromUtf8(element));
+		return createSetRemoveHelper(elementList, CRDT_type.RWSET, AntidoteSetOpType.SetRemove);
 	}
 	
 	/**
@@ -1115,17 +1098,60 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createRWSetRemove(List<String> elementList){
+		List<ByteString> bsElementList = new ArrayList<>();
+		for (String element : elementList){
+	    	bsElementList.add(ByteString.copyFromUtf8(element));
+	    }
+		return createSetRemoveHelper(bsElementList, CRDT_type.RWSET, AntidoteSetOpType.SetRemove);
+	}
+	
+	/**
+	 * Creates the set remove helper.
+	 *
+	 * @param elementList the element list
+	 * @param type the type
+	 * @param opNumber the op number
+	 * @return the antidote map update
+	 */
+	public AntidoteMapUpdate createSetRemoveHelper(List<ByteString> elementList, CRDT_type type, int opNumber){
 		ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
     	ApbSetUpdate.Builder upBuilder = ApbSetUpdate.newBuilder();
-    	ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
-    	for (String element : elementList){
-    		upBuilder.addRems(ByteString.copyFromUtf8(element));
+    	ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(opNumber);
+    	if (opNumber == AntidoteSetOpType.SetRemove){
+    	    for (ByteString element : elementList){
+    	    	upBuilder.addRems(element);
+    	    }
+    	}
+    	else if (opNumber == AntidoteSetOpType.SetAdd){
+    		for (ByteString element : elementList){
+    	    	upBuilder.addAdds(element);
+    	    }
     	}
     	upBuilder.setOptype(opType);
     	ApbSetUpdate up = upBuilder.build();
     	opBuilder.setSetop(up);
     	ApbUpdateOperation op = opBuilder.build();
-		return new AntidoteMapUpdate(CRDT_type.RWSET, op);
+		return new AntidoteMapUpdate(type, op);
+	}
+	
+	/**
+	 * Creates the register set.
+	 *
+	 * @param value the value to which the register is set
+	 * @return the antidote map update
+	 */
+	public AntidoteMapUpdate createRegisterSet(ByteString value){
+		return createRegisterSetHelper(value, CRDT_type.LWWREG);
+	}
+	
+	/**
+	 * Creates the MV-Register set.
+	 *
+	 * @param value the value to which the MV-Register is set
+	 * @return the antidote map update
+	 */
+	public AntidoteMapUpdate createMVRegisterSet(ByteString value){
+		return createRegisterSetHelper(value, CRDT_type.MVREG);
 	}
 	
 	/**
@@ -1135,13 +1161,7 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createRegisterSet(String value){
-		ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
-    	ApbRegUpdate.Builder upBuilder = ApbRegUpdate.newBuilder();
-    	upBuilder.setValue(ByteString.copyFromUtf8(value));
-    	ApbRegUpdate up = upBuilder.build();
-    	opBuilder.setRegop(up);
-    	ApbUpdateOperation op = opBuilder.build();
-		return new AntidoteMapUpdate(CRDT_type.LWWREG, op);
+		return createRegisterSetHelper(ByteString.copyFromUtf8(value), CRDT_type.LWWREG);
 	}
 	
 	/**
@@ -1151,13 +1171,24 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createMVRegisterSet(String value){
+		return createRegisterSetHelper(ByteString.copyFromUtf8(value), CRDT_type.MVREG);
+	}
+	
+	/**
+	 * Creates the register set helper.
+	 *
+	 * @param value the value
+	 * @param type the type
+	 * @return the antidote map update
+	 */
+	public AntidoteMapUpdate createRegisterSetHelper(ByteString value, CRDT_type type){
 		ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
     	ApbRegUpdate.Builder upBuilder = ApbRegUpdate.newBuilder();
-    	upBuilder.setValue(ByteString.copyFromUtf8(value));
+    	upBuilder.setValue(value);
     	ApbRegUpdate up = upBuilder.build();
     	opBuilder.setRegop(up);
     	ApbUpdateOperation op = opBuilder.build();
-		return new AntidoteMapUpdate(CRDT_type.MVREG, op);
+		return new AntidoteMapUpdate(type, op);
 	}
 	
 	/**
@@ -1181,35 +1212,7 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createGMapUpdate(String key, List<AntidoteMapUpdate> updateList) {
-		CRDT_type type = updateList.get(0).getType();
-		List<ApbUpdateOperation> apbUpdateList = new ArrayList<ApbUpdateOperation>();
-		for (AntidoteMapUpdate u : updateList){
-			if (!(type.equals(u.getType()))){
-				throw new IllegalArgumentException("Different types detected, only one type allowed");
-			}
-			apbUpdateList.add(u.getOperation());
-		}
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
-		apbKeyBuilder.setType(type);
-		ApbMapKey apbKey = apbKeyBuilder.build();
-		ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
-    	ApbMapUpdate.Builder upBuilder = ApbMapUpdate.newBuilder();
-    	
-    	ApbMapNestedUpdate.Builder mapNestedUpdateBuilder = ApbMapNestedUpdate.newBuilder();
-        List<ApbMapNestedUpdate> mapNestedUpdateList = new ArrayList<ApbMapNestedUpdate>();
-        ApbMapNestedUpdate mapNestedUpdate;
-        for (ApbUpdateOperation update : apbUpdateList){
-        	mapNestedUpdateBuilder.setUpdate(update);
-        	mapNestedUpdateBuilder.setKey(apbKey);
-        	mapNestedUpdate = mapNestedUpdateBuilder.build();
-        	mapNestedUpdateList.add(mapNestedUpdate);
-        }
-    	upBuilder.addAllUpdates(mapNestedUpdateList);
-    	ApbMapUpdate up = upBuilder.build();
-    	opBuilder.setMapop(up);
-    	ApbUpdateOperation op = opBuilder.build();
-		return new AntidoteMapUpdate(CRDT_type.GMAP, op);
+		return createMapUpdateHelper(key, updateList, CRDT_type.GMAP);
 	}
 	
 	/**
@@ -1228,11 +1231,15 @@ public class AntidoteClient {
 	/**
 	 * Creates the AW-Map update.
 	 *
-	 * @param the key of the entry to be updated
+	 * @param key the key
 	 * @param updateList the list of updates which are executed on a particular entry of the map
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createAWMapUpdate(String key, List<AntidoteMapUpdate> updateList) {
+		return createMapUpdateHelper(key, updateList, CRDT_type.AWMAP);
+	}
+	
+	private AntidoteMapUpdate createMapUpdateHelper(String key, List<AntidoteMapUpdate> updateList, CRDT_type mapType) {
 		CRDT_type type = updateList.get(0).getType();
 		List<ApbUpdateOperation> apbUpdateList = new ArrayList<ApbUpdateOperation>();
 		for (AntidoteMapUpdate u : updateList){
@@ -1261,19 +1268,27 @@ public class AntidoteClient {
     	ApbMapUpdate up = upBuilder.build();
     	opBuilder.setMapop(up);
     	ApbUpdateOperation op = opBuilder.build();
-		return new AntidoteMapUpdate(CRDT_type.AWMAP, op);
+		return new AntidoteMapUpdate(mapType, op);
 	}
 	
     /**
-     * Creates the actual remove update. G-Maps are grow only, so this is only called for AW-Maps
+     * Creates the map remove.
      *
-     * @param keyList the keys of all elements that are removed
+     * @param keyList the key list
+     * @param type the type
      * @return the antidote map update
      */
-    public AntidoteMapUpdate createMapRemove(List<ApbMapKey> keyList){
+    public AntidoteMapUpdate createMapRemove(List<String> keyList, CRDT_type type){
+    	List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
+		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
+		keyBuilder.setType(type);
+		for (String key : keyList){
+			keyBuilder.setKey(ByteString.copyFromUtf8(key));
+			apbKeyList.add(keyBuilder.build());
+		}
     	ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
     	ApbMapUpdate.Builder upBuilder = ApbMapUpdate.newBuilder();
-    	upBuilder.addAllRemovedKeys(keyList);
+    	upBuilder.addAllRemovedKeys(apbKeyList);
     	ApbMapUpdate up = upBuilder.build();
     	opBuilder.setMapop(up);
     	ApbUpdateOperation op = opBuilder.build();
@@ -1289,24 +1304,17 @@ public class AntidoteClient {
 	public AntidoteMapUpdate createMapCounterRemove(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		return createMapCounterRemove(keyList);
+		return createMapRemove(keyList, CRDT_type.COUNTER);		
 	}
 	
 	/**
-	 * Creates the counter remove.
+	 * Creates the map counter remove.
 	 *
-	 * @param keyList the keys of the counters to be removed
+	 * @param keyList the key list
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createMapCounterRemove(List<String> keyList) {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-		keyBuilder.setType(CRDT_type.COUNTER);
-		for (String key : keyList){
-			keyBuilder.setKey(ByteString.copyFromUtf8(key));
-			apbKeyList.add(keyBuilder.build());
-		}
-		return createMapRemove(apbKeyList);		
+		return createMapRemove(keyList, CRDT_type.COUNTER);		
 	}
 	
 	/**
@@ -1318,24 +1326,17 @@ public class AntidoteClient {
 	public AntidoteMapUpdate createMapIntegerRemove(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		return createMapIntegerRemove(keyList);
+		return createMapRemove(keyList, CRDT_type.INTEGER);		
 	}
 	
 	/**
-	 * Creates the integer remove.
+	 * Creates the map integer remove.
 	 *
-	 * @param keyList the keys of the integers to be removed
+	 * @param keyList the key list
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createMapIntegerRemove(List<String> keyList) {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-		keyBuilder.setType(CRDT_type.INTEGER);
-		for (String key : keyList){
-			keyBuilder.setKey(ByteString.copyFromUtf8(key));
-			apbKeyList.add(keyBuilder.build());
-		}
-		return createMapRemove(apbKeyList);		
+		return createMapRemove(keyList, CRDT_type.INTEGER);			
 	}
 	
 	/**
@@ -1346,8 +1347,8 @@ public class AntidoteClient {
 	 */
 	public AntidoteMapUpdate createMapORSetRemove(String key) {
 		List<String> keyList = new ArrayList<String>();
-		keyList.add(key);
-		return createMapORSetRemove(keyList);
+		keyList.add(key);		
+		return createMapRemove(keyList, CRDT_type.ORSET);		
 	}
 	
 	/**
@@ -1357,14 +1358,7 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createMapORSetRemove(List<String> keyList) {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-		keyBuilder.setType(CRDT_type.ORSET);
-		for (String key : keyList){
-			keyBuilder.setKey(ByteString.copyFromUtf8(key));
-			apbKeyList.add(keyBuilder.build());
-		}
-		return createMapRemove(apbKeyList);		
+		return createMapRemove(keyList, CRDT_type.ORSET);		
 	}
 	
 	/**
@@ -1375,8 +1369,8 @@ public class AntidoteClient {
 	 */
 	public AntidoteMapUpdate createMapRWSetRemove(String key) {
 		List<String> keyList = new ArrayList<String>();
-		keyList.add(key);
-		return createMapRWSetRemove(keyList);
+		keyList.add(key);		
+		return createMapRemove(keyList, CRDT_type.RWSET);		
 	}
 	
 	/**
@@ -1386,14 +1380,7 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createMapRWSetRemove(List<String> keyList) {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-		keyBuilder.setType(CRDT_type.RWSET);
-		for (String key : keyList){
-			keyBuilder.setKey(ByteString.copyFromUtf8(key));
-			apbKeyList.add(keyBuilder.build());
-		}
-		return createMapRemove(apbKeyList);		
+		return createMapRemove(keyList, CRDT_type.RWSET);			
 	}
 	
 	/**
@@ -1405,7 +1392,7 @@ public class AntidoteClient {
 	public AntidoteMapUpdate createMapRegisterRemove(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		return createMapRegisterRemove(keyList);
+		return createMapRemove(keyList, CRDT_type.LWWREG);		
 	}
 	
 	/**
@@ -1415,14 +1402,7 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createMapRegisterRemove(List<String> keyList) {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-		keyBuilder.setType(CRDT_type.LWWREG);
-		for (String key : keyList){
-			keyBuilder.setKey(ByteString.copyFromUtf8(key));
-			apbKeyList.add(keyBuilder.build());
-		}
-		return createMapRemove(apbKeyList);		
+		return createMapRemove(keyList, CRDT_type.LWWREG);		
 	}
 	
 	/**
@@ -1434,7 +1414,7 @@ public class AntidoteClient {
 	public AntidoteMapUpdate createMapMVRegisterRemove(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		return createMapMVRegisterRemove(keyList);
+		return createMapRemove(keyList, CRDT_type.MVREG);		
 	}
 	
 	/**
@@ -1444,14 +1424,7 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createMapMVRegisterRemove(List<String> keyList) {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-		keyBuilder.setType(CRDT_type.MVREG);
-		for (String key : keyList){
-			keyBuilder.setKey(ByteString.copyFromUtf8(key));
-			apbKeyList.add(keyBuilder.build());
-		}
-		return createMapRemove(apbKeyList);		
+		return createMapRemove(keyList, CRDT_type.MVREG);		
 	}
 	
 	/**
@@ -1463,7 +1436,7 @@ public class AntidoteClient {
 	public AntidoteMapUpdate createMapAWMapRemove(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		return createMapAWMapRemove(keyList);
+		return createMapRemove(keyList, CRDT_type.AWMAP);		
 	}
 	
 	/**
@@ -1473,14 +1446,7 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createMapAWMapRemove(List<String> keyList) {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-		keyBuilder.setType(CRDT_type.AWMAP);
-		for (String key : keyList){
-			keyBuilder.setKey(ByteString.copyFromUtf8(key));
-			apbKeyList.add(keyBuilder.build());
-		}
-		return createMapRemove(apbKeyList);		
+		return createMapRemove(keyList, CRDT_type.AWMAP);		
 	}
 	
 	/**
@@ -1492,7 +1458,7 @@ public class AntidoteClient {
 	public AntidoteMapUpdate createMapGMapRemove(String key) {
 		List<String> keyList = new ArrayList<String>();
 		keyList.add(key);
-		return createMapAWMapRemove(keyList);
+		return createMapRemove(keyList, CRDT_type.GMAP);		
 	}
 	
 	/**
@@ -1502,13 +1468,6 @@ public class AntidoteClient {
 	 * @return the antidote map update
 	 */
 	public AntidoteMapUpdate createMapGMapRemove(List<String> keyList) {
-		List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
-		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
-		keyBuilder.setType(CRDT_type.GMAP);
-		for (String key : keyList){
-			keyBuilder.setKey(ByteString.copyFromUtf8(key));
-			apbKeyList.add(keyBuilder.build());
-		}
-		return createMapRemove(apbKeyList);		
+		return createMapRemove(keyList, CRDT_type.GMAP);		
 	}
 }

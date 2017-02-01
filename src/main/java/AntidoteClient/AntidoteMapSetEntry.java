@@ -3,6 +3,7 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import com.google.protobuf.ByteString;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 
 /**
@@ -36,6 +37,19 @@ public class AntidoteMapSetEntry extends AntidoteMapEntry {
 	public List<String> getValueList(){
 		return valueList;
 	}
+	
+	/**
+	 * Gets the value list as ByteString.
+	 *
+	 * @return the value list as ByteString
+	 */
+	public List<ByteString> getValueListBS(){
+		List<ByteString> valueListBS = new ArrayList<>();
+		for (String value : valueList){
+			valueListBS.add(ByteString.copyFromUtf8(value));
+		}
+		return valueListBS;
+	}
 
 	/**
 	 * Sets the value list.
@@ -45,6 +59,8 @@ public class AntidoteMapSetEntry extends AntidoteMapEntry {
 	public void setValueList(List<String> valueList){
 		this.valueList = valueList;
 	}
+	
+	
 	
 	/**
 	 * Adds the elements locally.
