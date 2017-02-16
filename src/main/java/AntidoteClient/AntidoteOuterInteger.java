@@ -1,15 +1,17 @@
 package main.java.AntidoteClient;
 
+import interfaces.IntegerCRDT;
+
 /**
  * The Class AntidoteOuterInteger.
  */
-public class AntidoteOuterInteger extends AntidoteObject implements InterfaceInteger{
+public final class AntidoteOuterInteger extends AntidoteCRDT implements IntegerCRDT{
 	
 	/** The value of the integer. */
 	private int value;
 
 	/** The low level integer. */
-	private LowLevelInteger lowLevelInteger;
+	private final IntegerRef lowLevelInteger;
 	
 	/**
 	 * Instantiates a new antidote integer.
@@ -22,7 +24,7 @@ public class AntidoteOuterInteger extends AntidoteObject implements InterfaceInt
 	public AntidoteOuterInteger(String name, String bucket, int value, AntidoteClient antidoteClient) {
 		super(name, bucket, antidoteClient, AntidoteType.IntegerType);
 		this.value = value;
-		lowLevelInteger = new LowLevelInteger(name, bucket, antidoteClient);
+		lowLevelInteger = new IntegerRef(name, bucket, antidoteClient);
 	}
 	
 	/**

@@ -8,7 +8,7 @@ import com.google.protobuf.ByteString;
 /**
  * The Class LowLevelRWSet.
  */
-public class LowLevelRWSet extends LowLevelSet{
+public final class RWSetRef extends SetRef{
 	
 	/**
 	 * Instantiates a new low level RW set.
@@ -17,7 +17,7 @@ public class LowLevelRWSet extends LowLevelSet{
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public LowLevelRWSet(String name, String bucket, AntidoteClient antidoteClient){
+	public RWSetRef(String name, String bucket, AntidoteClient antidoteClient){
 		super(name, bucket, antidoteClient);
 	}
 	
@@ -179,7 +179,7 @@ public class LowLevelRWSet extends LowLevelSet{
      * @return the antidote RW set
      */
     public AntidoteOuterRWSet createAntidoteRWSet(){
-    	ApbGetSetResp set = getClient().readHelper(getName(), getBucket(), AntidoteType.RWSetType).getObjects().getObjects(0).getSet();
+    	ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType).getObjects().getObjects(0).getSet();
         List<String> entriesList = new ArrayList<String>();
         for (ByteString e : set.getValueList()){
           	entriesList.add(e.toStringUtf8());
@@ -195,7 +195,7 @@ public class LowLevelRWSet extends LowLevelSet{
      * @return the antidote RW set
      */
     public AntidoteOuterRWSet createAntidoteRWSet(AntidoteTransaction antidoteTransaction){
-    	ApbGetSetResp set = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.RWSetType).getObjects(0).getSet();
+    	ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType, antidoteTransaction).getObjects(0).getSet();
         List<String> entriesList = new ArrayList<String>();
         for (ByteString e : set.getValueList()){
           	entriesList.add(e.toStringUtf8());
@@ -210,7 +210,7 @@ public class LowLevelRWSet extends LowLevelSet{
      * @return the value list as Strings
      */
     public List<String> readValueList() {
-        ApbGetSetResp set = getClient().readHelper(getName(), getBucket(), AntidoteType.RWSetType).getObjects().getObjects(0).getSet();
+        ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType).getObjects().getObjects(0).getSet();
         List<String> valueList = new ArrayList<String>();
         for (ByteString e : set.getValueList()){
         	valueList.add(e.toStringUtf8());
@@ -225,7 +225,7 @@ public class LowLevelRWSet extends LowLevelSet{
      * @return the value list as Strings
      */
     public List<String> readValueList(AntidoteTransaction antidoteTransaction){
-    	ApbGetSetResp set = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.RWSetType).getObjects(0).getSet();
+    	ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType, antidoteTransaction).getObjects(0).getSet();
     	List<String> valueList = new ArrayList<String>();
         for (ByteString e : set.getValueList()){
         	valueList.add(e.toStringUtf8());
@@ -239,7 +239,7 @@ public class LowLevelRWSet extends LowLevelSet{
      * @return the value list as ByteStrings
      */
     public List<ByteString> readValueListBS() {
-        ApbGetSetResp set = getClient().readHelper(getName(), getBucket(), AntidoteType.RWSetType).getObjects().getObjects(0).getSet();
+        ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType).getObjects().getObjects(0).getSet();
         return set.getValueList();
     }
     
@@ -250,7 +250,7 @@ public class LowLevelRWSet extends LowLevelSet{
      * @return the value list as ByteStrings
      */
     public List<ByteString> readValueListBS(AntidoteTransaction antidoteTransaction){
-    	ApbGetSetResp set = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.RWSetType).getObjects(0).getSet();
+    	ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType, antidoteTransaction).getObjects(0).getSet();
         return set.getValueList();
     }
 }

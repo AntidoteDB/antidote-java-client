@@ -2,13 +2,15 @@ package main.java.AntidoteClient;
 
 import java.util.List;
 
+import interfaces.SetCRDT;
+
 /**
  * The Class AntidoteOuterORSet.
  */
-public class AntidoteOuterORSet extends AntidoteOuterSet implements InterfaceSet{
+public final class AntidoteOuterORSet extends AntidoteOuterSet implements SetCRDT{
 	
 	/** The low level set. */
-	private LowLevelORSet lowLevelSet;
+	private final ORSetRef lowLevelSet;
 	
 	/**
 	 * Instantiates a new antidote OR set.
@@ -20,7 +22,7 @@ public class AntidoteOuterORSet extends AntidoteOuterSet implements InterfaceSet
 	 */
 	public AntidoteOuterORSet(String name, String bucket, List<String> valueList, AntidoteClient antidoteClient){
 		super(name, bucket, valueList, antidoteClient, AntidoteType.ORSetType);
-		lowLevelSet = new LowLevelORSet(name, bucket, antidoteClient);
+		lowLevelSet = new ORSetRef(name, bucket, antidoteClient);
 	}
 	
 	/**
@@ -30,7 +32,7 @@ public class AntidoteOuterORSet extends AntidoteOuterSet implements InterfaceSet
 		if (getUpdateList().size() > 0){
 			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
 		}
-		setValueList(lowLevelSet.readValueList());
+		setValues(lowLevelSet.readValueList());
 	}
 	
 	/* (non-Javadoc)

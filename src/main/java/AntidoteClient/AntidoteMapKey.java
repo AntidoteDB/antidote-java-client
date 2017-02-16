@@ -7,16 +7,16 @@ import com.google.protobuf.ByteString;
 /**
  * The Class AntidoteMapKey.
  */
-public class AntidoteMapKey {
+public final class AntidoteMapKey {
 	
 	/** The key. */
-	private ByteString key;
+	private final ByteString key;
 	
 	/** The type. */
-	private CRDT_type type;
+	private final CRDT_type type;
 	
 	/** The apb key. */
-	private ApbMapKey apbKey;
+	private final ApbMapKey apbKey;
 
 	/**
 	 * Instantiates a new antidote map key.
@@ -93,48 +93,5 @@ public class AntidoteMapKey {
 	 */
 	public CRDT_type getType(){
 		return type;
-	}
-	
-	/**
-	 * Sets the apb key.
-	 *
-	 * @param type the type
-	 * @param key the key
-	 */
-	private void setApbKey(CRDT_type type, ByteString key){
-		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setKey(key);
-		apbKeyBuilder.setType(type);
-		this.apbKey = apbKeyBuilder.build();
-	}
-	
-	/**
-	 * Sets the type.
-	 *
-	 * @param type the new type
-	 */
-	public void setType(CRDT_type type){
-		this.type = type;
-		setApbKey(type, key);
-	}
-	
-	/**
-	 * Sets the key.
-	 *
-	 * @param key the new key
-	 */
-	public void setKey(String key){
-		this.key = ByteString.copyFromUtf8(key);
-		setApbKey(type, this.key);
-	}
-	
-	/**
-	 * Sets the key.
-	 *
-	 * @param key the new key
-	 */
-	public void setKey(ByteString key){
-		this.key = key;
-		setApbKey(type, key);
 	}	
 }

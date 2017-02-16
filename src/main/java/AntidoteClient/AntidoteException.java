@@ -3,7 +3,7 @@ package main.java.AntidoteClient;
 /**
  * The Class AntidoteException.
  */
-public class AntidoteException extends RuntimeException {
+public final class AntidoteException extends RuntimeException {
 	
 	/** The Constant serialVersionUID. */
 	private static final long serialVersionUID = 1L;

@@ -1,42 +1,26 @@
-package main.java.AntidoteClient;
-
+package interfaces;
+import java.util.Set;
 import java.util.List;
-
 import com.google.protobuf.ByteString;
 
 /**
  * The Interface InterfaceSet.
  */
-public interface InterfaceSet {
+public interface SetCRDT extends CRDT {
 	
 	/**
 	 * Gets the value list.
 	 *
 	 * @return the value list
 	 */
-	List<String> getValueList();
+	Set<String> getValues();
 	
 	/**
 	 * Gets the value list as ByteStrings.
 	 *
 	 * @return the value list BS
 	 */
-	List<ByteString> getValueListBS();
-	
-	/**
-	 * Read database.
-	 */
-	void readDatabase();
-	
-	/**
-	 * Roll back: delete information about local updates and read database.
-	 */
-	void rollBack();
-	
-	/**
-	 * Synchronize: first push own changes, then read database.
-	 */
-	void synchronize();
+	Set<ByteString> getValuesBS();
 	
 	/**
 	 * Adds the element.

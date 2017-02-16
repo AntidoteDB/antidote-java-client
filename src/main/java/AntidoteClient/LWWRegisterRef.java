@@ -6,7 +6,7 @@ import com.google.protobuf.ByteString;
 /**
  * The Class LowLevelLWWRegister.
  */
-public class LowLevelLWWRegister extends LowLevelRegister{
+public final class LWWRegisterRef extends RegisterRef{
 	
 	/**
 	 * Instantiates a new low level LWW register.
@@ -15,7 +15,7 @@ public class LowLevelLWWRegister extends LowLevelRegister{
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public LowLevelLWWRegister(String name, String bucket, AntidoteClient antidoteClient){
+	public LWWRegisterRef(String name, String bucket, AntidoteClient antidoteClient){
 		super(name, bucket, antidoteClient);
 	}
 	
@@ -63,7 +63,7 @@ public class LowLevelLWWRegister extends LowLevelRegister{
      * @return the antidote register
      */
     public AntidoteOuterLWWRegister createAntidoteLWWRegister() {
-        ApbGetRegResp reg = getClient().readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType).getObjects().getObjects(0).getReg();
+        ApbGetRegResp reg = readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType).getObjects().getObjects(0).getReg();
         return new AntidoteOuterLWWRegister(getName(), getBucket(), reg.getValue().toStringUtf8(), getClient()); 
     }
     
@@ -74,7 +74,7 @@ public class LowLevelLWWRegister extends LowLevelRegister{
      * @return the antidote register
      */
     public AntidoteOuterLWWRegister createAntidoteLWWRegister(AntidoteTransaction antidoteTransaction){
-    	ApbGetRegResp reg = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType).getObjects(0).getReg();
+    	ApbGetRegResp reg = readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType, antidoteTransaction).getObjects(0).getReg();
         return new AntidoteOuterLWWRegister(getName(), getBucket(), reg.getValue().toStringUtf8(), getClient()); 
     }
     
@@ -84,7 +84,7 @@ public class LowLevelLWWRegister extends LowLevelRegister{
      * @return the register value as ByteString
      */
     public ByteString readRegisterValueBS() {
-        ApbGetRegResp reg = getClient().readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType).getObjects().getObjects(0).getReg();
+        ApbGetRegResp reg = readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType).getObjects().getObjects(0).getReg();
         return reg.getValue(); 
     }
     
@@ -95,7 +95,7 @@ public class LowLevelLWWRegister extends LowLevelRegister{
      * @return the register value as ByteString
      */
     public ByteString readRegisterValueBS(AntidoteTransaction antidoteTransaction){
-    	ApbGetRegResp reg = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType).getObjects(0).getReg();
+    	ApbGetRegResp reg = readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType, antidoteTransaction).getObjects(0).getReg();
         return reg.getValue(); 
     }
     
@@ -105,7 +105,7 @@ public class LowLevelLWWRegister extends LowLevelRegister{
      * @return the register value as String
      */
     public String readRegisterValue() {
-        ApbGetRegResp reg = getClient().readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType).getObjects().getObjects(0).getReg();
+        ApbGetRegResp reg = readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType).getObjects().getObjects(0).getReg();
         return reg.getValue().toStringUtf8(); 
     }
     
@@ -116,7 +116,7 @@ public class LowLevelLWWRegister extends LowLevelRegister{
      * @return the register value as String
      */
     public String readRegisterValue(AntidoteTransaction antidoteTransaction){
-    	ApbGetRegResp reg = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType).getObjects(0).getReg();
+    	ApbGetRegResp reg = readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType, antidoteTransaction).getObjects(0).getReg();
         return reg.getValue().toStringUtf8(); 
     }
 }

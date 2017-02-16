@@ -3,6 +3,7 @@ package main.java.AntidoteClient;
 import static java.lang.Math.toIntExact;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
@@ -13,10 +14,10 @@ import com.google.protobuf.ByteString;
 /**
  * The Class AntidoteInnerMap.
  */
-public class AntidoteInnerMap extends AntidoteInnerObject {
+public class AntidoteInnerMap extends AntidoteInnerCRDT {
 	
 	/** The entry list. */
-	private List<AntidoteInnerObject> entryList;
+	private List<AntidoteInnerCRDT> entryList;
 	
 	/**
 	 * Instantiates a new antidote map map entry.
@@ -28,7 +29,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 	 * @param path the path
 	 * @param outerMapType the outer map type
 	 */
-	public AntidoteInnerMap(List<AntidoteInnerObject> entryList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
+	public AntidoteInnerMap(List<AntidoteInnerCRDT> entryList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
 		super(antidoteClient, name, bucket, path, outerMapType);
 		this.entryList = entryList;
 	}
@@ -38,8 +39,8 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 	 *
 	 * @return the entry list
 	 */
-	public List<AntidoteInnerObject> getEntryList(){
-		return entryList;
+	public List<AntidoteInnerCRDT> getEntryList(){
+		return Collections.unmodifiableList(entryList);
 	}
 	
 	/**
@@ -47,7 +48,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 	 *
 	 * @param entryList the new entry list
 	 */
-	public void setEntryList(List<AntidoteInnerObject> entryList){
+	protected void setEntryList(List<AntidoteInnerCRDT> entryList){
 		this.entryList = entryList;
 	}
 	
@@ -92,12 +93,12 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 		}
 		AntidoteInnerMap innerMap = null;
 		if (getType() == AntidoteType.GMapType){
-			LowLevelGMap lowGMap = new LowLevelGMap(getName(), getBucket(), getClient());
+			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
 			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
 			innerMap = getUpdateHelper(outerMap);
 		}
 		else if (getType() == AntidoteType.AWMapType){
-			LowLevelAWMap lowAWMap = new LowLevelAWMap(getName(), getBucket(), getClient());
+			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
 			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
 			innerMap = getUpdateHelper(outerMap);
 		}
@@ -109,7 +110,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 				innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
 			}
 		}
-		entryList = innerMap.getEntryList();
+		entryList = new ArrayList<>(innerMap.getEntryList());
 	}
 	
 	/**
@@ -148,7 +149,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 		switch (type){
 		case ORSET:
 			AntidoteInnerORSet updatedORSetEntry = new AntidoteInnerORSet(new ArrayList<String>(), getClient(), getName(), getBucket(), newPath, getType());
-			for(AntidoteInnerObject e : entryList){
+			for(AntidoteInnerCRDT e : entryList){
 				//check if there already is an entry for given key
 				//if so, overwrite the newly created one
 				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
@@ -179,7 +180,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 			break;
 		case RWSET:
 			AntidoteInnerRWSet updatedRWSetEntry = new AntidoteInnerRWSet(new ArrayList<String>(), getClient(), getName(), getBucket(), newPath, getType());
-			for(AntidoteInnerObject e : entryList){
+			for(AntidoteInnerCRDT e : entryList){
 				//check if there already is an entry for given key
 				//if so, overwrite the newly created one
 				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
@@ -210,7 +211,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 			break;
 		case COUNTER:
 			AntidoteInnerCounter updatedCounterEntry = new AntidoteInnerCounter(0, getClient(), getName(), getBucket(), newPath, getType());
-			for(AntidoteInnerObject e : entryList){
+			for(AntidoteInnerCRDT e : entryList){
 				//check if there already is an entry for given key
 				//if so, overwrite the newly created one
 				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
@@ -232,7 +233,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 			break;
 		case INTEGER:
 			AntidoteInnerInteger updatedIntegerEntry = new AntidoteInnerInteger(0, getClient(), getName(), getBucket(), newPath, getType());
-			for(AntidoteInnerObject e : entryList){
+			for(AntidoteInnerCRDT e : entryList){
 				//check if there already is an entry for given key
 				//if so, overwrite the newly created one
 				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
@@ -260,7 +261,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 			break;	
 		case LWWREG:
 			AntidoteInnerLWWRegister updatedRegisterEntry = new AntidoteInnerLWWRegister("", getClient(), getName(), getBucket(), newPath, getType());
-			for(AntidoteInnerObject e : entryList){
+			for(AntidoteInnerCRDT e : entryList){
 				//check if there already is an entry for given key
 				//if so, overwrite the newly created one
 				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
@@ -283,7 +284,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 		case MVREG:
 			AntidoteInnerMVRegister updatedMVRegisterEntry = new AntidoteInnerMVRegister(
 					new ArrayList<String>(), getClient(), getName(), getBucket(), newPath, getType());
-			for(AntidoteInnerObject e : entryList){
+			for(AntidoteInnerCRDT e : entryList){
 				//check if there already is an entry for given key
 				//if so, overwrite the newly created one
 				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
@@ -304,8 +305,8 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 			}
 			break;
 		case AWMAP:
-			AntidoteInnerAWMap updatedAWMapEntry = new AntidoteInnerAWMap(new ArrayList<AntidoteInnerObject>(), getClient(), getName(), getBucket(), newPath, getType());
-			for(AntidoteInnerObject e : entryList){
+			AntidoteInnerAWMap updatedAWMapEntry = new AntidoteInnerAWMap(new ArrayList<AntidoteInnerCRDT>(), getClient(), getName(), getBucket(), newPath, getType());
+			for(AntidoteInnerCRDT e : entryList){
 				//check if there already is an entry for given key
 				//if so, overwrite the newly created one
 				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
@@ -336,8 +337,8 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 			}
 			break;
 		case GMAP:
-			AntidoteInnerGMap updatedGMapEntry = new AntidoteInnerGMap(new ArrayList<AntidoteInnerObject>(), getClient(), getName(), getBucket(), newPath, getType());
-			for(AntidoteInnerObject e : entryList){
+			AntidoteInnerGMap updatedGMapEntry = new AntidoteInnerGMap(new ArrayList<AntidoteInnerCRDT>(), getClient(), getName(), getBucket(), newPath, getType());
+			for(AntidoteInnerCRDT e : entryList){
 				//check if there already is an entry for given key
 				//if so, overwrite the newly created one
 				if (e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key) && e.getPath().get(e.getPath().size()-1).getType().equals(type)){
@@ -371,7 +372,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 	 * @return the counter entry
 	 */
 	public AntidoteInnerCounter getCounterEntry(String key){
-		for (AntidoteInnerObject e : entryList){
+		for (AntidoteInnerCRDT e : entryList){
 			if (e.getPath().get(e.getPath().size()-1).getType() == AntidoteType.CounterType && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
 				return (AntidoteInnerCounter)e;		
 			}
@@ -386,7 +387,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 	 * @return the OR set entry
 	 */
 	public AntidoteInnerORSet getORSetEntry(String key){
-		for (AntidoteInnerObject e : entryList){
+		for (AntidoteInnerCRDT e : entryList){
 			if (e.getPath().get(e.getPath().size()-1).getType() == AntidoteType.ORSetType && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
 				return (AntidoteInnerORSet)e;		
 			}
@@ -401,7 +402,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 	 * @return the RW set entry
 	 */
 	public AntidoteInnerRWSet getRWSetEntry(String key){
-		for (AntidoteInnerObject e : entryList){
+		for (AntidoteInnerCRDT e : entryList){
 			if (e.getPath().get(e.getPath().size()-1).getType() == AntidoteType.RWSetType && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
 				return (AntidoteInnerRWSet)e;		
 			}
@@ -416,7 +417,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 	 * @return the register entry
 	 */
 	public AntidoteInnerLWWRegister getLWWRegisterEntry(String key){
-		for (AntidoteInnerObject e : entryList){
+		for (AntidoteInnerCRDT e : entryList){
 			if (e.getPath().get(e.getPath().size()-1).getType() == AntidoteType.LWWRegisterType && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
 				return (AntidoteInnerLWWRegister)e;		
 			}
@@ -431,7 +432,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 	 * @return the MV register entry
 	 */
 	public AntidoteInnerMVRegister getMVRegisterEntry(String key){
-		for (AntidoteInnerObject e : entryList){
+		for (AntidoteInnerCRDT e : entryList){
 			if (e.getPath().get(e.getPath().size()-1).getType() == AntidoteType.MVRegisterType && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
 				return (AntidoteInnerMVRegister)e;		
 			}
@@ -446,7 +447,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 	 * @return the integer entry
 	 */
 	public AntidoteInnerInteger getIntegerEntry(String key){
-		for (AntidoteInnerObject e : entryList){
+		for (AntidoteInnerCRDT e : entryList){
 			if (e.getPath().get(e.getPath().size()-1).getType() == AntidoteType.IntegerType && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
 				return (AntidoteInnerInteger)e;		
 			}
@@ -461,7 +462,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 	 * @return the AW map entry
 	 */
 	public AntidoteInnerAWMap getAWMapEntry(String key){
-		for (AntidoteInnerObject e : entryList){
+		for (AntidoteInnerCRDT e : entryList){
 			if (e.getPath().get(e.getPath().size()-1).getType() == AntidoteType.AWMapType && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
 				return (AntidoteInnerAWMap)e;		
 			}
@@ -476,7 +477,7 @@ public class AntidoteInnerMap extends AntidoteInnerObject {
 	 * @return the g map entry
 	 */
 	public AntidoteInnerGMap getGMapEntry(String key){
-		for (AntidoteInnerObject e : entryList){
+		for (AntidoteInnerCRDT e : entryList){
 			if (e.getPath().get(e.getPath().size()-1).getType() == AntidoteType.GMapType && e.getPath().get(e.getPath().size()-1).getKey().toStringUtf8().equals(key)){
 				return (AntidoteInnerGMap)e;		
 			}

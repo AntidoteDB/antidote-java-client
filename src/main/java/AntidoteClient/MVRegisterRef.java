@@ -8,7 +8,7 @@ import com.google.protobuf.ByteString;
 /**
  * The Class LowLevelMVRegister.
  */
-public class LowLevelMVRegister extends LowLevelRegister {
+public final class MVRegisterRef extends RegisterRef {
 	
 	/**
 	 * Instantiates a new low level MV register.
@@ -17,7 +17,7 @@ public class LowLevelMVRegister extends LowLevelRegister {
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public LowLevelMVRegister(String name, String bucket, AntidoteClient antidoteClient){
+	public MVRegisterRef(String name, String bucket, AntidoteClient antidoteClient){
 		super(name, bucket, antidoteClient);
 	}
 	
@@ -65,7 +65,7 @@ public class LowLevelMVRegister extends LowLevelRegister {
      * @return the antidote register
      */
     public AntidoteOuterMVRegister createAntidoteMVRegister() {
-        ApbGetMVRegResp reg = getClient().readHelper(getName(), getBucket(), AntidoteType.MVRegisterType).getObjects().getObjects(0).getMvreg();
+        ApbGetMVRegResp reg = readHelper(getName(), getBucket(), AntidoteType.MVRegisterType).getObjects().getObjects(0).getMvreg();
         List<String> entriesList = new ArrayList<String>();
         for (ByteString e : reg.getValuesList()){
           	entriesList.add(e.toStringUtf8());
@@ -80,7 +80,7 @@ public class LowLevelMVRegister extends LowLevelRegister {
      * @return the antidote register
      */
     public AntidoteOuterMVRegister createAntidoteMVRegister(AntidoteTransaction antidoteTransaction){
-        ApbGetMVRegResp reg = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.MVRegisterType).getObjects(0).getMvreg();         
+        ApbGetMVRegResp reg = readHelper(getName(), getBucket(), AntidoteType.MVRegisterType, antidoteTransaction).getObjects(0).getMvreg();         
     	List<String> entriesList = new ArrayList<String>();
         for (ByteString e : reg.getValuesList()){
           	entriesList.add(e.toStringUtf8());
@@ -94,7 +94,7 @@ public class LowLevelMVRegister extends LowLevelRegister {
      * @return the register value as ByteString
      */
     public List<ByteString> readRegisterValuesBS() {
-        ApbGetMVRegResp reg = getClient().readHelper(getName(), getBucket(), AntidoteType.MVRegisterType).getObjects().getObjects(0).getMvreg();
+        ApbGetMVRegResp reg = readHelper(getName(), getBucket(), AntidoteType.MVRegisterType).getObjects().getObjects(0).getMvreg();
         return reg.getValuesList(); 
     }
     
@@ -105,7 +105,7 @@ public class LowLevelMVRegister extends LowLevelRegister {
      * @return the register value as ByteString
      */
     public List<ByteString> readRegisterValuesBS(AntidoteTransaction antidoteTransaction){
-    	ApbGetMVRegResp reg = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.MVRegisterType).getObjects(0).getMvreg();
+    	ApbGetMVRegResp reg = readHelper(getName(), getBucket(), AntidoteType.MVRegisterType, antidoteTransaction).getObjects(0).getMvreg();
         return reg.getValuesList(); 
     }
     
@@ -115,7 +115,7 @@ public class LowLevelMVRegister extends LowLevelRegister {
      * @return the register value as String
      */
     public List<String> readRegisterValues() {
-        ApbGetMVRegResp reg = getClient().readHelper(getName(), getBucket(), AntidoteType.MVRegisterType).getObjects().getObjects(0).getMvreg();
+        ApbGetMVRegResp reg = readHelper(getName(), getBucket(), AntidoteType.MVRegisterType).getObjects().getObjects(0).getMvreg();
         List<String> entriesList = new ArrayList<String>();
         for (ByteString e : reg.getValuesList()){
           	entriesList.add(e.toStringUtf8());
@@ -130,7 +130,7 @@ public class LowLevelMVRegister extends LowLevelRegister {
      * @return the register value as String
      */
     public List<String> readRegisterValues(AntidoteTransaction antidoteTransaction){
-    	ApbGetMVRegResp reg = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.MVRegisterType).getObjects(0).getMvreg();
+    	ApbGetMVRegResp reg = readHelper(getName(), getBucket(), AntidoteType.MVRegisterType, antidoteTransaction).getObjects(0).getMvreg();
     	List<String> entriesList = new ArrayList<String>();
         for (ByteString e : reg.getValuesList()){
           	entriesList.add(e.toStringUtf8());

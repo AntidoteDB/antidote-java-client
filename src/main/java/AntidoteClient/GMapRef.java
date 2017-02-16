@@ -10,7 +10,7 @@ import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 /**
  * The Class LowLevelGMap.
  */
-public class LowLevelGMap extends LowLevelMap{
+public final class GMapRef extends MapRef{
 	
 	/**
 	 * Instantiates a new low level G map.
@@ -19,7 +19,7 @@ public class LowLevelGMap extends LowLevelMap{
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public LowLevelGMap(String name, String bucket, AntidoteClient antidoteClient){
+	public GMapRef(String name, String bucket, AntidoteClient antidoteClient){
 		super(name, bucket, antidoteClient);
 	}
 	
@@ -71,10 +71,10 @@ public class LowLevelGMap extends LowLevelMap{
 	 * @return the antidote G-Map
 	 */
 	public AntidoteOuterGMap createAntidoteGMap() {
-        ApbGetMapResp map = getClient().readHelper(getName(), getBucket(), AntidoteType.GMapType).getObjects().getObjects(0).getMap();
+        ApbGetMapResp map = readHelper(getName(), getBucket(), AntidoteType.GMapType).getObjects().getObjects(0).getMap();
         List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
         apbEntryList = map.getEntriesList();
-        List<AntidoteInnerObject> antidoteEntryList = new ArrayList<AntidoteInnerObject>();
+        List<AntidoteInnerCRDT> antidoteEntryList = new ArrayList<AntidoteInnerCRDT>();
     	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
         antidoteEntryList = readMapHelper(path, apbEntryList, AntidoteType.GMapType);     
         return new AntidoteOuterGMap(getName(), getBucket(), antidoteEntryList, getClient());   
@@ -87,10 +87,10 @@ public class LowLevelGMap extends LowLevelMap{
      * @return the antidote G map
      */
     public AntidoteOuterGMap createAntidoteGMap(AntidoteTransaction antidoteTransaction){
-    	ApbGetMapResp map = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.GMapType).getObjects(0).getMap();
+    	ApbGetMapResp map = readHelper(getName(), getBucket(), AntidoteType.GMapType, antidoteTransaction).getObjects(0).getMap();
         List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
         apbEntryList = map.getEntriesList();
-        List<AntidoteInnerObject> antidoteEntryList = new ArrayList<AntidoteInnerObject>();
+        List<AntidoteInnerCRDT> antidoteEntryList = new ArrayList<AntidoteInnerCRDT>();
     	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
         antidoteEntryList = readMapHelper(path, apbEntryList, AntidoteType.GMapType);     
         return new AntidoteOuterGMap(getName(), getBucket(), antidoteEntryList, getClient());   
@@ -101,8 +101,8 @@ public class LowLevelGMap extends LowLevelMap{
 	 *
 	 * @return the antidote G-Map entry list
 	 */
-	public List<AntidoteInnerObject> readEntryList() {
-        ApbGetMapResp map = getClient().readHelper(getName(), getBucket(), AntidoteType.GMapType).getObjects().getObjects(0).getMap();
+	public List<AntidoteInnerCRDT> readEntryList() {
+        ApbGetMapResp map = readHelper(getName(), getBucket(), AntidoteType.GMapType).getObjects().getObjects(0).getMap();
         List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
         apbEntryList = map.getEntriesList();
     	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
@@ -115,8 +115,8 @@ public class LowLevelGMap extends LowLevelMap{
      * @param antidoteTransaction the transaction
      * @return the antidote G map entry list
      */
-    public List<AntidoteInnerObject> readEntryList(AntidoteTransaction antidoteTransaction){
-    	ApbGetMapResp map = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.GMapType).getObjects(0).getMap();
+    public List<AntidoteInnerCRDT> readEntryList(AntidoteTransaction antidoteTransaction){
+    	ApbGetMapResp map = readHelper(getName(), getBucket(), AntidoteType.GMapType, antidoteTransaction).getObjects(0).getMap();
     	List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
         apbEntryList = map.getEntriesList();
     	List<ApbMapKey> path = new ArrayList<ApbMapKey>();

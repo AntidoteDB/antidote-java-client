@@ -2,20 +2,20 @@ package main.java.AntidoteClient;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+
 
 /**
  * The Class AntidoteObject.
  */
-public abstract class AntidoteObject extends LowLevelObject{
+public abstract class AntidoteCRDT extends ObjectRef{
     
 	/** The list of locally executed but not yet pushed operations. */
 	private List<ApbUpdateOperation.Builder> updateList;	
 	
 	/** The type. */
-	private CRDT_type type;
+	private final CRDT_type type;
 	
     /**
      * Instantiates a new antidote object.
@@ -25,7 +25,7 @@ public abstract class AntidoteObject extends LowLevelObject{
      * @param antidoteClient the antidote client
      * @param type the type
      */
-    public AntidoteObject(String name, String bucket, AntidoteClient antidoteClient, CRDT_type type) {
+    public AntidoteCRDT(String name, String bucket, AntidoteClient antidoteClient, CRDT_type type) {
         super(name, bucket, antidoteClient);
         updateList = new ArrayList<>();
         this.type = type;
@@ -70,8 +70,10 @@ public abstract class AntidoteObject extends LowLevelObject{
 	 */
 	public void push(){	
 		for(ApbUpdateOperation.Builder update : getUpdateList()){
-			getClient().updateHelper(update, getName(), getBucket(), type);
+			updateHelper(update, getName(), getBucket(), type);
 		}
 		clearUpdateList();
 	}
+	
+	
 }

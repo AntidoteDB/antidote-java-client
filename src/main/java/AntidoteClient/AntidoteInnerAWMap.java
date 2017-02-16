@@ -6,10 +6,12 @@ import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
+import interfaces.AWMapCRDT;
+
 /**
  * The Class AntidoteInnerAWMap.
  */
-public class AntidoteInnerAWMap extends AntidoteInnerMap implements InterfaceAWMap{
+public final class AntidoteInnerAWMap extends AntidoteInnerMap implements AWMapCRDT{
 	
 	/**
 	 * Instantiates a new antidote map AW map entry.
@@ -21,7 +23,7 @@ public class AntidoteInnerAWMap extends AntidoteInnerMap implements InterfaceAWM
 	 * @param path the path
 	 * @param outerMapType the outer map type
 	 */
-	public AntidoteInnerAWMap(List<AntidoteInnerObject> entryList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
+	public AntidoteInnerAWMap(List<AntidoteInnerCRDT> entryList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
 		super(entryList, antidoteClient, name, bucket, path, outerMapType);
 	}
 	
@@ -46,7 +48,7 @@ public class AntidoteInnerAWMap extends AntidoteInnerMap implements InterfaceAWM
 	public void update(String mapKey, List<AntidoteMapUpdate> updateList){
 		updateLocal(mapKey, updateList);
 		List<AntidoteMapUpdate> innerMapUpdate = new ArrayList<AntidoteMapUpdate>(); 
-		innerMapUpdate.add(getClient().createAWMapUpdate(mapKey, updateList));
+		innerMapUpdate.add(AntidoteMapUpdate.createAWMapUpdate(mapKey, updateList));
 		updateHelper(innerMapUpdate);
 	}
 	
@@ -56,8 +58,8 @@ public class AntidoteInnerAWMap extends AntidoteInnerMap implements InterfaceAWM
 	 * @param keyList the key list
 	 */
 	protected void removeLocal(List<ApbMapKey> keyList) {
-		List<AntidoteInnerObject> entriesValid = new ArrayList<AntidoteInnerObject>();		
-		for (AntidoteInnerObject e : getEntryList()){
+		List<AntidoteInnerCRDT> entriesValid = new ArrayList<AntidoteInnerCRDT>();		
+		for (AntidoteInnerCRDT e : getEntryList()){
 			if (! keyList.contains(e.getPath().get(e.getPath().size()-1))){
 				entriesValid.add(e);
 			}
@@ -91,23 +93,23 @@ public class AntidoteInnerAWMap extends AntidoteInnerMap implements InterfaceAWM
 		}
 		removeLocal(apbKeyList);
 		List<AntidoteMapUpdate> innerMapUpdate = new ArrayList<AntidoteMapUpdate>(); 
-		innerMapUpdate.add(getClient().createMapRemove(keyList, type));
+		innerMapUpdate.add(AntidoteMapUpdate.createMapRemove(keyList, type));
 		AntidoteMapUpdate mapUpdate;
 		List<AntidoteMapUpdate> mapUpdateList = new ArrayList<AntidoteMapUpdate>();
 		ApbMapKey key;
 		for (int i = getPath().size()-1; i>0; i--){
 			key = getPath().get(i);
 			if (i == getPath().size()-1){
-				mapUpdate = getClient().createAWMapUpdate(key.getKey().toStringUtf8(), innerMapUpdate);
+				mapUpdate = AntidoteMapUpdate.createAWMapUpdate(key.getKey().toStringUtf8(), innerMapUpdate);
 				mapUpdateList.add(mapUpdate);
 			}
 			else{
 				mapUpdate = null; //since we are not at the last position of path, it is one of both kinds of maps
 				if(key.getType() == AntidoteType.AWMapType){
-					mapUpdate = getClient().createAWMapUpdate(key.getKey().toStringUtf8(), mapUpdateList);
+					mapUpdate = AntidoteMapUpdate.createAWMapUpdate(key.getKey().toStringUtf8(), mapUpdateList);
 				}
 				else if (key.getType() == AntidoteType.GMapType){
-					mapUpdate = getClient().createGMapUpdate(key.getKey().toStringUtf8(), mapUpdateList);
+					mapUpdate = AntidoteMapUpdate.createGMapUpdate(key.getKey().toStringUtf8(), mapUpdateList);
 				}
 				mapUpdateList = new ArrayList<AntidoteMapUpdate>();
 				mapUpdateList.add(mapUpdate);
@@ -115,21 +117,21 @@ public class AntidoteInnerAWMap extends AntidoteInnerMap implements InterfaceAWM
 		}
 		if (getPath().size()>1){
 			if(getType() == AntidoteType.AWMapType){
-				LowLevelAWMap lowMap = new LowLevelAWMap(getName(), getBucket(), getClient());
+				AWMapRef lowMap = new AWMapRef(getName(), getBucket(), getClient());
 				lowMap.update(new AntidoteMapKey(getPath().get(0).getType(), getPath().get(0).getKey()), mapUpdateList);
 			}
 			else{
-				LowLevelGMap lowMap = new LowLevelGMap(getName(), getBucket(), getClient());
+				GMapRef lowMap = new GMapRef(getName(), getBucket(), getClient());
 				lowMap.update(new AntidoteMapKey(getPath().get(0).getType(), getPath().get(0).getKey()), mapUpdateList);
 			}
 		}
 		else if (getPath().size()==1){
 			if(getType() == AntidoteType.AWMapType){
-				LowLevelAWMap lowMap = new LowLevelAWMap(getName(), getBucket(), getClient());
+				AWMapRef lowMap = new AWMapRef(getName(), getBucket(), getClient());
 				lowMap.update(new AntidoteMapKey(getPath().get(0).getType(), getPath().get(0).getKey()), innerMapUpdate);
 			}
 			else{
-				LowLevelGMap lowMap = new LowLevelGMap(getName(), getBucket(), getClient());
+				GMapRef lowMap = new GMapRef(getName(), getBucket(), getClient());
 				lowMap.update(new AntidoteMapKey(getPath().get(0).getType(), getPath().get(0).getKey()), innerMapUpdate);
 			}
 		}		

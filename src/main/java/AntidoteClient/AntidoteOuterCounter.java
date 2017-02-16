@@ -1,15 +1,17 @@
 package main.java.AntidoteClient;
 
+import interfaces.CounterCRDT;
+
 /**
  * The Class AntidoteOuterCounter.
  */
-public class AntidoteOuterCounter extends AntidoteObject implements InterfaceCounter{
+public final class AntidoteOuterCounter extends AntidoteCRDT implements CounterCRDT{
 	
 	/** The value of the counter. */
 	private int value;
 		
 	/** The low level counter. */
-	private LowLevelCounter lowLevelCounter;
+	private final CounterRef lowLevelCounter;
 	
 	/**
 	 * Instantiates a new antidote counter.
@@ -22,7 +24,7 @@ public class AntidoteOuterCounter extends AntidoteObject implements InterfaceCou
 	public AntidoteOuterCounter(String name, String bucket, int value, AntidoteClient antidoteClient) {
 		super(name, bucket, antidoteClient, AntidoteType.CounterType);
 		this.value = value;
-		lowLevelCounter = new LowLevelCounter(name, bucket, antidoteClient);
+		lowLevelCounter = new CounterRef(name, bucket, antidoteClient);
 	}
 	
 	/**

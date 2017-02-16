@@ -3,7 +3,7 @@ package main.java.AntidoteClient;
 /**
  * The Class AntidoteSetOpType.
  */
-public class AntidoteSetOpType {
+public final class AntidoteSetOpType {
     
     /** The Constant SetRemove. */
     public static final int SetRemove = 2;

@@ -5,10 +5,12 @@ import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 
+import interfaces.IntegerCRDT;
+
 /**
  * The Class AntidoteInnerInteger.
  */
-public class AntidoteInnerInteger extends AntidoteInnerObject implements InterfaceInteger{
+public final class AntidoteInnerInteger extends AntidoteInnerCRDT implements IntegerCRDT{
 	
 	/** The value. */
 	private int value;
@@ -62,7 +64,7 @@ public class AntidoteInnerInteger extends AntidoteInnerObject implements Interfa
 		}
 		AntidoteInnerInteger integer;
 		if (getType() == AntidoteType.GMapType){
-			LowLevelGMap lowGMap = new LowLevelGMap(getName(), getBucket(), getClient());
+			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
 			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
 			if (getPath().size() == 1){
 				integer = outerMap.getIntegerEntry(getPath().get(0).getKey().toStringUtf8());
@@ -73,7 +75,7 @@ public class AntidoteInnerInteger extends AntidoteInnerObject implements Interfa
 			value = integer.getValue();
 		}
 		else if (getType() == AntidoteType.AWMapType){ 
-			LowLevelAWMap lowAWMap = new LowLevelAWMap(getName(), getBucket(), getClient());
+			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
 			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
 			if (getPath().size() == 1){
 				integer = outerMap.getIntegerEntry(getPath().get(0).getKey().toStringUtf8());
@@ -109,7 +111,7 @@ public class AntidoteInnerInteger extends AntidoteInnerObject implements Interfa
 	public void increment(int inc){
 		incrementLocal(inc);
 		List<AntidoteMapUpdate> integerIncrement = new ArrayList<AntidoteMapUpdate>(); 
-		integerIncrement.add(getClient().createIntegerIncrement(inc));
+		integerIncrement.add(AntidoteMapUpdate.createIntegerIncrement(inc));
 		updateHelper(integerIncrement);
 	}
 	
@@ -130,7 +132,7 @@ public class AntidoteInnerInteger extends AntidoteInnerObject implements Interfa
 	public void setValue(int value){
 		setLocal(value);
 		List<AntidoteMapUpdate> integerSet = new ArrayList<AntidoteMapUpdate>(); 
-		integerSet.add(getClient().createIntegerSet(value));
+		integerSet.add(AntidoteMapUpdate.createIntegerSet(value));
 		updateHelper(integerSet);
 	}
 }

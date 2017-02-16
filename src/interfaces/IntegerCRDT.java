@@ -1,9 +1,9 @@
-package main.java.AntidoteClient;
+package interfaces;
 
 /**
  * The Interface InterfaceInteger.
  */
-public interface InterfaceInteger {
+public interface IntegerCRDT extends CRDT {
 	
 	/**
 	 * Gets the value.
@@ -11,21 +11,6 @@ public interface InterfaceInteger {
 	 * @return the value
 	 */
 	int getValue();
-	
-	/**
-	 * Read database.
-	 */
-	void readDatabase();
-	
-	/**
-	 * Roll back: delete information about local updates and read database.
-	 */
-	void rollBack();
-	
-	/**
-	 * Synchronize: first push own changes, then read database.
-	 */
-	void synchronize();
 	
 	/**
 	 * Increment by 1.

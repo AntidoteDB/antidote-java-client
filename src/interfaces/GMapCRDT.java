@@ -1,33 +1,29 @@
-package main.java.AntidoteClient;
+package interfaces;
 
 import java.util.List;
+
+import main.java.AntidoteClient.AntidoteInnerAWMap;
+import main.java.AntidoteClient.AntidoteInnerCounter;
+import main.java.AntidoteClient.AntidoteInnerGMap;
+import main.java.AntidoteClient.AntidoteInnerInteger;
+import main.java.AntidoteClient.AntidoteInnerLWWRegister;
+import main.java.AntidoteClient.AntidoteInnerMVRegister;
+import main.java.AntidoteClient.AntidoteInnerORSet;
+import main.java.AntidoteClient.AntidoteInnerCRDT;
+import main.java.AntidoteClient.AntidoteInnerRWSet;
+import main.java.AntidoteClient.AntidoteMapUpdate;
 
 /**
  * The Interface InterfaceGMap.
  */
-public interface InterfaceGMap {
+public interface GMapCRDT extends CRDT{
 	
 	/**
 	 * Gets the entry list.
 	 *
 	 * @return the entry list
 	 */
-	List<AntidoteInnerObject> getEntryList();
-	
-	/**
-	 * Read database.
-	 */
-	void readDatabase();
-	
-	/**
-	 * Roll back: delete information about local updates and read database.
-	 */
-	void rollBack();
-	
-	/**
-	 * Synchronize: first push own changes, then read database.
-	 */
-	void synchronize();
+	List<AntidoteInnerCRDT> getEntryList();
 	
 	/**
 	 * Update the element with the given key by applying the given update (update contains type information).

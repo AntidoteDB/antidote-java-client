@@ -5,10 +5,12 @@ import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 
+import interfaces.GMapCRDT;
+
 /**
  * The Class AntidoteInnerGMap.
  */
-public class AntidoteInnerGMap extends AntidoteInnerMap implements InterfaceGMap{
+public final class AntidoteInnerGMap extends AntidoteInnerMap implements GMapCRDT{
 	
 	/**
 	 * Instantiates a new antidote map G map entry.
@@ -20,7 +22,7 @@ public class AntidoteInnerGMap extends AntidoteInnerMap implements InterfaceGMap
 	 * @param path the path
 	 * @param outerMapType the outer map type
 	 */
-	public AntidoteInnerGMap(List<AntidoteInnerObject> entryList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
+	public AntidoteInnerGMap(List<AntidoteInnerCRDT> entryList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
 		super(entryList, antidoteClient, name, bucket, path, outerMapType);
 	}
 	
@@ -45,7 +47,7 @@ public class AntidoteInnerGMap extends AntidoteInnerMap implements InterfaceGMap
 	public void update(String mapKey, List<AntidoteMapUpdate> updateList){
 		updateLocal(mapKey, updateList);
 		List<AntidoteMapUpdate> innerMapUpdate = new ArrayList<AntidoteMapUpdate>(); 
-		innerMapUpdate.add(getClient().createGMapUpdate(mapKey, updateList));
+		innerMapUpdate.add(AntidoteMapUpdate.createGMapUpdate(mapKey, updateList));
 		updateHelper(innerMapUpdate);
 	}
 }

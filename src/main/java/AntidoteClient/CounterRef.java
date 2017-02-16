@@ -7,7 +7,7 @@ import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 /**
  * The Class LowLevelCounter.
  */
-public class LowLevelCounter extends LowLevelObject{
+public final class CounterRef extends ObjectRef{
 	
 	/**
 	 * Instantiates a new low level counter.
@@ -16,7 +16,7 @@ public class LowLevelCounter extends LowLevelObject{
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public LowLevelCounter(String name, String bucket, AntidoteClient antidoteClient){
+	public CounterRef(String name, String bucket, AntidoteClient antidoteClient){
 		super(name, bucket, antidoteClient);
 	}
 	
@@ -24,7 +24,7 @@ public class LowLevelCounter extends LowLevelObject{
 	 * Increment.
 	 */
 	public void increment() {
-        getClient().updateHelper(incrementOpBuilder(1), getName(), getBucket(), AntidoteType.CounterType);
+        updateHelper(incrementOpBuilder(1), getName(), getBucket(), AntidoteType.CounterType);
     }
 	
 	/**
@@ -33,7 +33,7 @@ public class LowLevelCounter extends LowLevelObject{
 	 * @param inc the increment, by which the counter shall be incremented
 	 */
     public void increment(int inc) {
-        getClient().updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.CounterType);
+        updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.CounterType);
     }
     
     /**
@@ -42,7 +42,7 @@ public class LowLevelCounter extends LowLevelObject{
      * @param antidoteTransaction the antidote transaction
      */
     public void increment(AntidoteTransaction antidoteTransaction){
-        antidoteTransaction.updateHelper(incrementOpBuilder(1), getName(), getBucket(), AntidoteType.CounterType);    
+        updateHelper(incrementOpBuilder(1), getName(), getBucket(), AntidoteType.CounterType, antidoteTransaction);    
     }
 
     /**
@@ -52,7 +52,7 @@ public class LowLevelCounter extends LowLevelObject{
      * @param antidoteTransaction the antidote transaction
      */
     public void increment(int inc, AntidoteTransaction antidoteTransaction){
-        antidoteTransaction.updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.CounterType);    
+        updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.CounterType, antidoteTransaction);    
     }
     
     /**
@@ -75,7 +75,7 @@ public class LowLevelCounter extends LowLevelObject{
      * @return the antidote counter
      */
     public AntidoteOuterCounter createAntidoteCounter() {
-        ApbGetCounterResp counter = getClient().readHelper(getName(), getBucket(), AntidoteType.CounterType).getObjects().getObjects(0).getCounter();
+        ApbGetCounterResp counter = readHelper(getName(), getBucket(), AntidoteType.CounterType).getObjects().getObjects(0).getCounter();
         AntidoteOuterCounter antidoteCounter = new AntidoteOuterCounter(getName(), getBucket(), counter.getValue(), getClient());
         return antidoteCounter;
     }
@@ -87,7 +87,7 @@ public class LowLevelCounter extends LowLevelObject{
      * @return the antidote counter
      */
     public AntidoteOuterCounter createAntidoteCounter(AntidoteTransaction antidoteTransaction){
-    	ApbGetCounterResp counter = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.CounterType).getObjects(0).getCounter();
+    	ApbGetCounterResp counter = readHelper(getName(), getBucket(), AntidoteType.CounterType, antidoteTransaction).getObjects(0).getCounter();
         AntidoteOuterCounter antidoteCounter = new AntidoteOuterCounter(getName(), getBucket(), counter.getValue(), getClient());
         return antidoteCounter;
     }
@@ -98,7 +98,7 @@ public class LowLevelCounter extends LowLevelObject{
      * @return the counter value
      */
     public int readValue() {
-        ApbGetCounterResp counter = getClient().readHelper(getName(), getBucket(), AntidoteType.CounterType).getObjects().getObjects(0).getCounter();
+        ApbGetCounterResp counter = readHelper(getName(), getBucket(), AntidoteType.CounterType).getObjects().getObjects(0).getCounter();
         return counter.getValue();
     }
     
@@ -109,7 +109,7 @@ public class LowLevelCounter extends LowLevelObject{
      * @return the counter value
      */
     public int readValue(AntidoteTransaction antidoteTransaction){
-    	ApbGetCounterResp counter = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.CounterType).getObjects(0).getCounter();
+    	ApbGetCounterResp counter = readHelper(getName(), getBucket(), AntidoteType.CounterType, antidoteTransaction).getObjects(0).getCounter();
         return counter.getValue();
     }
 }

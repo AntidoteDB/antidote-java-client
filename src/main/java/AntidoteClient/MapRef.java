@@ -15,7 +15,7 @@ import com.google.protobuf.ByteString;
 /**
  * The Class LowLevelMap.
  */
-public class LowLevelMap extends LowLevelObject{
+public class MapRef extends ObjectRef{
 	
 	/**
 	 * Instantiates a new low level map.
@@ -24,7 +24,7 @@ public class LowLevelMap extends LowLevelObject{
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public LowLevelMap(String name, String bucket, AntidoteClient antidoteClient){
+	public MapRef(String name, String bucket, AntidoteClient antidoteClient){
 		super(name, bucket, antidoteClient);
 	}
 	
@@ -74,7 +74,7 @@ public class LowLevelMap extends LowLevelObject{
 	 * @param type the type
 	 */
 	public void update(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates, CRDT_type type) { 
-		getClient().updateHelper(updateOpBuilder(mapKey, updates), getName(), getBucket(), type);
+		updateHelper(updateOpBuilder(mapKey, updates), getName(), getBucket(), type);
 	}
 	
 	/**
@@ -100,7 +100,7 @@ public class LowLevelMap extends LowLevelObject{
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void update(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates, CRDT_type type, AntidoteTransaction antidoteTransaction) { 
-	    antidoteTransaction.updateHelper(updateOpBuilder(mapKey, updates), getName(), getBucket(), type);
+	    updateHelper(updateOpBuilder(mapKey, updates), getName(), getBucket(), type, antidoteTransaction);
 	}
 	
 	/**
@@ -112,8 +112,8 @@ public class LowLevelMap extends LowLevelObject{
 	 * @param outerMapType the type of the outer Map (G-Map or AW-Map). The type of the outermost Map is not stored in the path
 	 * @return the list of AntidoteMapEntries
 	 */
-	protected List<AntidoteInnerObject> readMapHelper(List<ApbMapKey> path, List<ApbMapEntry> apbEntryList, CRDT_type outerMapType){
-		List<AntidoteInnerObject> antidoteEntryList = new ArrayList<AntidoteInnerObject>();
+	protected List<AntidoteInnerCRDT> readMapHelper(List<ApbMapKey> path, List<ApbMapEntry> apbEntryList, CRDT_type outerMapType){
+		List<AntidoteInnerCRDT> antidoteEntryList = new ArrayList<AntidoteInnerCRDT>();
 		path.add(null);
 		for (ApbMapEntry e: apbEntryList){
         	path.set(path.size()-1, e.getKey());

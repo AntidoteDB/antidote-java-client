@@ -1,11 +1,11 @@
-package main.java.AntidoteClient;
+package interfaces;
 
 import com.google.protobuf.ByteString;
 
 /**
  * The Interface InterfaceLWWRegister.
  */
-public interface InterfaceLWWRegister {
+public interface LWWRegisterCRDT extends CRDT {
 	
 	/**
 	 * Gets the value.
@@ -20,21 +20,6 @@ public interface InterfaceLWWRegister {
 	 * @return the value BS
 	 */
 	ByteString getValueBS();
-	
-	/**
-	 * Read database.
-	 */
-	void readDatabase();
-	
-	/**
-	 * Roll back: delete information about local updates and read database.
-	 */
-	void rollBack();
-	
-	/**
-	 * Synchronize: first push own changes, then read database.
-	 */
-	void synchronize();
 	
 	/**
 	 * Sets the value.

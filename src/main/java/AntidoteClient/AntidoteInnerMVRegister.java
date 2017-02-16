@@ -1,15 +1,18 @@
 package main.java.AntidoteClient;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
+import interfaces.MVRegisterCRDT;
+
 /**
  * The Class AntidoteInnerMVRegister.
  */
-public class AntidoteInnerMVRegister extends AntidoteInnerObject implements InterfaceMVRegister{
+public final class AntidoteInnerMVRegister extends AntidoteInnerCRDT implements MVRegisterCRDT{
 
 /** The value list. */
 private List<String> valueList;
@@ -54,7 +57,7 @@ private List<String> valueList;
 		}
 		AntidoteInnerMVRegister mvRegister;
 		if (getType() == AntidoteType.GMapType){
-			LowLevelGMap lowGMap = new LowLevelGMap(getName(), getBucket(), getClient());
+			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
 			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
 			if (getPath().size() == 1){
 				mvRegister = outerMap.getMVRegisterEntry(getPath().get(0).getKey().toStringUtf8());
@@ -62,10 +65,10 @@ private List<String> valueList;
 			else{
 				mvRegister = readDatabaseHelper(getPath(), outerMap).getMVRegisterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
 			}		
-			valueList = mvRegister.getValueList();
+			valueList = new ArrayList<>(mvRegister.getValueList());
 		}
 		else if (getType() == AntidoteType.AWMapType){ 
-			LowLevelAWMap lowAWMap = new LowLevelAWMap(getName(), getBucket(), getClient());
+			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
 			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
 			if (getPath().size() == 1){
 				mvRegister = outerMap.getMVRegisterEntry(getPath().get(0).getKey().toStringUtf8());
@@ -73,7 +76,7 @@ private List<String> valueList;
 			else{
 				mvRegister = readDatabaseHelper(getPath(), outerMap).getMVRegisterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
 			}		
-			valueList = mvRegister.getValueList();
+			valueList = new ArrayList<>(mvRegister.getValueList());
 		}
 	}
 	
@@ -83,7 +86,7 @@ private List<String> valueList;
 	 * @return the value list
 	 */
 	public List<String> getValueList(){
-		return valueList;
+		return Collections.unmodifiableList(valueList);
 	}
 	
 	/* (non-Javadoc)
@@ -115,7 +118,7 @@ private List<String> valueList;
 	public void setValue(String value){
 		setLocal(value);
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
-		registerSet.add(getClient().createMVRegisterSet(value));
+		registerSet.add(AntidoteMapUpdate.createMVRegisterSet(value));
 		updateHelper(registerSet);
 	}
 	
@@ -125,7 +128,7 @@ private List<String> valueList;
 	public void setValueBS(ByteString value){
 		setLocal(value.toStringUtf8());
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
-		registerSet.add(getClient().createMVRegisterSet(value.toStringUtf8()));
+		registerSet.add(AntidoteMapUpdate.createMVRegisterSet(value.toStringUtf8()));
 		updateHelper(registerSet);
 	}
 }

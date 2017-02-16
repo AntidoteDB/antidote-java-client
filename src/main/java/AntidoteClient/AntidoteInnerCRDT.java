@@ -8,11 +8,11 @@ import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 /**
  * The Class AntidoteInnerObject.
  */
-public class AntidoteInnerObject extends AntidoteObject{
+public class AntidoteInnerCRDT extends AntidoteCRDT{
 	
 	/** The path storing the key and type of all inner maps leading to the entry. This is needed when storing Map entries in variables 
 	* that are a subclass of AntidoteMapEntry if we want to give them an update method.*/
-	private List<ApbMapKey> path;
+	private final List<ApbMapKey> path;
 	
 	/**
 	 * Instantiates a new antidote map entry.
@@ -23,7 +23,7 @@ public class AntidoteInnerObject extends AntidoteObject{
 	 * @param path the path
 	 * @param outerMapType the outer map type
 	 */
-	public AntidoteInnerObject(AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
+	public AntidoteInnerCRDT(AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
 		super(name, bucket, antidoteClient, outerMapType);
 		this.path = path;
 	}
@@ -41,19 +41,19 @@ public class AntidoteInnerObject extends AntidoteObject{
 			apbKey = getPath().get(i);
 			if (i == getPath().size()-1){
 				if (getPath().get(i-1).getType() == AntidoteType.GMapType){
-					mapUpdate = getClient().createGMapUpdate(apbKey.getKey().toStringUtf8(), innerUpdate);
+					mapUpdate = AntidoteMapUpdate.createGMapUpdate(apbKey.getKey().toStringUtf8(), innerUpdate);
 				}
 				else{
-					mapUpdate = getClient().createAWMapUpdate(apbKey.getKey().toStringUtf8(), innerUpdate);
+					mapUpdate = AntidoteMapUpdate.createAWMapUpdate(apbKey.getKey().toStringUtf8(), innerUpdate);
 				}
 				mapUpdateList.add(mapUpdate);
 			}
 			else{
 				if (getPath().get(i-1).getType() == AntidoteType.GMapType){
-					mapUpdate = getClient().createGMapUpdate(apbKey.getKey().toStringUtf8(), mapUpdateList);
+					mapUpdate = AntidoteMapUpdate.createGMapUpdate(apbKey.getKey().toStringUtf8(), mapUpdateList);
 				}
 				else{
-					mapUpdate = getClient().createAWMapUpdate(apbKey.getKey().toStringUtf8(), mapUpdateList);
+					mapUpdate = AntidoteMapUpdate.createAWMapUpdate(apbKey.getKey().toStringUtf8(), mapUpdateList);
 				}
 				mapUpdateList = new ArrayList<AntidoteMapUpdate>();
 				mapUpdateList.add(mapUpdate);
@@ -61,18 +61,18 @@ public class AntidoteInnerObject extends AntidoteObject{
 		}
 		if (getPath().size()>1){
 			if (getType() == AntidoteType.GMapType){
-				updateAdd(new LowLevelMap(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), mapUpdateList));	
+				updateAdd(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), mapUpdateList));	
 			}
 			else if (getType() == AntidoteType.AWMapType){
-				updateAdd(new LowLevelMap(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), mapUpdateList));	
+				updateAdd(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), mapUpdateList));	
 			}
 		}
 		else if (getPath().size()==1){
 			if (getType() == AntidoteType.GMapType){
-				updateAdd(new LowLevelMap(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), innerUpdate));	
+				updateAdd(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), innerUpdate));	
 			}
 			else if (getType() == AntidoteType.AWMapType){
-				updateAdd(new LowLevelMap(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), innerUpdate));	
+				updateAdd(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), innerUpdate));	
 			}
 		}
 	}

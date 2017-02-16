@@ -1,20 +1,23 @@
 package main.java.AntidoteClient;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.google.protobuf.ByteString;
 
+import interfaces.MVRegisterCRDT;
+
 /**
  * The Class AntidoteOuterMVRegister.
  */
-public class AntidoteOuterMVRegister extends AntidoteObject implements InterfaceMVRegister{
+public final class AntidoteOuterMVRegister extends AntidoteCRDT implements MVRegisterCRDT{
 	
 	/** The value list. */
 	private List<String> valueList;
 
 	/** The low level register. */
-	private LowLevelMVRegister lowLevelRegister;
+	private final MVRegisterRef lowLevelRegister;
 	
 	/**
 	 * Instantiates a new antidote MV register.
@@ -27,7 +30,7 @@ public class AntidoteOuterMVRegister extends AntidoteObject implements Interface
 	public AntidoteOuterMVRegister(String name, String bucket, List<String> valueList, AntidoteClient antidoteClient) {
 		super(name, bucket, antidoteClient, AntidoteType.MVRegisterType);
 		this.valueList = valueList;
-		lowLevelRegister = new LowLevelMVRegister(name, bucket, antidoteClient);
+		lowLevelRegister = new MVRegisterRef(name, bucket, antidoteClient);
 	}
 	
 	/**
@@ -36,7 +39,7 @@ public class AntidoteOuterMVRegister extends AntidoteObject implements Interface
 	 * @return the value list
 	 */
 	public List<String> getValueList(){
-		return valueList;
+		return Collections.unmodifiableList(valueList);
 	}
 	
 	/* (non-Javadoc)

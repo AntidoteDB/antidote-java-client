@@ -3,13 +3,15 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 
+import interfaces.GMapCRDT;
+
 /**
  * The Class AntidoteOuterGMap.
  */
-public class AntidoteOuterGMap extends AntidoteOuterMap implements InterfaceGMap{
+public final class AntidoteOuterGMap extends AntidoteOuterMap implements GMapCRDT{
 	
 	/** The low level map. */
-	private LowLevelGMap lowLevelMap;
+	private final GMapRef lowLevelMap;
 	
 	/**
 	 * Instantiates a new antidote G map.
@@ -19,9 +21,9 @@ public class AntidoteOuterGMap extends AntidoteOuterMap implements InterfaceGMap
 	 * @param entryList the map's entries
 	 * @param antidoteClient the antidote client
 	 */
-	public AntidoteOuterGMap(String name, String bucket, List<AntidoteInnerObject> entryList, AntidoteClient antidoteClient) {
+	public AntidoteOuterGMap(String name, String bucket, List<AntidoteInnerCRDT> entryList, AntidoteClient antidoteClient) {
 		super(name, bucket, entryList, antidoteClient, AntidoteType.GMapType);
-		lowLevelMap = new LowLevelGMap(name, bucket, antidoteClient);
+		lowLevelMap = new GMapRef(name, bucket, antidoteClient);
 	}
 
 	/**

@@ -2,16 +2,18 @@ package main.java.AntidoteClient;
 
 import com.google.protobuf.ByteString;
 
+import interfaces.LWWRegisterCRDT;
+
 /**
  * The Class AntidoteOuterLWWRegister.
  */
-public class AntidoteOuterLWWRegister extends AntidoteObject implements InterfaceLWWRegister{
+public final class AntidoteOuterLWWRegister extends AntidoteCRDT implements LWWRegisterCRDT{
 	
 	/** The value. */
 	private String value;
 
 	/** The low level register. */
-	private LowLevelLWWRegister lowLevelRegister;
+	private final LWWRegisterRef lowLevelRegister;
 
 	/**
 	 * Instantiates a new antidote register.
@@ -24,7 +26,7 @@ public class AntidoteOuterLWWRegister extends AntidoteObject implements Interfac
 	public AntidoteOuterLWWRegister(String name, String bucket, String value, AntidoteClient antidoteClient) {
 		super(name, bucket, antidoteClient, AntidoteType.LWWRegisterType);
 		this.value = value;
-		lowLevelRegister = new LowLevelLWWRegister(name, bucket, antidoteClient);
+		lowLevelRegister = new LWWRegisterRef(name, bucket, antidoteClient);
 	}
 	
 	/**

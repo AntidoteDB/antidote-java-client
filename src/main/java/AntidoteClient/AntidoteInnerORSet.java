@@ -1,15 +1,18 @@
 package main.java.AntidoteClient;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
+import interfaces.SetCRDT;
+
 /**
  * The Class AntidoteInnerORSet.
  */
-public class AntidoteInnerORSet extends AntidoteInnerSet implements InterfaceSet{
+public final class AntidoteInnerORSet extends AntidoteInnerSet implements SetCRDT{
 
 	/**
 	 * Instantiates a new antidote map OR set entry.
@@ -64,7 +67,7 @@ public class AntidoteInnerORSet extends AntidoteInnerSet implements InterfaceSet
 		}
 		addElementLocal(stringElementList);
 		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>(); 
-		setAdd.add(getClient().createORSetAddBS(elementList));
+		setAdd.add(AntidoteMapUpdate.createORSetAddBS(elementList));
 		updateHelper(setAdd);
 	}
 	
@@ -91,7 +94,7 @@ public class AntidoteInnerORSet extends AntidoteInnerSet implements InterfaceSet
 		}
 		removeElementLocal(stringElementList);
 		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>(); 
-		setRemove.add(getClient().createORSetRemoveBS(elementList));
+		setRemove.add(AntidoteMapUpdate.createORSetRemoveBS(elementList));
 		updateHelper(setRemove);
 	}
 	
@@ -114,7 +117,7 @@ public class AntidoteInnerORSet extends AntidoteInnerSet implements InterfaceSet
 	public void addElement(List<String> elementList){
 		addElementLocal(elementList);
 		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>(); 
-		setAdd.add(getClient().createORSetAdd(elementList));
+		setAdd.add(AntidoteMapUpdate.createORSetAdd(elementList));
 		updateHelper(setAdd);
 	}
 	
@@ -137,7 +140,7 @@ public class AntidoteInnerORSet extends AntidoteInnerSet implements InterfaceSet
 	public void removeElement(List<String> elementList){
 		removeElementLocal(elementList);
 		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>(); 
-		setRemove.add(getClient().createORSetRemove(elementList));
+		setRemove.add(AntidoteMapUpdate.createORSetRemove(elementList));
 		updateHelper(setRemove);
 	}
 	
@@ -150,7 +153,7 @@ public class AntidoteInnerORSet extends AntidoteInnerSet implements InterfaceSet
 		}
 		AntidoteInnerORSet set;
 		if (getType() == AntidoteType.GMapType){
-			LowLevelGMap lowGMap = new LowLevelGMap(getName(), getBucket(), getClient());
+			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
 			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
 			if (getPath().size() == 1){
 				set = outerMap.getORSetEntry(getPath().get(0).getKey().toStringUtf8());
@@ -158,10 +161,10 @@ public class AntidoteInnerORSet extends AntidoteInnerSet implements InterfaceSet
 			else{
 				set = readDatabaseHelper(getPath(), outerMap).getORSetEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
 			}		
-			setValueList(set.getValueList());
+			setValues(set.getValues());
 		}
 		else if (getType() == AntidoteType.AWMapType){ 
-			LowLevelAWMap lowAWMap = new LowLevelAWMap(getName(), getBucket(), getClient());
+			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
 			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
 			if (getPath().size() == 1){
 				set = outerMap.getORSetEntry(getPath().get(0).getKey().toStringUtf8());
@@ -169,7 +172,7 @@ public class AntidoteInnerORSet extends AntidoteInnerSet implements InterfaceSet
 			else{
 				set = readDatabaseHelper(getPath(), outerMap).getORSetEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
 			}		
-			setValueList(set.getValueList());
+			setValues(new HashSet<>(set.getValues()));
 		}
 	}
 }

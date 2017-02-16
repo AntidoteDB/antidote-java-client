@@ -6,10 +6,12 @@ import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
+import interfaces.LWWRegisterCRDT;
+
 /**
  * The Class AntidoteInnerLWWRegister.
  */
-public class AntidoteInnerLWWRegister extends AntidoteInnerObject implements InterfaceLWWRegister{
+public final class AntidoteInnerLWWRegister extends AntidoteInnerCRDT implements LWWRegisterCRDT{
 	
 	/** The value. */
 	private String value;
@@ -54,7 +56,7 @@ public class AntidoteInnerLWWRegister extends AntidoteInnerObject implements Int
 		}
 		AntidoteInnerLWWRegister register;
 		if (getType() == AntidoteType.GMapType){
-			LowLevelGMap lowGMap = new LowLevelGMap(getName(), getBucket(), getClient());
+			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
 			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
 			if (getPath().size() == 1){
 				register = outerMap.getLWWRegisterEntry(getPath().get(0).getKey().toStringUtf8());
@@ -65,7 +67,7 @@ public class AntidoteInnerLWWRegister extends AntidoteInnerObject implements Int
 			value = register.getValue();
 		}
 		else if (getType() == AntidoteType.AWMapType){ 
-			LowLevelAWMap lowAWMap = new LowLevelAWMap(getName(), getBucket(), getClient());
+			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
 			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
 			if (getPath().size() == 1){
 				register = outerMap.getLWWRegisterEntry(getPath().get(0).getKey().toStringUtf8());
@@ -110,7 +112,7 @@ public class AntidoteInnerLWWRegister extends AntidoteInnerObject implements Int
 	public void setValue(String value){
 		setLocal(value);
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
-		registerSet.add(getClient().createRegisterSet(value));
+		registerSet.add(AntidoteMapUpdate.createRegisterSet(value));
 		updateHelper(registerSet);
 	}
 	
@@ -120,7 +122,7 @@ public class AntidoteInnerLWWRegister extends AntidoteInnerObject implements Int
 	public void setValueBS(ByteString value){
 		setLocal(value.toStringUtf8());
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
-		registerSet.add(getClient().createRegisterSet(value.toStringUtf8()));
+		registerSet.add(AntidoteMapUpdate.createRegisterSet(value.toStringUtf8()));
 		updateHelper(registerSet);
 	}
 }

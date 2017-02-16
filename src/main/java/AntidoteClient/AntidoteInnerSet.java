@@ -1,7 +1,11 @@
 package main.java.AntidoteClient;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
@@ -9,10 +13,10 @@ import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 /**
  * The Class AntidoteInnerSet.
  */
-public class AntidoteInnerSet extends AntidoteInnerObject {
+public class AntidoteInnerSet extends AntidoteInnerCRDT {
 	
 	/** The value list. */
-	private List<String> valueList;
+	private Set<String> values;
 	
 	/**
 	 * Instantiates a new antidote map set entry.
@@ -26,7 +30,7 @@ public class AntidoteInnerSet extends AntidoteInnerObject {
 	 */
 	public AntidoteInnerSet(List<String> valueList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
 		super(antidoteClient, name, bucket, path, outerMapType);
-		this.valueList = valueList;
+		this.values = new HashSet<>(valueList);
 	}
 	
 	/**
@@ -34,21 +38,21 @@ public class AntidoteInnerSet extends AntidoteInnerObject {
 	 *
 	 * @return the value list
 	 */
-	public List<String> getValueList(){
-		return valueList;
+	public Set<String> getValues(){
+		return Collections.unmodifiableSet(values);
 	}
 	
 	/**
-	 * Gets the value list as ByteString.
+	 * Gets the value list as ByteStrings.
 	 *
-	 * @return the value list as ByteString
+	 * @return the value list as ByteStrings
 	 */
-	public List<ByteString> getValueListBS(){
-		List<ByteString> valueListBS = new ArrayList<>();
-		for (String value : valueList){
-			valueListBS.add(ByteString.copyFromUtf8(value));
+	public Set<ByteString> getValuesBS(){
+		Set<ByteString> valueListBS = new HashSet<ByteString>();
+		for (String s : values){
+			valueListBS.add(ByteString.copyFromUtf8(s));
 		}
-		return valueListBS;
+		return Collections.unmodifiableSet(valueListBS);
 	}
 
 	/**
@@ -56,10 +60,9 @@ public class AntidoteInnerSet extends AntidoteInnerObject {
 	 *
 	 * @param valueList the new value list
 	 */
-	public void setValueList(List<String> valueList){
-		this.valueList = valueList;
+	protected void setValues(Set<String> valueList){
+		this.values = new HashSet<>(valueList);
 	}
-	
 	
 	
 	/**
@@ -68,11 +71,7 @@ public class AntidoteInnerSet extends AntidoteInnerObject {
 	 * @param elementList the element list
 	 */
 	protected void addElementLocal(List<String> elementList){
-		for (String e : elementList){
-			if (! valueList.contains(e)){
-				valueList.add(e);
-			}
-		}
+		values.addAll(elementList);
 	}
 	
 	/**
@@ -103,10 +102,6 @@ public class AntidoteInnerSet extends AntidoteInnerObject {
 	 * @param elementList the element list
 	 */
 	protected void removeElementLocal(List<String> elementList){
-		for (String e : elementList){
-			if (valueList.contains(e)){
-				valueList.remove(e);
-			}
-		}
+		values.removeAll(elementList);
 	}
 }

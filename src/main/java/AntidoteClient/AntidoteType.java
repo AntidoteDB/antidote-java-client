@@ -5,7 +5,7 @@ import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 /**
  * The Class AntidoteType.
  */
-public class AntidoteType {
+public final class AntidoteType {
 	
 	/** The Constant CounterType. */
 	public static final CRDT_type CounterType = CRDT_type.COUNTER;

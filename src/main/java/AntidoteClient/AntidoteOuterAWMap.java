@@ -4,13 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 
+import interfaces.AWMapCRDT;
+
 /**
  * The Class AntidoteOuterAWMap.
  */
-public class AntidoteOuterAWMap extends AntidoteOuterMap implements InterfaceAWMap{
+public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapCRDT{
 	
 	/** The low level AW-map. */
-	private LowLevelAWMap lowLevelMap;
+	private final AWMapRef lowLevelMap;
 	/**
 	 * Instantiates a new antidote AW map.
 	 *
@@ -19,9 +21,9 @@ public class AntidoteOuterAWMap extends AntidoteOuterMap implements InterfaceAWM
 	 * @param entryList the map's entries
 	 * @param antidoteClient the antidote client
 	 */
-	public AntidoteOuterAWMap(String name, String bucket, List<AntidoteInnerObject> entryList, AntidoteClient antidoteClient) {
+	public AntidoteOuterAWMap(String name, String bucket, List<AntidoteInnerCRDT> entryList, AntidoteClient antidoteClient) {
 		super(name, bucket, entryList, antidoteClient, AntidoteType.AWMapType);
-		lowLevelMap = new LowLevelAWMap(name, bucket, antidoteClient);
+		lowLevelMap = new AWMapRef(name, bucket, antidoteClient);
 	}
 	
 	/**
@@ -78,8 +80,8 @@ public class AntidoteOuterAWMap extends AntidoteOuterMap implements InterfaceAWM
 	 * @param keyList the key list
 	 */
 	private void removeLocal(List<AntidoteMapKey> keyList){
-		List<AntidoteInnerObject> entriesValid = new ArrayList<AntidoteInnerObject>();		
-		for (AntidoteInnerObject e : getEntryList()){
+		List<AntidoteInnerCRDT> entriesValid = new ArrayList<AntidoteInnerCRDT>();		
+		for (AntidoteInnerCRDT e : getEntryList()){
 			if (! keyList.contains(new AntidoteMapKey(e.getPath().get(e.getPath().size()-1)))){
 				entriesValid.add(e);
 			}

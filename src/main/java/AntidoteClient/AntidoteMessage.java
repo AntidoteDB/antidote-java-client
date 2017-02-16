@@ -3,16 +3,16 @@ package main.java.AntidoteClient;
 /**
  * The Class AntidoteMessage.
  */
-public class AntidoteMessage {
+public final class AntidoteMessage {
     
     /** The length. */
-    private int length;
+    private final int length;
     
     /** The code. */
-    private int code;
+    private final int code;
     
     /** The message. */
-    private byte[] message;
+    private final byte[] message;
 
     /**
      * Instantiates a new antidote message.

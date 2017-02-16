@@ -2,13 +2,15 @@ package main.java.AntidoteClient;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 
+import interfaces.CounterCRDT;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * The Class AntidoteInnerCounter.
  */
-public class AntidoteInnerCounter extends AntidoteInnerObject implements InterfaceCounter{
+public final class AntidoteInnerCounter extends AntidoteInnerCRDT implements CounterCRDT{
 	
 	/** The value. */
 	private int value;
@@ -54,7 +56,7 @@ public class AntidoteInnerCounter extends AntidoteInnerObject implements Interfa
 		}
 		AntidoteInnerCounter counter;
 		if (getType() == AntidoteType.GMapType){
-			LowLevelGMap lowGMap = new LowLevelGMap(getName(), getBucket(), getClient());
+			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
 			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
 			if (getPath().size() == 1){
 				counter = outerMap.getCounterEntry(getPath().get(0).getKey().toStringUtf8());
@@ -65,7 +67,7 @@ public class AntidoteInnerCounter extends AntidoteInnerObject implements Interfa
 			value = counter.getValue();
 		}
 		else if (getType() == AntidoteType.AWMapType){ 
-			LowLevelAWMap lowAWMap = new LowLevelAWMap(getName(), getBucket(), getClient());
+			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
 			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
 			if (getPath().size() == 1){
 				counter = outerMap.getCounterEntry(getPath().get(0).getKey().toStringUtf8());
@@ -101,7 +103,7 @@ public class AntidoteInnerCounter extends AntidoteInnerObject implements Interfa
 	public void increment(int inc){
 		incrementLocal(inc);
 		List<AntidoteMapUpdate> counterIncrement = new ArrayList<AntidoteMapUpdate>(); 
-		counterIncrement.add(getClient().createCounterIncrement(inc));
+		counterIncrement.add(AntidoteMapUpdate.createCounterIncrement(inc));
 		updateHelper(counterIncrement);
 	}
 	

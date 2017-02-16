@@ -7,10 +7,10 @@ import com.google.protobuf.AbstractMessage;
 public class AntidoteRequest {
     
     /** The code. */
-    private int code;
+    private final int code;
     
     /** The message. */
-    private AbstractMessage message;
+    private final AbstractMessage message;
 
     /**
      * Instantiates a new antidote request.

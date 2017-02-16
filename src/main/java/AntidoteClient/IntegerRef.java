@@ -8,7 +8,7 @@ import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 /**
  * The Class LowLevelInteger.
  */
-public class LowLevelInteger extends LowLevelObject{
+public final class IntegerRef extends ObjectRef{
 
 	/**
 	 * Instantiates a new low level integer.
@@ -17,7 +17,7 @@ public class LowLevelInteger extends LowLevelObject{
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public LowLevelInteger(String name, String bucket, AntidoteClient antidoteClient){
+	public IntegerRef(String name, String bucket, AntidoteClient antidoteClient){
 		super(name, bucket, antidoteClient);
 	}
 	
@@ -55,7 +55,7 @@ public class LowLevelInteger extends LowLevelObject{
      * @param inc the increment, by which the integer is incremented
      */
     public void increment(int inc) {
-    	getClient().updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.IntegerType);
+    	updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.IntegerType);
     }
     
     /**
@@ -64,7 +64,7 @@ public class LowLevelInteger extends LowLevelObject{
      * @param number the number, to which the integer is set
      */
     public void set(int number) {
-    	getClient().updateHelper(setOpBuilder(number), getName(), getBucket(), AntidoteType.IntegerType);
+    	updateHelper(setOpBuilder(number), getName(), getBucket(), AntidoteType.IntegerType);
     }
         
     /**
@@ -74,7 +74,7 @@ public class LowLevelInteger extends LowLevelObject{
      * @param antidoteTransaction the antidote transaction
      */
     public void set(int number, AntidoteTransaction antidoteTransaction) {
-        antidoteTransaction.updateHelper(setOpBuilder(number), getName(), getBucket(), AntidoteType.IntegerType);
+        updateHelper(setOpBuilder(number), getName(), getBucket(), AntidoteType.IntegerType, antidoteTransaction);
     }
     
     /**
@@ -84,7 +84,7 @@ public class LowLevelInteger extends LowLevelObject{
      * @param antidoteTransaction the antidote transaction
      */
     public void increment(int inc, AntidoteTransaction antidoteTransaction) {
-        antidoteTransaction.updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.IntegerType);
+        updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.IntegerType, antidoteTransaction);
     }
     
     /**
@@ -93,7 +93,7 @@ public class LowLevelInteger extends LowLevelObject{
      * @return the antidote integer
      */
     public AntidoteOuterInteger createAntidoteInteger() {
-        ApbGetIntegerResp number = getClient().readHelper(getName(), getBucket(), AntidoteType.IntegerType).getObjects().getObjects(0).getInt();
+        ApbGetIntegerResp number = readHelper(getName(), getBucket(), AntidoteType.IntegerType).getObjects().getObjects(0).getInt();
         return new AntidoteOuterInteger(getName(), getBucket(), toIntExact(number.getValue()), getClient());  
     }
     
@@ -104,7 +104,7 @@ public class LowLevelInteger extends LowLevelObject{
      * @return the antidote integer
      */
     public AntidoteOuterInteger createAntidoteInteger(AntidoteTransaction antidoteTransaction){
-    	ApbGetIntegerResp number = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.IntegerType).getObjects(0).getInt();
+    	ApbGetIntegerResp number = readHelper(getName(), getBucket(), AntidoteType.IntegerType, antidoteTransaction).getObjects(0).getInt();
         return new AntidoteOuterInteger(getName(), getBucket(), toIntExact(number.getValue()), getClient());  
     }
     
@@ -114,7 +114,7 @@ public class LowLevelInteger extends LowLevelObject{
      * @return the integer value
      */
     public int readValue() {
-        ApbGetIntegerResp number = getClient().readHelper(getName(), getBucket(), AntidoteType.IntegerType).getObjects().getObjects(0).getInt();
+        ApbGetIntegerResp number = readHelper(getName(), getBucket(), AntidoteType.IntegerType).getObjects().getObjects(0).getInt();
         return toIntExact(number.getValue()); 
     }
     
@@ -125,7 +125,7 @@ public class LowLevelInteger extends LowLevelObject{
      * @return the integer value
      */
     public int readValue(AntidoteTransaction antidoteTransaction){
-    	ApbGetIntegerResp number = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.IntegerType).getObjects(0).getInt();
+    	ApbGetIntegerResp number = readHelper(getName(), getBucket(), AntidoteType.IntegerType, antidoteTransaction).getObjects(0).getInt();
         return toIntExact(number.getValue());
     }
 }

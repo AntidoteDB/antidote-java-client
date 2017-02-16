@@ -7,7 +7,7 @@ import com.google.protobuf.ByteString;
 /**
  * The Class LowLevelRegister.
  */
-public class LowLevelRegister extends LowLevelObject {
+public class RegisterRef extends ObjectRef {
 	
 	/**
 	 * Instantiates a new low level register.
@@ -16,7 +16,7 @@ public class LowLevelRegister extends LowLevelObject {
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public LowLevelRegister(String name, String bucket, AntidoteClient antidoteClient){
+	public RegisterRef(String name, String bucket, AntidoteClient antidoteClient){
 		super(name, bucket, antidoteClient);
 	}
 
@@ -27,7 +27,7 @@ public class LowLevelRegister extends LowLevelObject {
      * @param type the type
      */
     public void set(String value, CRDT_type type){
-        getClient().updateHelper(setOpBuilder(ByteString.copyFromUtf8(value)), getName(), getBucket(), type);
+        updateHelper(setOpBuilder(ByteString.copyFromUtf8(value)), getName(), getBucket(), type);
     }  
     
     /**
@@ -37,7 +37,7 @@ public class LowLevelRegister extends LowLevelObject {
      * @param type the type
      */
     public void setBS(ByteString value, CRDT_type type){
-        getClient().updateHelper(setOpBuilder(value), getName(), getBucket(), type);
+        updateHelper(setOpBuilder(value), getName(), getBucket(), type);
     }  
 
     /**
@@ -48,7 +48,7 @@ public class LowLevelRegister extends LowLevelObject {
      * @param antidoteTransaction the antidote transaction
      */
     public void setBS(ByteString value, CRDT_type type, AntidoteTransaction antidoteTransaction){
-        antidoteTransaction.updateHelper(setOpBuilder(value), getName(), getBucket(), type);
+        updateHelper(setOpBuilder(value), getName(), getBucket(), type, antidoteTransaction);
     }
     
     /**
@@ -59,7 +59,7 @@ public class LowLevelRegister extends LowLevelObject {
      * @param antidoteTransaction the antidote transaction
      */
     public void set(String value, CRDT_type type, AntidoteTransaction antidoteTransaction){
-        antidoteTransaction.updateHelper(setOpBuilder(ByteString.copyFromUtf8(value)), getName(), getBucket(), type);
+        updateHelper(setOpBuilder(ByteString.copyFromUtf8(value)), getName(), getBucket(), type, antidoteTransaction);
     }
     
     /**

@@ -12,7 +12,7 @@ import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 /**
  * The Class LowLevelAWMap.
  */
-public class LowLevelAWMap extends LowLevelMap{
+public final class AWMapRef extends MapRef{
 	
 	/**
 	 * Instantiates a new low level AW map.
@@ -21,7 +21,7 @@ public class LowLevelAWMap extends LowLevelMap{
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public LowLevelAWMap(String name, String bucket, AntidoteClient antidoteClient){
+	public AWMapRef(String name, String bucket, AntidoteClient antidoteClient){
 		super(name, bucket, antidoteClient);
 	}
 	
@@ -106,7 +106,7 @@ public class LowLevelAWMap extends LowLevelMap{
      * @param keys the keys
      */
     public void remove(List<AntidoteMapKey> keys) {
-        getClient().updateHelper(removeOpBuilder(keys), getName(), getBucket(), AntidoteType.AWMapType);
+        updateHelper(removeOpBuilder(keys), getName(), getBucket(), AntidoteType.AWMapType);
     }
     
     /**
@@ -140,7 +140,7 @@ public class LowLevelAWMap extends LowLevelMap{
         
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setMapop(mapUpdateInstruction);
-        antidoteTransaction.updateHelper(updateOperation, getName(), getBucket(), AntidoteType.AWMapType);
+        updateHelper(updateOperation, getName(), getBucket(), AntidoteType.AWMapType, antidoteTransaction);
     }
     
     /**
@@ -149,10 +149,10 @@ public class LowLevelAWMap extends LowLevelMap{
 	 * @return the antidote AW-Map
 	 */
 	public AntidoteOuterAWMap createAntidoteAWMap() {
-        ApbGetMapResp map = getClient().readHelper(getName(), getBucket(), AntidoteType.AWMapType).getObjects().getObjects(0).getMap();
+        ApbGetMapResp map = readHelper(getName(), getBucket(), AntidoteType.AWMapType).getObjects().getObjects(0).getMap();
         List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
         apbEntryList = map.getEntriesList();
-        List<AntidoteInnerObject> antidoteEntryList = new ArrayList<AntidoteInnerObject>();
+        List<AntidoteInnerCRDT> antidoteEntryList = new ArrayList<AntidoteInnerCRDT>();
     	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
         antidoteEntryList = readMapHelper(path, apbEntryList, AntidoteType.AWMapType);     
         return new AntidoteOuterAWMap(getName(), getBucket(), antidoteEntryList, getClient());   
@@ -165,10 +165,10 @@ public class LowLevelAWMap extends LowLevelMap{
      * @return the antidote AW map
      */
     public AntidoteOuterAWMap createAntidoteAWMap(AntidoteTransaction antidoteTransaction){
-    	ApbGetMapResp map = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.AWMapType).getObjects(0).getMap();
+    	ApbGetMapResp map = readHelper(getName(), getBucket(), AntidoteType.AWMapType, antidoteTransaction).getObjects(0).getMap();
         List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
         apbEntryList = map.getEntriesList();
-        List<AntidoteInnerObject> antidoteEntryList = new ArrayList<AntidoteInnerObject>();
+        List<AntidoteInnerCRDT> antidoteEntryList = new ArrayList<AntidoteInnerCRDT>();
     	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
         antidoteEntryList = readMapHelper(path, apbEntryList, AntidoteType.AWMapType);     
         return new AntidoteOuterAWMap(getName(), getBucket(), antidoteEntryList, getClient());   
@@ -179,8 +179,8 @@ public class LowLevelAWMap extends LowLevelMap{
 	 *
 	 * @return the antidote AW-Map entry list
 	 */
-	public List<AntidoteInnerObject> readEntryList() {
-        ApbGetMapResp map = getClient().readHelper(getName(), getBucket(), AntidoteType.AWMapType).getObjects().getObjects(0).getMap();
+	public List<AntidoteInnerCRDT> readEntryList() {
+        ApbGetMapResp map = readHelper(getName(), getBucket(), AntidoteType.AWMapType).getObjects().getObjects(0).getMap();
         List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
         apbEntryList = map.getEntriesList();
     	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
@@ -193,8 +193,8 @@ public class LowLevelAWMap extends LowLevelMap{
      * @param antidoteTransaction the transaction
      * @return the antidote AW map entry list
      */
-    public List<AntidoteInnerObject> readEntryList(AntidoteTransaction antidoteTransaction){
-    	ApbGetMapResp map = antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.AWMapType).getObjects(0).getMap();
+    public List<AntidoteInnerCRDT> readEntryList(AntidoteTransaction antidoteTransaction){
+    	ApbGetMapResp map = readHelper(getName(), getBucket(), AntidoteType.AWMapType, antidoteTransaction).getObjects(0).getMap();
     	List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
         apbEntryList = map.getEntriesList();
     	List<ApbMapKey> path = new ArrayList<ApbMapKey>();

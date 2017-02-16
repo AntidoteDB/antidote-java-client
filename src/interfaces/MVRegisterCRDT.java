@@ -1,4 +1,4 @@
-package main.java.AntidoteClient;
+package interfaces;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import com.google.protobuf.ByteString;
 /**
  * The Interface InterfaceMVRegister.
  */
-public interface InterfaceMVRegister {
+public interface MVRegisterCRDT extends CRDT{
 	
 	/**
 	 * Gets the value list.
@@ -23,20 +23,6 @@ public interface InterfaceMVRegister {
 	 */
 	List<ByteString> getValueListBS();
 	
-	/**
-	 * Read database.
-	 */
-	void readDatabase();
-	
-	/**
-	 * Roll back: delete information about local updates and read database.
-	 */
-	void rollBack();
-	
-	/**
-	 * Synchronize: first push own changes, then read database.
-	 */
-	void synchronize();
 	
 	/**
 	 * Sets the value.

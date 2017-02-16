@@ -10,7 +10,7 @@ import com.google.protobuf.ByteString;
 /**
  * The Class LowLevelSet.
  */
-public class LowLevelSet extends LowLevelObject {
+public class SetRef extends ObjectRef {
 	
 	/**
 	 * Instantiates a new low level set.
@@ -19,7 +19,7 @@ public class LowLevelSet extends LowLevelObject {
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public LowLevelSet(String name, String bucket, AntidoteClient antidoteClient){
+	public SetRef(String name, String bucket, AntidoteClient antidoteClient){
 		super(name, bucket, antidoteClient);
 	}
 	
@@ -110,7 +110,7 @@ public class LowLevelSet extends LowLevelObject {
      * @param type the type
      */
     public void removeBS(List<ByteString> elements, CRDT_type type){
-        getClient().updateHelper(removeOpBuilder(elements), getName(), getBucket(), type);
+        updateHelper(removeOpBuilder(elements), getName(), getBucket(), type);
     }
 
     /**
@@ -120,7 +120,7 @@ public class LowLevelSet extends LowLevelObject {
      * @param type the type
      */
     public void addBS(List<ByteString> elements, CRDT_type type){
-        getClient().updateHelper(addOpBuilder(elements), getName(), getBucket(), type);
+        updateHelper(addOpBuilder(elements), getName(), getBucket(), type);
 
     }
     
@@ -135,7 +135,7 @@ public class LowLevelSet extends LowLevelObject {
         for (String e : elements){
         	elementsByteString.add(ByteString.copyFromUtf8(e));
         }
-        getClient().updateHelper(removeOpBuilder(elementsByteString), getName(), getBucket(), type);
+        updateHelper(removeOpBuilder(elementsByteString), getName(), getBucket(), type);
     }
 
     /**
@@ -149,7 +149,7 @@ public class LowLevelSet extends LowLevelObject {
         for (String e : elements){
         	elementsByteString.add(ByteString.copyFromUtf8(e));
         }
-        getClient().updateHelper(addOpBuilder(elementsByteString), getName(), getBucket(), type);
+        updateHelper(addOpBuilder(elementsByteString), getName(), getBucket(), type);
     }
     
     /**
@@ -212,7 +212,7 @@ public class LowLevelSet extends LowLevelObject {
      * @param antidoteTransaction the antidote transaction
      */
     public void removeBS(List<ByteString> elements, CRDT_type type, AntidoteTransaction antidoteTransaction){
-        antidoteTransaction.updateHelper(removeOpBuilder(elements), getName(), getBucket(), type);
+        updateHelper(removeOpBuilder(elements), getName(), getBucket(), type, antidoteTransaction);
     }
 
     /**
@@ -223,7 +223,7 @@ public class LowLevelSet extends LowLevelObject {
      * @param antidoteTransaction the antidote transaction
      */
     public void addBS(List<ByteString> elements, CRDT_type type, AntidoteTransaction antidoteTransaction){
-        antidoteTransaction.updateHelper(addOpBuilder(elements), getName(), getBucket(), type);
+        updateHelper(addOpBuilder(elements), getName(), getBucket(), type, antidoteTransaction);
     }
     
     /**
@@ -238,7 +238,7 @@ public class LowLevelSet extends LowLevelObject {
         for (String e : elements){
         	elementsByteString.add(ByteString.copyFromUtf8(e));
         }
-        antidoteTransaction.updateHelper(removeOpBuilder(elementsByteString), getName(), getBucket(), type);
+        updateHelper(removeOpBuilder(elementsByteString), getName(), getBucket(), type, antidoteTransaction);
 
     }
 
@@ -254,7 +254,6 @@ public class LowLevelSet extends LowLevelObject {
         for (String e : elements){
         	elementsByteString.add(ByteString.copyFromUtf8(e));
         }
-        antidoteTransaction.updateHelper(addOpBuilder(elementsByteString), getName(), getBucket(), type);
-
+        updateHelper(addOpBuilder(elementsByteString), getName(), getBucket(), type, antidoteTransaction);
     }
 }

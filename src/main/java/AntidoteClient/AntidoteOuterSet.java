@@ -1,17 +1,21 @@
 package main.java.AntidoteClient;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import com.google.protobuf.ByteString;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 
 /**
  * The Class AntidoteOuterSet.
  */
-public class AntidoteOuterSet extends AntidoteObject {
+public class AntidoteOuterSet extends AntidoteCRDT {
 	
 	/** The value list. */
-	private List<String> valueList;
+	private Set<String> valueList;
 	
 	/**
 	 * Instantiates a new antidote set.
@@ -24,7 +28,7 @@ public class AntidoteOuterSet extends AntidoteObject {
 	 */
 	public AntidoteOuterSet(String name, String bucket, List<String> valueList, AntidoteClient antidoteClient, CRDT_type type) {
 		super(name, bucket, antidoteClient, type);
-		this.valueList = valueList;
+		this.valueList = new HashSet<>(valueList);
 	}
 	
 	/**
@@ -32,8 +36,8 @@ public class AntidoteOuterSet extends AntidoteObject {
 	 *
 	 * @return the value list
 	 */
-	public List<String> getValueList(){
-		return valueList;
+	public Set<String> getValues(){
+		return Collections.unmodifiableSet(valueList);
 	}
 	
 	/**
@@ -41,12 +45,12 @@ public class AntidoteOuterSet extends AntidoteObject {
 	 *
 	 * @return the value list as ByteStrings
 	 */
-	public List<ByteString> getValueListBS(){
-		List<ByteString> valueListBS = new ArrayList<>();
-		for (String value : valueList){
-			valueListBS.add(ByteString.copyFromUtf8(value));
+	public Set<ByteString> getValuesBS(){
+		Set<ByteString> valueListBS = new HashSet<ByteString>();
+		for (String s : valueList){
+			valueListBS.add(ByteString.copyFromUtf8(s));
 		}
-		return valueListBS;
+		return Collections.unmodifiableSet(valueListBS);
 	}
 	
 	/**
@@ -54,8 +58,8 @@ public class AntidoteOuterSet extends AntidoteObject {
 	 *
 	 * @param valueList the new value list
 	 */
-	protected void setValueList(List<String> valueList){
-		this.valueList = valueList;
+	protected void setValues(List<String> valueList){
+		this.valueList = new HashSet<>(valueList);
 	}
 	
 	/**
@@ -164,11 +168,7 @@ public class AntidoteOuterSet extends AntidoteObject {
 	 * @param elements the elements
 	 */
 	private void addLocal(List<String> elements){
-		for (String s : elements){
-			if (! valueList.contains(s)){
-				valueList.add(s);
-			}
-		}
+		valueList.addAll(elements);
 	}
 	
 	/**
@@ -177,11 +177,7 @@ public class AntidoteOuterSet extends AntidoteObject {
 	 * @param elements the elements
 	 */
 	private void removeLocal(List<String> elements){
-		for(String s : elements){
-			if (valueList.contains(s)){
-				valueList.remove(s);
-			}
-		}
+		valueList.removeAll(elements);
 	}
 	
 	/**
@@ -192,10 +188,10 @@ public class AntidoteOuterSet extends AntidoteObject {
 	 */
 	private void addUpdate(List<ByteString> elements, int type){
 		if(type == AntidoteSetOpType.SetAdd){
-			updateAdd(new LowLevelSet(getName(), getBucket(), getClient()).addOpBuilder(elements));
+			updateAdd(new SetRef(getName(), getBucket(), getClient()).addOpBuilder(elements));
 		}
 		else if(type == AntidoteSetOpType.SetRemove){
-			updateAdd(new LowLevelSet(getName(), getBucket(), getClient()).removeOpBuilder(elements));
+			updateAdd(new SetRef(getName(), getBucket(), getClient()).removeOpBuilder(elements));
 		}
 	}
 }
