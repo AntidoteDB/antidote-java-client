@@ -1,5 +1,6 @@
 package main.java.AntidoteClient;
 
+import com.basho.riak.protobuf.AntidotePB;
 import interfaces.CounterCRDT;
 
 /**
@@ -9,7 +10,7 @@ public final class AntidoteOuterCounter extends AntidoteCRDT implements CounterC
 	
 	/** The value of the counter. */
 	private int value;
-		
+
 	/** The low level counter. */
 	private final CounterRef lowLevelCounter;
 	
@@ -33,9 +34,10 @@ public final class AntidoteOuterCounter extends AntidoteCRDT implements CounterC
 	 * @return the value
 	 */
 	public int getValue(){
+
 		return value;
 	}
-	
+
 	/**
 	 * Gets the most recent state from the database.
 	 */
@@ -74,8 +76,31 @@ public final class AntidoteOuterCounter extends AntidoteCRDT implements CounterC
 	 *
 	 * @param inc the value by which the counter is incremented
 	 */
+
 	public void increment(int inc){
 		value = value + inc;
 		updateAdd(lowLevelCounter.incrementOpBuilder(inc));
+	}
+
+	/**
+	 * Increment by one.
+	 *
+	 * @param antidoteTransaction the antidote static transaction
+	 */
+	public void increment(AntidoteTransaction antidoteTransaction){
+		increment(1, antidoteTransaction);
+	}
+
+
+	/**
+	 * Increment.
+	 *
+	 * @param inc the value by which the counter is incremented
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void increment(int inc, AntidoteTransaction antidoteTransaction){
+		value = value + inc;
+		antidoteTransaction.updateHelper(lowLevelCounter.incrementOpBuilder(inc),getName(),getBucket(),getType());
+
 	}
 }

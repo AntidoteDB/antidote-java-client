@@ -140,7 +140,7 @@ public final class AWMapRef extends MapRef{
         
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setMapop(mapUpdateInstruction);
-        updateHelper(updateOperation, getName(), getBucket(), AntidoteType.AWMapType, antidoteTransaction);
+        antidoteTransaction.updateHelper(updateOperation, getName(), getBucket(), AntidoteType.AWMapType);
     }
     
     /**

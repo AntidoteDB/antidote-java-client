@@ -212,7 +212,7 @@ public class SetRef extends ObjectRef {
      * @param antidoteTransaction the antidote transaction
      */
     public void removeBS(List<ByteString> elements, CRDT_type type, AntidoteTransaction antidoteTransaction){
-        updateHelper(removeOpBuilder(elements), getName(), getBucket(), type, antidoteTransaction);
+        antidoteTransaction.updateHelper(removeOpBuilder(elements), getName(), getBucket(), type);
     }
 
     /**
@@ -223,7 +223,7 @@ public class SetRef extends ObjectRef {
      * @param antidoteTransaction the antidote transaction
      */
     public void addBS(List<ByteString> elements, CRDT_type type, AntidoteTransaction antidoteTransaction){
-        updateHelper(addOpBuilder(elements), getName(), getBucket(), type, antidoteTransaction);
+        antidoteTransaction.updateHelper(addOpBuilder(elements), getName(), getBucket(), type);
     }
     
     /**
@@ -238,7 +238,7 @@ public class SetRef extends ObjectRef {
         for (String e : elements){
         	elementsByteString.add(ByteString.copyFromUtf8(e));
         }
-        updateHelper(removeOpBuilder(elementsByteString), getName(), getBucket(), type, antidoteTransaction);
+        antidoteTransaction.updateHelper(removeOpBuilder(elementsByteString), getName(), getBucket(), type);
 
     }
 
@@ -254,6 +254,6 @@ public class SetRef extends ObjectRef {
         for (String e : elements){
         	elementsByteString.add(ByteString.copyFromUtf8(e));
         }
-        updateHelper(addOpBuilder(elementsByteString), getName(), getBucket(), type, antidoteTransaction);
+        antidoteTransaction.updateHelper(addOpBuilder(elementsByteString), getName(), getBucket(), type);
     }
 }

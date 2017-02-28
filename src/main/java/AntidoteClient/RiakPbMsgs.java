@@ -23,6 +23,9 @@ public class RiakPbMsgs {
     
     /** The Constant ApbCommitTransaction. */
     public static final int ApbCommitTransaction = 121;
+
+    /** The Constant ApbAbortTransaction. */
+    public static final int ApbAbortTransaction = 120;
     //all other message codes can be added
 }
 

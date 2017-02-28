@@ -74,9 +74,9 @@ public final class IntegerRef extends ObjectRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void set(int number, AntidoteTransaction antidoteTransaction) {
-        updateHelper(setOpBuilder(number), getName(), getBucket(), AntidoteType.IntegerType, antidoteTransaction);
+        antidoteTransaction.updateHelper(setOpBuilder(number), getName(), getBucket(), AntidoteType.IntegerType);
     }
-    
+
     /**
      * Increments the value of the integer.
      *
@@ -84,7 +84,7 @@ public final class IntegerRef extends ObjectRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void increment(int inc, AntidoteTransaction antidoteTransaction) {
-        updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.IntegerType, antidoteTransaction);
+        antidoteTransaction.updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.IntegerType);
     }
     
     /**

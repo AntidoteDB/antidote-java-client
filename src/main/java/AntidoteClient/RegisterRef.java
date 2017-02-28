@@ -48,7 +48,7 @@ public class RegisterRef extends ObjectRef {
      * @param antidoteTransaction the antidote transaction
      */
     public void setBS(ByteString value, CRDT_type type, AntidoteTransaction antidoteTransaction){
-        updateHelper(setOpBuilder(value), getName(), getBucket(), type, antidoteTransaction);
+        antidoteTransaction.updateHelper(setOpBuilder(value), getName(), getBucket(), type);
     }
     
     /**
@@ -59,7 +59,7 @@ public class RegisterRef extends ObjectRef {
      * @param antidoteTransaction the antidote transaction
      */
     public void set(String value, CRDT_type type, AntidoteTransaction antidoteTransaction){
-        updateHelper(setOpBuilder(ByteString.copyFromUtf8(value)), getName(), getBucket(), type, antidoteTransaction);
+        antidoteTransaction.updateHelper(setOpBuilder(ByteString.copyFromUtf8(value)), getName(), getBucket(), type);
     }
     
     /**

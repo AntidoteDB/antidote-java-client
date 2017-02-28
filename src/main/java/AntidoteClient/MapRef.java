@@ -99,8 +99,8 @@ public class MapRef extends ObjectRef{
 	 * @param type the type
 	 * @param antidoteTransaction the antidote transaction
 	 */
-	public void update(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates, CRDT_type type, AntidoteTransaction antidoteTransaction) { 
-	    updateHelper(updateOpBuilder(mapKey, updates), getName(), getBucket(), type, antidoteTransaction);
+	public void update(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates, CRDT_type type, AntidoteTransaction antidoteTransaction) {
+		antidoteTransaction.updateHelper(updateOpBuilder(mapKey, updates), getName(), getBucket(), type);
 	}
 	
 	/**

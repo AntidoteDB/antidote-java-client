@@ -142,37 +142,7 @@ public class ObjectRef {
 		}
 		return readResponse;
     }
-    
-    /**
-     * Update helper that has the generic part of the code.
-     *
-     * @param operation the operation
-     * @param name the name
-     * @param bucket the bucket
-     * @param type the type
-     */
-    protected void updateHelper(
-    		ApbUpdateOperation.Builder operation, String name, String bucket, CRDT_type type, AntidoteTransaction antidoteTransaction){
-    	if (antidoteTransaction.getDescriptor() == null){
-    		throw new AntidoteException("You need to start the transaction first");
-    	}
-    	ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message to update
-    	object.setKey(ByteString.copyFromUtf8(name));
-    	object.setType(type);
-    	object.setBucket(ByteString.copyFromUtf8(bucket));
 
-        ApbUpdateOp.Builder updateInstruction = ApbUpdateOp.newBuilder();
-        updateInstruction.setBoundobject(object);
-        updateInstruction.setOperation(operation);
-
-        ApbUpdateObjects.Builder updateObject = ApbUpdateObjects.newBuilder();
-        updateObject.addUpdates(updateInstruction);
-        updateObject.setTransactionDescriptor(antidoteTransaction.getDescriptor());
-
-        ApbUpdateObjects updateObjectMessage = updateObject.build();
-        antidoteClient.sendMessage(new AntidoteRequest(RiakPbMsgs.ApbUpdateObjects, updateObjectMessage));
-    }
-    
     /**
      * Read helper that has the generic part of the code.
      *

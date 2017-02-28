@@ -1,4 +1,5 @@
 package test.java.Tests;
+import com.google.protobuf.InvalidProtocolBufferException;
 import main.java.AntidoteClient.*;
 import java.security.SecureRandom;
 import java.math.BigInteger;
@@ -12,7 +13,7 @@ public class AntidoteTest{
 	PoolManager antidotePoolManager;
 	AntidoteClient antidoteClient;
 	String bucket;
-	AntidoteTransaction antidoteTransaction;
+
 
 	public AntidoteTest() {
 		List<Host> hosts = new LinkedList<Host>();
@@ -21,14 +22,76 @@ public class AntidoteTest{
 		antidotePoolManager = new PoolManager(20, 5, hosts);
 		antidoteClient = new AntidoteClient(antidotePoolManager);
 		bucket = nextSessionId();
-		antidoteTransaction = new AntidoteTransaction(antidoteClient);
+
 	}
 	
 	public String nextSessionId() {
 		SecureRandom random = new SecureRandom();
 	    return new BigInteger(130, random).toString(32);
 	}
-	
+
+	@Test(timeout=10000)
+	public void counterRefCommitStaticTransaction() {
+		CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
+		CounterRef lowCounter2 = new CounterRef("testCounter3", bucket, antidoteClient);
+		AntidoteOuterCounter counter1old = lowCounter1.createAntidoteCounter();
+		int oldValue1 = counter1old.getValue();
+		AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter();
+		int oldValue2 = counter2old.getValue();
+
+		AntidoteTransaction tx = antidoteClient.createStaticTransaction();
+		lowCounter1.increment(5, tx);
+		lowCounter1.increment(5, tx);
+		lowCounter2.increment(3, tx);
+		lowCounter2.increment(3, tx);
+		tx.commitTransaction();
+		tx.close();
+
+		AntidoteOuterCounter counter1new = lowCounter1.createAntidoteCounter();
+		AntidoteOuterCounter counter2new = lowCounter2.createAntidoteCounter();
+		int newValue1 = counter1new.getValue();
+		int newValue2 = counter2new.getValue();
+		assert (newValue1 == oldValue1+10);
+		assert (newValue2 == oldValue2+6);
+		counter1new.readDatabase();
+		counter2new.readDatabase();
+		newValue1 = counter1new.getValue();
+		newValue2 = counter2new.getValue();
+		assert(newValue1 == oldValue1+10);
+		assert(newValue2 == oldValue2+6);
+	}
+
+	@Test(timeout=10000)
+	public void counterRefCommitTransaction() {
+		CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
+		CounterRef lowCounter2 = new CounterRef("testCounter3", bucket, antidoteClient);
+		AntidoteOuterCounter counter1old = lowCounter1.createAntidoteCounter();
+		int oldValue1 = counter1old.getValue();
+		AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter();
+		int oldValue2 = counter2old.getValue();
+
+		AntidoteTransaction tx = antidoteClient.createTransaction();
+		lowCounter1.increment(5, tx);
+		lowCounter1.increment(5, tx);
+		lowCounter2.increment(3, tx);
+		lowCounter2.increment(3, tx);
+		tx.commitTransaction();
+		tx.close();
+
+		AntidoteOuterCounter counter1new = lowCounter1.createAntidoteCounter();
+		AntidoteOuterCounter counter2new = lowCounter2.createAntidoteCounter();
+		int newValue1 = counter1new.getValue();
+		int newValue2 = counter2new.getValue();
+		assert (newValue1 == oldValue1+10);
+		assert (newValue2 == oldValue2+6);
+		counter1new.readDatabase();
+		counter2new.readDatabase();
+		newValue1 = counter1new.getValue();
+		newValue2 = counter2new.getValue();
+		assert(newValue1 == oldValue1+10);
+		assert(newValue2 == oldValue2+6);
+	}
+
 	@Test(timeout=10000)
 	public void commitTransaction() {
 		CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
@@ -37,19 +100,55 @@ public class AntidoteTest{
 		int oldValue1 = counter1old.getValue();
 		AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter();
 		int oldValue2 = counter2old.getValue();
-		antidoteTransaction.startTransaction();
-		lowCounter1.increment(5, antidoteTransaction);
-		lowCounter2.increment(3, antidoteTransaction);
-		antidoteTransaction.commitTransaction();
-		AntidoteOuterCounter counter1new = lowCounter1.createAntidoteCounter();
-		AntidoteOuterCounter counter2new = lowCounter2.createAntidoteCounter();
-		int newValue1 = counter1new.getValue();
-		assert (newValue1 == oldValue1+5);
-		int newValue2 = counter2new.getValue();
-		assert (newValue2 == oldValue2+3);
-	}	
+
+		AntidoteTransaction tx3 = antidoteClient.createTransaction();
+		counter1old.increment(5, tx3);
+		counter1old.increment(5, tx3);
+		counter2old.increment(3, tx3);
+		counter2old.increment(3, tx3);
+		tx3.commitTransaction();
+		tx3.close();
+
+		int newValue1 = counter1old.getValue();
+		int newValue2 = counter2old.getValue();
+		assert(newValue1 == oldValue1+10);
+		assert(newValue2 == oldValue2+6);
+		counter1old.readDatabase();
+		counter2old.readDatabase();
+		newValue1 = counter1old.getValue();
+		newValue2 = counter2old.getValue();
+		assert(newValue1 == oldValue1+10);
+		assert(newValue2 == oldValue2+6);
+	}
+
+	@Test(timeout=10000)
+	public void commitStaticTransaction() {
+		CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
+		CounterRef lowCounter2 = new CounterRef("testCounter3", bucket, antidoteClient);
+		AntidoteOuterCounter counter1old = lowCounter1.createAntidoteCounter();
+		int oldValue1 = counter1old.getValue();
+		AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter();
+		int oldValue2 = counter2old.getValue();
+
+		AntidoteTransaction tx = antidoteClient.createStaticTransaction();
+		counter1old.increment(5, tx);
+		counter1old.increment(5, tx);
+		counter2old.increment(3, tx);
+		counter2old.increment(3, tx);
+		tx.commitTransaction();
+		tx.close();
+
+		int newValue1 = counter1old.getValue();
+		int newValue2 = counter2old.getValue();
+		assert(newValue1 == oldValue1+10);
+		assert(newValue2 == oldValue2+6);
+		counter1old.readDatabase();
+		counter2old.readDatabase();
+		assert(newValue1 == oldValue1+10);
+		assert(newValue2 == oldValue2+6);
+	}
 	
-	@Test(timeout=1000) 
+	@Test(timeout=10000)
 	public void incBy2Test() {		
 		CounterRef lowCounter = new CounterRef("testCounter5", bucket, antidoteClient);
 		AntidoteOuterCounter counter = lowCounter.createAntidoteCounter();
@@ -613,15 +712,15 @@ public class AntidoteTest{
 		AntidoteMapUpdate mvRegisterUpdate = AntidoteMapUpdate.createMVRegisterSet("Hi");
 		AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate("testCounter", counterUpdate);
 		AntidoteMapUpdate gMapUpdate = AntidoteMapUpdate.createGMapUpdate("testCounter", counterUpdate);
-		antidoteTransaction.startTransaction();
+		//antidoteTransaction.startTransaction();
 		CounterRef lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
 		IntegerRef lowInteger = new IntegerRef("testInteger", bucket, antidoteClient);
-		lowCounter.increment(2, antidoteTransaction);
-		lowInteger.set(7, antidoteTransaction);
-		lowInteger.increment(1, antidoteTransaction);
+	//	lowCounter.increment(2, antidoteTransaction);
+	//	lowInteger.set(7, antidoteTransaction);
+	//	lowInteger.increment(1, antidoteTransaction);
 		
-		lowORSet.add("Hi", antidoteTransaction);
-		lowRWSet.add("Hi", antidoteTransaction);
+	//	lowORSet.add("Hi", antidoteTransaction);
+	/*	lowRWSet.add("Hi", antidoteTransaction);
 		lowORSet.addBS(ByteString.copyFromUtf8("Hi2"), antidoteTransaction);
 		lowRWSet.addBS(ByteString.copyFromUtf8("Hi2"), antidoteTransaction);
 		lowORSet.add("Hi3", antidoteTransaction);
@@ -661,7 +760,7 @@ public class AntidoteTest{
 		AntidoteOuterGMap gMap = lowGMap.createAntidoteGMap(antidoteTransaction);
 		
 		antidoteTransaction.commitTransaction();
-		
+
 		assert(counter.getValue() == 2);
 		assert(integer.getValue() == 8);
 		assert(register.getValue().equals("Hi"));
@@ -737,7 +836,7 @@ public class AntidoteTest{
 		counter3.synchronize();
 		assert(counter1.getValue()==6);
 		assert(counter2.getValue()==7);
-		assert(counter3.getValue()==8);
+		assert(counter3.getValue()==8);*/
 	}
 	
 	@Test(timeout=2000)

@@ -12,12 +12,12 @@ import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 public abstract class AntidoteCRDT extends ObjectRef{
     
 	/** The list of locally executed but not yet pushed operations. */
-	private List<ApbUpdateOperation.Builder> updateList;	
-	
+	private List<ApbUpdateOperation.Builder> updateList;
+
 	/** The type. */
 	private final CRDT_type type;
-	
-    /**
+
+	/**
      * Instantiates a new antidote object.
      *
      * @param name the name
@@ -39,7 +39,7 @@ public abstract class AntidoteCRDT extends ObjectRef{
     public CRDT_type getType(){
     	return type;
     }
-	
+
 	/**
 	 * Gets the update list.
 	 *
@@ -74,6 +74,4 @@ public abstract class AntidoteCRDT extends ObjectRef{
 		}
 		clearUpdateList();
 	}
-	
-	
 }

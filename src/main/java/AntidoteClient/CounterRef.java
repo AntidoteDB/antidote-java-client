@@ -8,7 +8,6 @@ import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
  * The Class LowLevelCounter.
  */
 public final class CounterRef extends ObjectRef{
-	
 	/**
 	 * Instantiates a new low level counter.
 	 *
@@ -42,7 +41,7 @@ public final class CounterRef extends ObjectRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void increment(AntidoteTransaction antidoteTransaction){
-        updateHelper(incrementOpBuilder(1), getName(), getBucket(), AntidoteType.CounterType, antidoteTransaction);    
+        antidoteTransaction.updateHelper(incrementOpBuilder(1), getName(), getBucket(), AntidoteType.CounterType);
     }
 
     /**
@@ -52,7 +51,7 @@ public final class CounterRef extends ObjectRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void increment(int inc, AntidoteTransaction antidoteTransaction){
-        updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.CounterType, antidoteTransaction);    
+        antidoteTransaction.updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.CounterType);
     }
     
     /**
@@ -112,4 +111,5 @@ public final class CounterRef extends ObjectRef{
     	ApbGetCounterResp counter = readHelper(getName(), getBucket(), AntidoteType.CounterType, antidoteTransaction).getObjects(0).getCounter();
         return counter.getValue();
     }
+
 }
