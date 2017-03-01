@@ -63,6 +63,12 @@ public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapC
 		updateList.add(update);
 		update(key, updateList);
 	}
+
+	public void update(String key, AntidoteMapUpdate update, AntidoteTransaction antidoteTransaction){
+		List<AntidoteMapUpdate> updateList = new ArrayList<AntidoteMapUpdate>();
+		updateList.add(update);
+		update(key, updateList, antidoteTransaction);
+	}
 	
 	/**
 	 * Update the entry with given key. Type information is contained in the AntidoteMapUpdate.
@@ -73,7 +79,11 @@ public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapC
 	public void update(String key, List<AntidoteMapUpdate> updateList){
 		super.update(key, updateList, AntidoteType.AWMapType);
 	}
-	
+
+	public void update(String key, List<AntidoteMapUpdate> updateList, AntidoteTransaction antidoteTransaction){
+		super.update(key, updateList, AntidoteType.AWMapType, antidoteTransaction);
+	}
+
 	/**
 	 * Removes entries locally.
 	 *
@@ -101,6 +111,12 @@ public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapC
 		remove(keyList, type);
 	}
 
+	public void remove(String key, CRDT_type type,AntidoteTransaction antidoteTransaction){
+		List<String> keyList = new ArrayList<String>();
+		keyList.add(key);
+		remove(keyList, type, antidoteTransaction);
+	}
+
 	/**
 	 * Removes a list of entries of the same type.
 	 *
@@ -114,5 +130,14 @@ public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapC
 		}
 		removeLocal(mapKeyList);
 		addRemoveToList(mapKeyList);
+	}
+
+	public void remove(List<String> keyList, CRDT_type type, AntidoteTransaction antidoteTransaction){
+		List<AntidoteMapKey> mapKeyList = new ArrayList<AntidoteMapKey>();
+		for (String key : keyList){
+			mapKeyList.add(new AntidoteMapKey(type, key));
+		}
+		removeLocal(mapKeyList);
+		addRemoveToList(mapKeyList, antidoteTransaction);
 	}
 }

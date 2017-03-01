@@ -45,6 +45,11 @@ public final class AntidoteOuterInteger extends AntidoteCRDT implements IntegerC
 		value = newValue;
 		updateAdd(lowLevelInteger.setOpBuilder(newValue));
 	}
+
+	public void setValue(int newValue, AntidoteTransaction antidoteTransaction){
+		value = newValue;
+		antidoteTransaction.updateHelper(lowLevelInteger.setOpBuilder(newValue),getName(),getBucket(),getType());
+	}
 	
 	/**
 	 * Gets the most recent state from the database.
@@ -78,6 +83,10 @@ public final class AntidoteOuterInteger extends AntidoteCRDT implements IntegerC
 	public void increment(){
 		increment(1);
 	}
+
+	public void increment(AntidoteTransaction antidoteTransaction){
+		increment(1, antidoteTransaction);
+	}
 	
 	/**
 	 * Increment by inc.
@@ -87,5 +96,10 @@ public final class AntidoteOuterInteger extends AntidoteCRDT implements IntegerC
 	public void increment(int inc){
 		value = value + inc;
 		updateAdd(lowLevelInteger.incrementOpBuilder(inc));
+	}
+
+	public void increment(int inc, AntidoteTransaction antidoteTransaction){
+		value = value + inc;
+		antidoteTransaction.updateHelper(lowLevelInteger.incrementOpBuilder(inc),getName(),getBucket(),getType());
 	}
 }

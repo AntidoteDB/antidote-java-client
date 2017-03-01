@@ -40,6 +40,10 @@ public class AntidoteOuterMap extends AntidoteCRDT {
 	protected void addRemoveToList(List<AntidoteMapKey> keys){
 		updateAdd(new AWMapRef(getName(), getBucket(), getClient()).removeOpBuilder(keys));
 	}
+
+	protected void addRemoveToList(List<AntidoteMapKey> keys, AntidoteTransaction antidoteTransaction){
+		antidoteTransaction.updateHelper(new AWMapRef(getName(), getBucket(), getClient()).removeOpBuilder(keys),getName(),getBucket(),getType());
+	}
 	
 	/**
 	 * Adds an update operation to the updateList.
@@ -49,6 +53,10 @@ public class AntidoteOuterMap extends AntidoteCRDT {
 	 */
 	protected void addUpdateToList(AntidoteMapKey mapKey, List<AntidoteMapUpdate> update){
 		updateAdd(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(mapKey, update));	
+	}
+
+	protected void addUpdateToList(AntidoteMapKey mapKey, List<AntidoteMapUpdate> update, AntidoteTransaction antidoteTransaction){
+		antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(mapKey, update),getName(),getBucket(),getType());
 	}
 	
 	/**
@@ -87,7 +95,19 @@ public class AntidoteOuterMap extends AntidoteCRDT {
 		addUpdateToList(mapKey, updateList);
 		updateLocal(key, updateList, mapType);		
 	}
-	
+
+	public void update(String key, List<AntidoteMapUpdate> updateList, CRDT_type mapType, AntidoteTransaction antidoteTransaction){
+		CRDT_type type = updateList.get(0).getType();
+		for (AntidoteMapUpdate u : updateList){
+			if (!(type.equals(u.getType()))){
+				throw new  IllegalArgumentException("Different types detected, only one type allowed");
+			}
+		}
+		AntidoteMapKey mapKey = new AntidoteMapKey(type, key);
+		addUpdateToList(mapKey, updateList, antidoteTransaction);
+		updateLocal(key, updateList, mapType);
+	}
+
 	/**
 	 * Execute an update locally.
 	 *

@@ -80,6 +80,11 @@ public final class AntidoteOuterLWWRegister extends AntidoteCRDT implements LWWR
 		value = element;
 		updateAdd(lowLevelRegister.setOpBuilder(ByteString.copyFromUtf8(element)));
 	}
+
+	public void setValue(String element, AntidoteTransaction antidoteTransaction){
+		value = element;
+		antidoteTransaction.updateHelper(lowLevelRegister.setOpBuilder(ByteString.copyFromUtf8(element)),getName(),getBucket(),getType());
+	}
 	
 	/* (non-Javadoc)
 	 * @see main.java.AntidoteClient.RegisterInterface#setValue(com.google.protobuf.ByteString)
@@ -87,5 +92,10 @@ public final class AntidoteOuterLWWRegister extends AntidoteCRDT implements LWWR
 	public void setValueBS(ByteString element){
 		value = element.toStringUtf8();
 		updateAdd(lowLevelRegister.setOpBuilder(element));
+	}
+
+	public void setValueBS(ByteString element, AntidoteTransaction antidoteTransaction){
+		value = element.toStringUtf8();
+		antidoteTransaction.updateHelper(lowLevelRegister.setOpBuilder(element),getName(),getBucket(),getType());
 	}
 }

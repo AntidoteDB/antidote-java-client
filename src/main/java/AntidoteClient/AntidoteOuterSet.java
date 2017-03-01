@@ -72,6 +72,12 @@ public class AntidoteOuterSet extends AntidoteCRDT {
 		elementList.add(element);
 		removeElement(elementList);
 	}
+
+	public void removeElement(String element, AntidoteTransaction antidoteTransaction){
+		List<String> elementList = new ArrayList<String>();
+		elementList.add(element);
+		removeElement(elementList, antidoteTransaction);
+	}
 	
 	/**
 	 * Removes the elements from the set.
@@ -86,6 +92,15 @@ public class AntidoteOuterSet extends AntidoteCRDT {
 		removeLocal(elementList);
 		addUpdate(bsElementList, AntidoteSetOpType.SetRemove);	
 	}
+
+	public void removeElement(List<String> elementList, AntidoteTransaction antidoteTransaction){
+		List<ByteString> bsElementList = new ArrayList<>();
+		for (String elt : elementList){
+			bsElementList.add(ByteString.copyFromUtf8(elt));
+		}
+		removeLocal(elementList);
+		addUpdate(bsElementList, AntidoteSetOpType.SetRemove, antidoteTransaction);
+	}
 	
 	/**
 	 * Adds the element to the set.
@@ -96,6 +111,12 @@ public class AntidoteOuterSet extends AntidoteCRDT {
 		List<String> elementList = new ArrayList<String>();
 		elementList.add(element);
 		addElement(elementList);
+	}
+
+	public void addElement(String element, AntidoteTransaction antidoteTransaction){
+		List<String> elementList = new ArrayList<String>();
+		elementList.add(element);
+		addElement(elementList, antidoteTransaction);
 	}
 	
 	/**
@@ -111,6 +132,15 @@ public class AntidoteOuterSet extends AntidoteCRDT {
 		addLocal(elementList);
 		addUpdate(bsElementList, AntidoteSetOpType.SetAdd);	
 	}
+
+	public void addElement(List<String> elementList, AntidoteTransaction antidoteTransaction){
+		List<ByteString> bsElementList = new ArrayList<>();
+		for (String elt : elementList){
+			bsElementList.add(ByteString.copyFromUtf8(elt));
+		}
+		addLocal(elementList);
+		addUpdate(bsElementList, AntidoteSetOpType.SetAdd, antidoteTransaction);
+	}
 	
 	/**
 	 * Removes the element, given as ByteString, from the set.
@@ -121,6 +151,12 @@ public class AntidoteOuterSet extends AntidoteCRDT {
 		List<String> elementList = new ArrayList<String>();
 		elementList.add(element.toStringUtf8());
 		removeElement(elementList);
+	}
+
+	public void removeElementBS(ByteString element, AntidoteTransaction antidoteTransaction){
+		List<String> elementList = new ArrayList<String>();
+		elementList.add(element.toStringUtf8());
+		removeElement(elementList, antidoteTransaction);
 	}
 	
 	/**
@@ -136,6 +172,15 @@ public class AntidoteOuterSet extends AntidoteCRDT {
 		removeLocal(stringElementList);
 		addUpdate(elementList, AntidoteSetOpType.SetRemove);	
 	}
+
+	public void removeElementBS(List<ByteString> elementList, AntidoteTransaction antidoteTransaction){
+		List<String> stringElementList = new ArrayList<>();
+		for (ByteString elt : elementList){
+			stringElementList.add(elt.toStringUtf8());
+		}
+		removeLocal(stringElementList);
+		addUpdate(elementList, AntidoteSetOpType.SetRemove, antidoteTransaction);
+	}
 	
 	/**
 	 * Adds the element, given as ByteString, to the set.
@@ -146,6 +191,12 @@ public class AntidoteOuterSet extends AntidoteCRDT {
 		List<String> elementList = new ArrayList<String>();
 		elementList.add(element.toStringUtf8());
 		addElement(elementList);
+	}
+
+	public void addElementBS(ByteString element, AntidoteTransaction antidoteTransaction){
+		List<String> elementList = new ArrayList<String>();
+		elementList.add(element.toStringUtf8());
+		addElement(elementList, antidoteTransaction);
 	}
 	
 	/**
@@ -161,7 +212,16 @@ public class AntidoteOuterSet extends AntidoteCRDT {
 		addLocal(stringElementList);
 		addUpdate(elementList, AntidoteSetOpType.SetAdd);	
 	}
-	
+
+	public void addElementBS(List<ByteString> elementList, AntidoteTransaction antidoteTransaction){
+		List<String> stringElementList = new ArrayList<>();
+		for (ByteString elt : elementList){
+			stringElementList.add(elt.toStringUtf8());
+		}
+		addLocal(stringElementList);
+		addUpdate(elementList, AntidoteSetOpType.SetAdd, antidoteTransaction);
+	}
+
 	/**
 	 * Executes the add operation locally.
 	 *
@@ -192,6 +252,15 @@ public class AntidoteOuterSet extends AntidoteCRDT {
 		}
 		else if(type == AntidoteSetOpType.SetRemove){
 			updateAdd(new SetRef(getName(), getBucket(), getClient()).removeOpBuilder(elements));
+		}
+	}
+
+	private void addUpdate(List<ByteString> elements, int type, AntidoteTransaction antidoteTransaction){
+		if(type == AntidoteSetOpType.SetAdd){
+			antidoteTransaction.updateHelper(new SetRef(getName(), getBucket(), getClient()).addOpBuilder(elements),getName(),getBucket(),getType());
+		}
+		else if(type == AntidoteSetOpType.SetRemove){
+			antidoteTransaction.updateHelper(new SetRef(getName(), getBucket(), getClient()).removeOpBuilder(elements),getName(),getBucket(),getType());
 		}
 	}
 }

@@ -166,7 +166,7 @@ public class ObjectRef {
 
         ApbReadObjects readObjectsMessage = readObject.build();
         AntidoteMessage readMessage = antidoteClient.sendMessage(new AntidoteRequest(RiakPbMsgs.ApbReadObjects, readObjectsMessage));
-        
+
         ApbReadObjectsResp readResponse = null;
         try {
             readResponse = ApbReadObjectsResp.parseFrom(readMessage.getMessage());

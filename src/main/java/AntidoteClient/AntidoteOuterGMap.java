@@ -63,7 +63,13 @@ public final class AntidoteOuterGMap extends AntidoteOuterMap implements GMapCRD
 		updateList.add(update);
 		update(key, updateList);
 	}
-	
+
+	public void update(String key, AntidoteMapUpdate update, AntidoteTransaction antidoteTransaction){
+		List<AntidoteMapUpdate> updateList = new ArrayList<AntidoteMapUpdate>();
+		updateList.add(update);
+		update(key, updateList, antidoteTransaction);
+	}
+
 	/**
 	 * Update the entry with given key. Type information is contained in the AntidoteMapUpdate.
 	 *
@@ -71,6 +77,10 @@ public final class AntidoteOuterGMap extends AntidoteOuterMap implements GMapCRD
 	 * @param updateList updates which are executed on that entry, type must be the same for all of them
 	 */
 	public void update(String key, List<AntidoteMapUpdate> updateList){
-		super.update(key, updateList, AntidoteType.GMapType);	
+		super.update(key, updateList, AntidoteType.GMapType);
+	}
+
+	public void update(String key, List<AntidoteMapUpdate> updateList, AntidoteTransaction antidoteTransaction){
+		super.update(key, updateList, AntidoteType.GMapType, antidoteTransaction);
 	}
 }

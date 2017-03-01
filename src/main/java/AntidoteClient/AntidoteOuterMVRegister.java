@@ -89,6 +89,12 @@ public final class AntidoteOuterMVRegister extends AntidoteCRDT implements MVReg
 		valueList.add(element);
 		updateAdd(lowLevelRegister.setOpBuilder(ByteString.copyFromUtf8(element)));
 	}
+
+	public void setValue(String element, AntidoteTransaction antidoteTransaction){
+		valueList.clear();
+		valueList.add(element);
+		antidoteTransaction.updateHelper(lowLevelRegister.setOpBuilder(ByteString.copyFromUtf8(element)),getName(),getBucket(),getType());
+	}
 	
 	/* (non-Javadoc)
 	 * @see main.java.AntidoteClient.MVRegisterInterface#setValue(com.google.protobuf.ByteString)
@@ -97,5 +103,11 @@ public final class AntidoteOuterMVRegister extends AntidoteCRDT implements MVReg
 		valueList.clear();
 		valueList.add(element.toStringUtf8());
 		updateAdd(lowLevelRegister.setOpBuilder(element));
+	}
+
+	public void setValueBS(ByteString element, AntidoteTransaction antidoteTransaction){
+		valueList.clear();
+		valueList.add(element.toStringUtf8());
+		antidoteTransaction.updateHelper(lowLevelRegister.setOpBuilder(element),getName(),getBucket(),getType());
 	}
 }
