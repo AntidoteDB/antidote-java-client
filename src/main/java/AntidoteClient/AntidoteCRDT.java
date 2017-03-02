@@ -9,13 +9,22 @@ import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 /**
  * The Class AntidoteObject.
  */
-public abstract class AntidoteCRDT extends ObjectRef{
-    
+public abstract class AntidoteCRDT {
+    ObjectRef obj;
 	/** The list of locally executed but not yet pushed operations. */
 	private List<ApbUpdateOperation.Builder> updateList;
 
 	/** The type. */
 	private final CRDT_type type;
+	
+	/** The name. */
+    private final String name;
+    
+    /** The bucket. */
+    private final String bucket;
+  
+    /** The antidote client. */
+	private final AntidoteClient antidoteClient;
 
 	/**
      * Instantiates a new antidote object.
@@ -26,7 +35,9 @@ public abstract class AntidoteCRDT extends ObjectRef{
      * @param type the type
      */
     public AntidoteCRDT(String name, String bucket, AntidoteClient antidoteClient, CRDT_type type) {
-        super(name, bucket, antidoteClient);
+    	this.name = name;
+        this.bucket = bucket;
+        this.antidoteClient = antidoteClient;
         updateList = new ArrayList<>();
         this.type = type;
     }
@@ -70,8 +81,35 @@ public abstract class AntidoteCRDT extends ObjectRef{
 	 */
 	public void push(){	
 		for(ApbUpdateOperation.Builder update : getUpdateList()){
-			updateHelper(update, getName(), getBucket(), type);
+			obj.updateHelper(update, name, bucket, type);
 		}
 		clearUpdateList();
+	}
+	
+	/**
+     * Gets the name.
+     *
+     * @return the name
+     */
+    public String getName(){
+    	return name;
+    }
+    
+    /**
+     * Gets the bucket.
+     *
+     * @return the bucket
+     */
+    public String getBucket(){
+    	return bucket;
+    };
+    
+	/**
+	 * Gets the client.
+	 *
+	 * @return the client
+	 */
+	public AntidoteClient getClient(){
+		return antidoteClient;
 	}
 }
