@@ -46,6 +46,12 @@ public final class AntidoteOuterInteger extends AntidoteCRDT implements IntegerC
 		updateAdd(lowLevelInteger.setOpBuilder(newValue));
 	}
 
+	/**
+	 * Sets the value.
+	 *
+	 * @param newValue the new value
+	 * @param antidoteTransaction the antidote transaction
+	 */
 	public void setValue(int newValue, AntidoteTransaction antidoteTransaction){
 		value = newValue;
 		antidoteTransaction.updateHelper(lowLevelInteger.setOpBuilder(newValue),getName(),getBucket(),getType());
@@ -84,6 +90,11 @@ public final class AntidoteOuterInteger extends AntidoteCRDT implements IntegerC
 		increment(1);
 	}
 
+	/**
+	 * Increment by one.
+	 *
+	 * @param antidoteTransaction the antidote transaction
+	 */
 	public void increment(AntidoteTransaction antidoteTransaction){
 		increment(1, antidoteTransaction);
 	}
@@ -98,6 +109,12 @@ public final class AntidoteOuterInteger extends AntidoteCRDT implements IntegerC
 		updateAdd(lowLevelInteger.incrementOpBuilder(inc));
 	}
 
+	/**
+	 * Increment by inc.
+	 *
+	 * @param inc the value by which the integer is incremented
+	 * @param antidoteTransaction the antidote transaction
+	 */
 	public void increment(int inc, AntidoteTransaction antidoteTransaction){
 		value = value + inc;
 		antidoteTransaction.updateHelper(lowLevelInteger.incrementOpBuilder(inc),getName(),getBucket(),getType());

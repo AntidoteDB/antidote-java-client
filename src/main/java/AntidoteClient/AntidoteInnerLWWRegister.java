@@ -115,7 +115,20 @@ public final class AntidoteInnerLWWRegister extends AntidoteInnerCRDT implements
 		registerSet.add(AntidoteMapUpdate.createRegisterSet(value));
 		updateHelper(registerSet);
 	}
-	
+
+	/**
+	 * Set the register to a new value.
+	 *
+	 * @param value the value
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void setValue(String value, AntidoteTransaction antidoteTransaction){
+		setLocal(value);
+		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>();
+		registerSet.add(AntidoteMapUpdate.createRegisterSet(value));
+		updateHelper(registerSet, antidoteTransaction);
+	}
+
 	/* (non-Javadoc)
 	 * @see main.java.AntidoteClient.RegisterInterface#setValue(com.google.protobuf.ByteString)
 	 */
@@ -124,5 +137,12 @@ public final class AntidoteInnerLWWRegister extends AntidoteInnerCRDT implements
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
 		registerSet.add(AntidoteMapUpdate.createRegisterSet(value.toStringUtf8()));
 		updateHelper(registerSet);
+	}
+
+	public void setValueBS(ByteString value, AntidoteTransaction antidoteTransaction){
+		setLocal(value.toStringUtf8());
+		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>();
+		registerSet.add(AntidoteMapUpdate.createRegisterSet(value.toStringUtf8()));
+		updateHelper(registerSet, antidoteTransaction);
 	}
 }

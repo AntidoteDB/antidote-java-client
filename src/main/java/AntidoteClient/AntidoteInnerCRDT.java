@@ -76,6 +76,56 @@ public class AntidoteInnerCRDT extends AntidoteCRDT{
 			}
 		}
 	}
+
+	/**
+	 * Update helper.
+	 *
+	 * @param innerUpdate the inner update
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	protected void updateHelper(List<AntidoteMapUpdate> innerUpdate, AntidoteTransaction antidoteTransaction){
+		AntidoteMapUpdate mapUpdate = null;
+		List<AntidoteMapUpdate> mapUpdateList = new ArrayList<AntidoteMapUpdate>();
+		ApbMapKey apbKey;
+		for (int i = getPath().size()-1; i>0; i--){
+			apbKey = getPath().get(i);
+			if (i == getPath().size()-1){
+				if (getPath().get(i-1).getType() == AntidoteType.GMapType){
+					mapUpdate = AntidoteMapUpdate.createGMapUpdate(apbKey.getKey().toStringUtf8(), innerUpdate);
+				}
+				else{
+					mapUpdate = AntidoteMapUpdate.createAWMapUpdate(apbKey.getKey().toStringUtf8(), innerUpdate);
+				}
+				mapUpdateList.add(mapUpdate);
+			}
+			else{
+				if (getPath().get(i-1).getType() == AntidoteType.GMapType){
+					mapUpdate = AntidoteMapUpdate.createGMapUpdate(apbKey.getKey().toStringUtf8(), mapUpdateList);
+				}
+				else{
+					mapUpdate = AntidoteMapUpdate.createAWMapUpdate(apbKey.getKey().toStringUtf8(), mapUpdateList);
+				}
+				mapUpdateList = new ArrayList<AntidoteMapUpdate>();
+				mapUpdateList.add(mapUpdate);
+			}
+		}
+		if (getPath().size()>1){
+			if (getType() == AntidoteType.GMapType){
+				antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), mapUpdateList),getName(),getBucket(),getType());
+			}
+			else if (getType() == AntidoteType.AWMapType){
+				antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), mapUpdateList),getName(),getBucket(),getType());
+			}
+		}
+		else if (getPath().size()==1){
+			if (getType() == AntidoteType.GMapType){
+				antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), innerUpdate),getName(),getBucket(),getType());
+			}
+			else if (getType() == AntidoteType.AWMapType){
+				antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), innerUpdate),getName(),getBucket(),getType());
+			}
+		}
+	}
 	
 	/**
 	 * Read database helper.

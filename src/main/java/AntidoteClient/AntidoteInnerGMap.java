@@ -37,7 +37,20 @@ public final class AntidoteInnerGMap extends AntidoteInnerMap implements GMapCRD
 		updateList.add(update);
 		update(mapKey, updateList);
 	}
-	
+
+	/**
+	 * Update the entry with the given key.
+	 *
+	 * @param mapKey the map key
+	 * @param update the update
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void update(String mapKey, AntidoteMapUpdate update, AntidoteTransaction antidoteTransaction){
+		List<AntidoteMapUpdate> updateList = new ArrayList<AntidoteMapUpdate>();
+		updateList.add(update);
+		update(mapKey, updateList, antidoteTransaction);
+	}
+
 	/**
 	 * Update the entry with the given key with multiple updates.
 	 *
@@ -49,5 +62,19 @@ public final class AntidoteInnerGMap extends AntidoteInnerMap implements GMapCRD
 		List<AntidoteMapUpdate> innerMapUpdate = new ArrayList<AntidoteMapUpdate>(); 
 		innerMapUpdate.add(AntidoteMapUpdate.createGMapUpdate(mapKey, updateList));
 		updateHelper(innerMapUpdate);
+	}
+
+	/**
+	 * Update the entry with the given key with multiple updates.
+	 *
+	 * @param mapKey the map key
+	 * @param updateList the update list
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void update(String mapKey, List<AntidoteMapUpdate> updateList, AntidoteTransaction antidoteTransaction){
+		updateLocal(mapKey, updateList);
+		List<AntidoteMapUpdate> innerMapUpdate = new ArrayList<AntidoteMapUpdate>();
+		innerMapUpdate.add(AntidoteMapUpdate.createGMapUpdate(mapKey, updateList));
+		updateHelper(innerMapUpdate, antidoteTransaction);
 	}
 }

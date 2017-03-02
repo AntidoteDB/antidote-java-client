@@ -94,7 +94,16 @@ public final class AntidoteInnerCounter extends AntidoteInnerCRDT implements Cou
 	public void increment(){
 		increment(1);
 	}
-	
+
+	/**
+	 * Increment the value by one.
+	 *
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void increment(AntidoteTransaction antidoteTransaction){
+		increment(1, antidoteTransaction);
+	}
+
 	/**
 	 * Increment the value.
 	 *
@@ -106,7 +115,20 @@ public final class AntidoteInnerCounter extends AntidoteInnerCRDT implements Cou
 		counterIncrement.add(AntidoteMapUpdate.createCounterIncrement(inc));
 		updateHelper(counterIncrement);
 	}
-	
+
+	/**
+	 * Increment the value.
+	 *
+	 * @param inc the increment by which the value is incremented
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void increment(int inc, AntidoteTransaction antidoteTransaction){
+		incrementLocal(inc);
+		List<AntidoteMapUpdate> counterIncrement = new ArrayList<AntidoteMapUpdate>();
+		counterIncrement.add(AntidoteMapUpdate.createCounterIncrement(inc));
+		updateHelper(counterIncrement, antidoteTransaction);
+	}
+
 	/**
 	 * Execute increment locally.
 	 *

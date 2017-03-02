@@ -102,6 +102,15 @@ public final class AntidoteInnerInteger extends AntidoteInnerCRDT implements Int
 	public void increment(){
 		increment(1);
 	}
+
+	/**
+	 * Increment by one.
+	 *
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void increment(AntidoteTransaction antidoteTransaction){
+		increment(1, antidoteTransaction);
+	}
 	
 	/**
 	 * Increment the value.
@@ -113,6 +122,19 @@ public final class AntidoteInnerInteger extends AntidoteInnerCRDT implements Int
 		List<AntidoteMapUpdate> integerIncrement = new ArrayList<AntidoteMapUpdate>(); 
 		integerIncrement.add(AntidoteMapUpdate.createIntegerIncrement(inc));
 		updateHelper(integerIncrement);
+	}
+
+	/**
+	 * Increment the value.
+	 *
+	 * @param inc the increment by which the value is incremented
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void increment(int inc, AntidoteTransaction antidoteTransaction){
+		incrementLocal(inc);
+		List<AntidoteMapUpdate> integerIncrement = new ArrayList<AntidoteMapUpdate>();
+		integerIncrement.add(AntidoteMapUpdate.createIntegerIncrement(inc));
+		updateHelper(integerIncrement, antidoteTransaction);
 	}
 	
 	/**
@@ -134,5 +156,18 @@ public final class AntidoteInnerInteger extends AntidoteInnerCRDT implements Int
 		List<AntidoteMapUpdate> integerSet = new ArrayList<AntidoteMapUpdate>(); 
 		integerSet.add(AntidoteMapUpdate.createIntegerSet(value));
 		updateHelper(integerSet);
+	}
+
+	/**
+	 * Sets the integer to a new value.
+	 *
+	 * @param value the new value
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void setValue(int value, AntidoteTransaction antidoteTransaction){
+		setLocal(value);
+		List<AntidoteMapUpdate> integerSet = new ArrayList<AntidoteMapUpdate>();
+		integerSet.add(AntidoteMapUpdate.createIntegerSet(value));
+		updateHelper(integerSet, antidoteTransaction);
 	}
 }

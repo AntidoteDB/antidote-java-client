@@ -121,6 +121,19 @@ private List<String> valueList;
 		registerSet.add(AntidoteMapUpdate.createMVRegisterSet(value));
 		updateHelper(registerSet);
 	}
+
+	/**
+	 * Set the register to a new value.
+	 *
+	 * @param value the value
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void setValue(String value, AntidoteTransaction antidoteTransaction){
+		setLocal(value);
+		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>();
+		registerSet.add(AntidoteMapUpdate.createMVRegisterSet(value));
+		updateHelper(registerSet, antidoteTransaction);
+	}
 	
 	/* (non-Javadoc)
 	 * @see main.java.AntidoteClient.MVRegisterInterface#setValue(com.google.protobuf.ByteString)
@@ -130,5 +143,12 @@ private List<String> valueList;
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
 		registerSet.add(AntidoteMapUpdate.createMVRegisterSet(value.toStringUtf8()));
 		updateHelper(registerSet);
+	}
+
+	public void setValueBS(ByteString value, AntidoteTransaction antidoteTransaction){
+		setLocal(value.toStringUtf8());
+		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>();
+		registerSet.add(AntidoteMapUpdate.createMVRegisterSet(value.toStringUtf8()));
+		updateHelper(registerSet, antidoteTransaction);
 	}
 }

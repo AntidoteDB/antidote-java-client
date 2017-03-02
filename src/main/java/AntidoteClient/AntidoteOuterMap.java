@@ -41,6 +41,12 @@ public class AntidoteOuterMap extends AntidoteCRDT {
 		updateAdd(new AWMapRef(getName(), getBucket(), getClient()).removeOpBuilder(keys));
 	}
 
+	/**
+	 * Adds a remove operation to the transaction.
+	 *
+	 * @param keys the keys
+	 * @param antidoteTransaction the antidote transaction
+	 */
 	protected void addRemoveToList(List<AntidoteMapKey> keys, AntidoteTransaction antidoteTransaction){
 		antidoteTransaction.updateHelper(new AWMapRef(getName(), getBucket(), getClient()).removeOpBuilder(keys),getName(),getBucket(),getType());
 	}
@@ -55,6 +61,12 @@ public class AntidoteOuterMap extends AntidoteCRDT {
 		updateAdd(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(mapKey, update));	
 	}
 
+	/**
+	 * Adds a update operation to the transaction.
+	 *
+	 * @param mapKey the keys
+	 * @param antidoteTransaction the antidote transaction
+	 */
 	protected void addUpdateToList(AntidoteMapKey mapKey, List<AntidoteMapUpdate> update, AntidoteTransaction antidoteTransaction){
 		antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(mapKey, update),getName(),getBucket(),getType());
 	}
@@ -96,6 +108,14 @@ public class AntidoteOuterMap extends AntidoteCRDT {
 		updateLocal(key, updateList, mapType);		
 	}
 
+	/**
+	 * Update.
+	 *
+	 * @param key the key of the entry which is updated
+	 * @param updateList the updates which are executed on that entry, must all be of the same type
+	 * @param mapType the type of the map
+	 * @param antidoteTransaction the antidote transaction
+	 */
 	public void update(String key, List<AntidoteMapUpdate> updateList, CRDT_type mapType, AntidoteTransaction antidoteTransaction){
 		CRDT_type type = updateList.get(0).getType();
 		for (AntidoteMapUpdate u : updateList){

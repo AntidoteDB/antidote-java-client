@@ -149,6 +149,7 @@ public class ObjectRef {
      * @param name the name
      * @param bucket the bucket
      * @param type the type
+     * @param antidoteTransaction the antidote transaction
      * @return the apb read objects resp
      */
     protected ApbReadObjectsResp readHelper(String name, String bucket, CRDT_type type, AntidoteTransaction antidoteTransaction){

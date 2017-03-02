@@ -54,7 +54,19 @@ public final class AntidoteInnerRWSet extends AntidoteInnerSet implements SetCRD
 		elementList.add(element);
 		addElementBS(elementList);
 	}
-	
+
+	/**
+	 * Adds the element, given as ByteString.
+	 *
+	 * @param element the element
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void addElementBS(ByteString element, AntidoteTransaction antidoteTransaction){
+		List<ByteString> elementList = new ArrayList<ByteString>();
+		elementList.add(element);
+		addElementBS(elementList, antidoteTransaction);
+	}
+
 	/**
 	 * Adds the elements, given as ByteStrings.
 	 *
@@ -70,7 +82,24 @@ public final class AntidoteInnerRWSet extends AntidoteInnerSet implements SetCRD
 		setAdd.add(AntidoteMapUpdate.createRWSetAddBS(elementList));
 		updateHelper(setAdd);
 	}
-	
+
+	/**
+	 * Adds the elements, given as ByteStrings.
+	 *
+	 * @param elementList the element list
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void addElementBS(List<ByteString> elementList, AntidoteTransaction antidoteTransaction){
+		List<String> stringElementList = new ArrayList<>();
+		for (ByteString elt : elementList){
+			stringElementList.add(elt.toStringUtf8());
+		}
+		addElementLocal(stringElementList);
+		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>();
+		setAdd.add(AntidoteMapUpdate.createRWSetAddBS(elementList));
+		updateHelper(setAdd, antidoteTransaction);
+	}
+
 	/**
 	 * Removes the elements, given as ByteString.
 	 *
@@ -81,7 +110,19 @@ public final class AntidoteInnerRWSet extends AntidoteInnerSet implements SetCRD
 		elementList.add(element);
 		removeElementBS(elementList);
 	}
-	
+
+	/**
+	 * Removes the element, given as ByteString.
+	 *
+	 * @param element the element
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void removeElementBS(ByteString element, AntidoteTransaction antidoteTransaction){
+		List<ByteString> elementList = new ArrayList<ByteString>();
+		elementList.add(element);
+		removeElementBS(elementList, antidoteTransaction);
+	}
+
 	/**
 	 * Removes the elements, given as ByteStrings.
 	 *
@@ -97,7 +138,24 @@ public final class AntidoteInnerRWSet extends AntidoteInnerSet implements SetCRD
 		setRemove.add(AntidoteMapUpdate.createRWSetRemoveBS(elementList));
 		updateHelper(setRemove);
 	}
-	
+
+	/**
+	 * Removes the elements, given as ByteStrings.
+	 *
+	 * @param elementList the element list
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void removeElementBS(List<ByteString> elementList, AntidoteTransaction antidoteTransaction){
+		List<String> stringElementList = new ArrayList<>();
+		for (ByteString elt : elementList){
+			stringElementList.add(elt.toStringUtf8());
+		}
+		removeElementLocal(stringElementList);
+		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>();
+		setRemove.add(AntidoteMapUpdate.createRWSetRemoveBS(elementList));
+		updateHelper(setRemove, antidoteTransaction);
+	}
+
 	/**
 	 * Adds the element.
 	 *
@@ -108,7 +166,19 @@ public final class AntidoteInnerRWSet extends AntidoteInnerSet implements SetCRD
 		elementList.add(element);
 		addElement(elementList);
 	}
-	
+
+	/**
+	 * Adds the element.
+	 *
+	 * @param element the element
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void addElement(String element, AntidoteTransaction antidoteTransaction){
+		List<String> elementList = new ArrayList<String>();
+		elementList.add(element);
+		addElement(elementList, antidoteTransaction);
+	}
+
 	/**
 	 * Adds the elements.
 	 *
@@ -120,7 +190,20 @@ public final class AntidoteInnerRWSet extends AntidoteInnerSet implements SetCRD
 		setAdd.add(AntidoteMapUpdate.createRWSetAdd(elementList));
 		updateHelper(setAdd);
 	}
-	
+
+	/**
+	 * Adds the elements.
+	 *
+	 * @param elementList the element list
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void addElement(List<String> elementList, AntidoteTransaction antidoteTransaction){
+		addElementLocal(elementList);
+		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>();
+		setAdd.add(AntidoteMapUpdate.createRWSetAdd(elementList));
+		updateHelper(setAdd, antidoteTransaction);
+	}
+
 	/**
 	 * Removes the element.
 	 *
@@ -131,7 +214,19 @@ public final class AntidoteInnerRWSet extends AntidoteInnerSet implements SetCRD
 		elementList.add(element);
 		removeElement(elementList);
 	}
-	
+
+	/**
+	 * Removes the element.
+	 *
+	 * @param element the element
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void removeElement(String element, AntidoteTransaction antidoteTransaction){
+		List<String> elementList = new ArrayList<String>();
+		elementList.add(element);
+		removeElement(elementList, antidoteTransaction);
+	}
+
 	/**
 	 * Removes the elements.
 	 *
@@ -143,7 +238,20 @@ public final class AntidoteInnerRWSet extends AntidoteInnerSet implements SetCRD
 		setRemove.add(AntidoteMapUpdate.createRWSetRemove(elementList));
 		updateHelper(setRemove);
 	}
-	
+
+	/**
+	 * Removes the elements.
+	 *
+	 * @param elementList the element list
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void removeElement(List<String> elementList, AntidoteTransaction antidoteTransaction){
+		removeElementLocal(elementList);
+		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>();
+		setRemove.add(AntidoteMapUpdate.createRWSetRemove(elementList));
+		updateHelper(setRemove, antidoteTransaction);
+	}
+
 	/**
 	 * Gets the most recent state from the database.
 	 */

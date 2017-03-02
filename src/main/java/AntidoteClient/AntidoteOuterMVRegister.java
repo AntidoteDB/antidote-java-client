@@ -90,6 +90,12 @@ public final class AntidoteOuterMVRegister extends AntidoteCRDT implements MVReg
 		updateAdd(lowLevelRegister.setOpBuilder(ByteString.copyFromUtf8(element)));
 	}
 
+	/**
+	 * Update the MV-Register.
+	 *
+	 * @param element the element
+	 * @param antidoteTransaction the antidote transaction
+	 */
 	public void setValue(String element, AntidoteTransaction antidoteTransaction){
 		valueList.clear();
 		valueList.add(element);

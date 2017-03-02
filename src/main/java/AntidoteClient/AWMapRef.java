@@ -88,7 +88,7 @@ public final class AWMapRef extends MapRef{
         updateOperation.setMapop(mapUpdateInstruction);
         return updateOperation;
 	}
-	
+
     /**
      * Removes the element with given key.
      *
@@ -128,19 +128,7 @@ public final class AWMapRef extends MapRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void remove(List<AntidoteMapKey> keys, AntidoteTransaction antidoteTransaction) {
-        ApbMapUpdate.Builder mapUpdateInstruction = ApbMapUpdate.newBuilder(); // The specific instruction in update instruction
-        List<ApbMapKey> apbKeys = new ArrayList<>();
-        ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-        apbKeyBuilder.setType(keys.get(0).getType());
-        for (AntidoteMapKey key : keys){
-        	apbKeyBuilder.setKey(key.getKeyBS());
-        	apbKeys.add(apbKeyBuilder.build());
-        }
-        mapUpdateInstruction.addAllRemovedKeys(apbKeys);      
-        
-        ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
-        updateOperation.setMapop(mapUpdateInstruction);
-        antidoteTransaction.updateHelper(updateOperation, getName(), getBucket(), AntidoteType.AWMapType);
+        antidoteTransaction.updateHelper(removeOpBuilder(keys), getName(), getBucket(), AntidoteType.AWMapType);
     }
     
     /**

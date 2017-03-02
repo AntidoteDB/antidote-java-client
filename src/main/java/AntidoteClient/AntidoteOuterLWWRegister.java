@@ -81,6 +81,12 @@ public final class AntidoteOuterLWWRegister extends AntidoteCRDT implements LWWR
 		updateAdd(lowLevelRegister.setOpBuilder(ByteString.copyFromUtf8(element)));
 	}
 
+	/**
+	 * Set the value of the register.
+	 *
+	 * @param element the element
+	 * @param antidoteTransaction the antidote transaction
+	 */
 	public void setValue(String element, AntidoteTransaction antidoteTransaction){
 		value = element;
 		antidoteTransaction.updateHelper(lowLevelRegister.setOpBuilder(ByteString.copyFromUtf8(element)),getName(),getBucket(),getType());
