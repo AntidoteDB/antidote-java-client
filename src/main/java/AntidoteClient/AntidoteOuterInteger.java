@@ -2,6 +2,8 @@ package main.java.AntidoteClient;
 
 import interfaces.IntegerCRDT;
 
+import java.util.List;
+
 /**
  * The Class AntidoteOuterInteger.
  */
@@ -72,5 +74,14 @@ public final class AntidoteOuterInteger extends AntidoteCRDT implements IntegerC
 	public void increment(int inc, AntidoteTransaction antidoteTransaction){
 		value = value + inc;
 		antidoteTransaction.updateHelper(lowLevelInteger.incrementOpBuilder(inc),getName(),getBucket(),getType());
+	}
+
+	public int getValue(List<AntidoteCRDT> outerObjects){
+		for(AntidoteCRDT object : outerObjects)
+		{
+			if(object.getName() == this.getName() && object.getClient() == this.getClient() && object.getBucket() == this.getBucket())
+				return ((AntidoteOuterInteger) object).getValue();
+		}
+		return 0;
 	}
 }
