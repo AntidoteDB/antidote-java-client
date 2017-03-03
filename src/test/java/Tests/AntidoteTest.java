@@ -7,14 +7,10 @@ import java.util.*;
 import java.util.ArrayList;
 import org.junit.Test;
 import com.google.protobuf.ByteString;
-
 public class AntidoteTest{
-
 	PoolManager antidotePoolManager;
 	AntidoteClient antidoteClient;
 	String bucket;
-
-
 	public AntidoteTest() {
 		List<Host> hosts = new LinkedList<Host>();
 		hosts.add(new Host("192.168.99.100", 8087));
@@ -22,13 +18,71 @@ public class AntidoteTest{
 		antidotePoolManager = new PoolManager(20, 5, hosts);
 		antidoteClient = new AntidoteClient(antidotePoolManager);
 		bucket = nextSessionId();
-
 	}
-	
+
 	public String nextSessionId() {
 		SecureRandom random = new SecureRandom();
-	    return new BigInteger(130, random).toString(32);
+		return new BigInteger(130, random).toString(32);
 	}
+
+	@Test(timeout=10000)
+	public void readstaticTransaction() {
+		List<AntidoteCRDT> antidoteCRDTObjects = new ArrayList<>();
+		List<ObjectRef> objectRefs = new ArrayList<>();
+		CounterRef lowCounter3 =antidoteClient.counterRef("testCounter1", bucket);
+		CounterRef lowCounter4 = antidoteClient.counterRef("testCounter2", bucket);
+		CounterRef lowCounter = antidoteClient.counterRef("testCounter3", bucket);
+		CounterRef lowCounter1 = antidoteClient.counterRef("testCounter4", bucket);
+		IntegerRef lowInt =antidoteClient.integerRef("testInteger1", bucket);
+		IntegerRef lowInt2 = antidoteClient.integerRef("testInteger2", bucket);
+		IntegerRef lowInt3 = antidoteClient.integerRef("testInteger3", bucket);
+		IntegerRef lowInt4 = antidoteClient.integerRef("testInteger4", bucket);
+		AntidoteOuterCounter counter1 = lowCounter1.createAntidoteCounter();
+		AntidoteOuterCounter counter = lowCounter.createAntidoteCounter();
+		AntidoteOuterInteger integer = lowInt.createAntidoteInteger();
+		AntidoteOuterInteger integer2 = lowInt2.createAntidoteInteger();
+
+
+		AntidoteTransaction tx = antidoteClient.createStaticTransaction();
+		lowCounter3.increment(2,tx);
+		lowCounter4.increment(3,tx);
+		lowInt3.increment(4,tx);
+		lowInt4.increment(5,tx);
+		integer.increment(6,tx);
+		integer2.increment(7,tx);
+		counter.increment(8,tx);
+		counter1.increment(9,tx);
+		tx.commitTransaction();
+		tx.close();
+
+		antidoteCRDTObjects.add(integer);
+		antidoteCRDTObjects.add(integer2);
+		antidoteCRDTObjects.add(counter);
+		antidoteCRDTObjects.add(counter1);
+
+		objectRefs.add(lowCounter3);
+		objectRefs.add(lowCounter4);
+		objectRefs.add(lowInt3);
+		objectRefs.add(lowInt4);
+
+
+
+		AntidoteStaticTransaction antidoteStaticTransaction = new AntidoteStaticTransaction(antidoteClient);
+
+		List<AntidoteCRDT> objectRefsList = antidoteStaticTransaction.readObjects(objectRefs);
+		List<AntidoteCRDT> antidoteCRDTList= antidoteStaticTransaction.readOuterObjects(antidoteCRDTObjects);
+
+		assert (lowCounter3.getValue(objectRefsList)==2);
+		assert (lowCounter4.getValue(objectRefsList)==3);
+		assert (lowInt3.getValue(objectRefsList)==4);
+		assert (lowInt4.getValue(objectRefsList)==5);
+		assert (integer.getValue(antidoteCRDTList)==6);
+		assert (integer2.getValue(antidoteCRDTList)==7);
+		assert (counter.getValue(antidoteCRDTList)==8);
+		assert (counter1.getValue(antidoteCRDTList)==9);
+	}
+
+
 
 	@Test(timeout=10000)
 	public void counterRefCommitStaticTransaction() {
@@ -38,7 +92,6 @@ public class AntidoteTest{
 		int oldValue1 = counter1old.getValue();
 		AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter();
 		int oldValue2 = counter2old.getValue();
-
 		AntidoteTransaction tx = antidoteClient.createStaticTransaction();
 		lowCounter1.increment(5, tx);
 		lowCounter1.increment(5, tx);
@@ -46,7 +99,6 @@ public class AntidoteTest{
 		lowCounter2.increment(3, tx);
 		tx.commitTransaction();
 		tx.close();
-
 		AntidoteOuterCounter counter1new = lowCounter1.createAntidoteCounter();
 		AntidoteOuterCounter counter2new = lowCounter2.createAntidoteCounter();
 		int newValue1 = counter1new.getValue();
@@ -60,7 +112,6 @@ public class AntidoteTest{
 		assert(newValue1 == oldValue1+10);
 		assert(newValue2 == oldValue2+6);
 	}
-
 	@Test(timeout=10000)
 	public void counterRefCommitTransaction() {
 		CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
@@ -69,7 +120,6 @@ public class AntidoteTest{
 		int oldValue1 = counter1old.getValue();
 		AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter();
 		int oldValue2 = counter2old.getValue();
-
 		AntidoteTransaction tx = antidoteClient.createTransaction();
 		lowCounter1.increment(5, tx);
 		lowCounter1.increment(5, tx);
@@ -77,7 +127,6 @@ public class AntidoteTest{
 		lowCounter2.increment(3, tx);
 		tx.commitTransaction();
 		tx.close();
-
 		AntidoteOuterCounter counter1new = lowCounter1.createAntidoteCounter();
 		AntidoteOuterCounter counter2new = lowCounter2.createAntidoteCounter();
 		int newValue1 = counter1new.getValue();
@@ -91,7 +140,6 @@ public class AntidoteTest{
 		assert(newValue1 == oldValue1+10);
 		assert(newValue2 == oldValue2+6);
 	}
-
 	@Test(timeout=10000)
 	public void commitTransaction() {
 		CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
@@ -100,7 +148,6 @@ public class AntidoteTest{
 		int oldValue1 = counter1old.getValue();
 		AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter();
 		int oldValue2 = counter2old.getValue();
-
 		AntidoteTransaction tx3 = antidoteClient.createTransaction();
 		counter1old.increment(5, tx3);
 		counter1old.increment(5, tx3);
@@ -108,7 +155,6 @@ public class AntidoteTest{
 		counter2old.increment(3, tx3);
 		tx3.commitTransaction();
 		tx3.close();
-
 		int newValue1 = counter1old.getValue();
 		int newValue2 = counter2old.getValue();
 		assert(newValue1 == oldValue1+10);
@@ -120,7 +166,6 @@ public class AntidoteTest{
 		assert(newValue1 == oldValue1+10);
 		assert(newValue2 == oldValue2+6);
 	}
-
 	@Test(timeout=10000)
 	public void commitStaticTransaction() {
 		CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
@@ -129,7 +174,6 @@ public class AntidoteTest{
 		int oldValue1 = counter1old.getValue();
 		AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter();
 		int oldValue2 = counter2old.getValue();
-
 		AntidoteTransaction tx = antidoteClient.createStaticTransaction();
 		counter1old.increment(5, tx);
 		counter1old.increment(5, tx);
@@ -137,7 +181,6 @@ public class AntidoteTest{
 		counter2old.increment(3, tx);
 		tx.commitTransaction();
 		tx.close();
-
 		int newValue1 = counter1old.getValue();
 		int newValue2 = counter2old.getValue();
 		assert(newValue1 == oldValue1+10);
@@ -147,9 +190,9 @@ public class AntidoteTest{
 		assert(newValue1 == oldValue1+10);
 		assert(newValue2 == oldValue2+6);
 	}
-	
+
 	@Test(timeout=10000)
-	public void incBy2Test() {		
+	public void incBy2Test() {
 		CounterRef lowCounter = new CounterRef("testCounter5", bucket, antidoteClient);
 		AntidoteOuterCounter counter = lowCounter.createAntidoteCounter();
 		int oldValue = counter.getValue();
@@ -160,9 +203,9 @@ public class AntidoteTest{
 		assert(newValue == oldValue+2);
 		counter.readDatabase();
 		newValue = counter.getValue();
-		assert(newValue == oldValue+2);	
+		assert(newValue == oldValue+2);
 	}
-	
+
 	@Test(timeout=2000)
 	public void decrementToZeroTest() {
 		CounterRef lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
@@ -173,9 +216,9 @@ public class AntidoteTest{
 		testCounter.readDatabase();
 		assert(testCounter.getValue() == 0); //operation executed in the data base
 	}
-	
+
 	@Test(timeout=2000)
-	public void incBy5Test(){	
+	public void incBy5Test(){
 		CounterRef lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
 		AntidoteOuterCounter counter = lowCounter.createAntidoteCounter();
 		int oldValue = counter.getValue();
@@ -185,9 +228,9 @@ public class AntidoteTest{
 		assert(newValue == oldValue+5);
 		counter.readDatabase();
 		newValue = counter.getValue();
-		assert(newValue == oldValue+5);		
+		assert(newValue == oldValue+5);
 	}
-	
+
 	@Test(timeout=2000)
 	public void addElemTest() {
 		ORSetRef lowSet = new ORSetRef("testSet", bucket, antidoteClient);
@@ -198,7 +241,7 @@ public class AntidoteTest{
 		testSet.readDatabase();
 		assert(testSet.getValues().contains("element"));
 	}
-	
+
 	@Test(timeout=2000)
 	public void remElemTest() {
 		List<String> elements = new ArrayList<String>();
@@ -215,7 +258,7 @@ public class AntidoteTest{
 		assert(! testSet.getValues().contains("Hi"));
 		assert(testSet.getValues().contains("Bye"));
 	}
-	
+
 	@Test(timeout=2000)
 	public void addElemsTest() {
 		RWSetRef lowSet = new RWSetRef("testSet1", bucket, antidoteClient);
@@ -229,7 +272,7 @@ public class AntidoteTest{
 		assert(testSet.getValues().contains("Wall"));
 		assert(testSet.getValues().contains("Ball"));
 	}
-	
+
 	@Test(timeout=2000)
 	public void remElemsTest() {
 		RWSetRef lowSet = new RWSetRef("testSet1", bucket, antidoteClient);
@@ -248,30 +291,29 @@ public class AntidoteTest{
 		assert(testSet.getValues().contains("Hi"));
 		assert(testSet.getValues().contains("Bye"));
 	}
-	
+
 	@Test(timeout=2000)
 	public void updateRegTest() {
 		LWWRegisterRef lowReg = new LWWRegisterRef("testReg", bucket, antidoteClient);
-        AntidoteOuterLWWRegister testReg = lowReg.createAntidoteLWWRegister();
-        testReg.setValue("hi");
-        testReg.setValue("bye");
-        testReg.push();
-        assert(testReg.getValue().equals("bye"));
-        assert(! testReg.getValue().equals("hi"));
+		AntidoteOuterLWWRegister testReg = lowReg.createAntidoteLWWRegister();
+		testReg.setValue("hi");
+		testReg.setValue("bye");
+		testReg.push();
+		assert(testReg.getValue().equals("bye"));
+		assert(! testReg.getValue().equals("hi"));
 	}
-	
+
 	@Test(timeout=2000)
 	public void updateMVRegTest() {
 		MVRegisterRef lowReg = new MVRegisterRef("testReg", bucket, antidoteClient);
-
 		AntidoteOuterMVRegister testReg = lowReg.createAntidoteMVRegister();
-        testReg.setValue("hi");
-        testReg.setValue("bye");
-        testReg.push();
-        assert(testReg.getValueList().contains("bye"));
-        assert(! testReg.getValueList().contains("hi"));
+		testReg.setValue("hi");
+		testReg.setValue("bye");
+		testReg.push();
+		assert(testReg.getValueList().contains("bye"));
+		assert(! testReg.getValueList().contains("hi"));
 	}
-	
+
 	@Test(timeout=2000)
 	public void incIntBy1Test() {
 		IntegerRef lowInt = new IntegerRef("testInteger", bucket, antidoteClient);
@@ -285,7 +327,7 @@ public class AntidoteTest{
 		newValue = integer.getValue();
 		assert(oldValue+1 == newValue);
 	}
-	
+
 	@Test(timeout=2000)
 	public void decBy5Test() {
 		IntegerRef lowInt = new IntegerRef("testInteger", bucket, antidoteClient);
@@ -299,18 +341,17 @@ public class AntidoteTest{
 		newValue = integer.getValue();
 		assert(oldValue-5 == newValue);
 	}
-	
+
 	@Test(timeout=2000)
-	public void setIntTest() {					
+	public void setIntTest() {
 		IntegerRef lowInt = new IntegerRef("testInteger", bucket, antidoteClient);
 		AntidoteOuterInteger integer = lowInt.createAntidoteInteger();
 		integer.setValue(42);
 		integer.push();
-		assert(integer.getValue() == 42);	
+		assert(integer.getValue() == 42);
 		integer.readDatabase();
-		assert(integer.getValue() == 42);	
+		assert(integer.getValue() == 42);
 	}
-
 	@Test(timeout=1000)
 	public void counterTest() {
 		String counterKey = "counterKey";
@@ -336,7 +377,7 @@ public class AntidoteTest{
 		testMap.remove(counterKey, AntidoteType.CounterType);
 		testMap.push(); // everything set to initial situation
 	}
-	
+
 	@Test(timeout=2000)
 	public void integerTest() {
 		String integerKey = "integerKey";
@@ -365,7 +406,7 @@ public class AntidoteTest{
 		testMap.remove(mapKey, AntidoteType.AWMapType);
 		testMap.push(); // everything set to initial situation
 	}
-	
+
 	@Test(timeout=1000)
 	public void registerTest() {
 		String registerKey = "registerKey";
@@ -387,10 +428,9 @@ public class AntidoteTest{
 		assert(register.getValue().equals("maybe")); // two updates sent to database at the same time, order is preserved
 		register.setValue("");
 		register.push();
-		testMap.remove(registerKey, AntidoteType.LWWRegisterType); 
+		testMap.remove(registerKey, AntidoteType.LWWRegisterType);
 		testMap.push(); // everything set to initial situation
 	}
-
 	@Test(timeout=2000)
 	public void mvRegisterTest() {
 		String registerKey = "mvRegisterKey";
@@ -412,10 +452,10 @@ public class AntidoteTest{
 		assert(register.getValueList().contains("maybe")); // two updates sent to database at the same time, order is preserved
 		register.setValue("");
 		register.push();
-		testMap.remove(registerKey, AntidoteType.MVRegisterType); 
+		testMap.remove(registerKey, AntidoteType.MVRegisterType);
 		testMap.push(); // everything set to initial situation
 	}
-	
+
 	@Test(timeout=2000)
 	public void orSetTest() {
 		String setKey = "orSetKey";
@@ -441,7 +481,7 @@ public class AntidoteTest{
 		assert(! set.getValues().contains("maybe"));
 		assert(set.getValues().contains("no"));// 3 local updates in a row
 	}
-	
+
 	@Test(timeout=2000)
 	public void rwSetTest() {
 		String setKey = "rwSetKey";
@@ -467,7 +507,7 @@ public class AntidoteTest{
 		assert(! set.getValues().contains("maybe"));
 		assert(set.getValues().contains("no"));// 3 local updates in a row
 	}
-	
+
 	@Test(timeout=2000)
 	public void rwSetTest4() {
 		String setKey = "rwSetKey";
@@ -493,12 +533,12 @@ public class AntidoteTest{
 		assert(! set.getValues().contains("maybe"));
 		assert(set.getValues().contains("no"));// 3 local updates in a row
 	}
-	
+
 	@Test(timeout=10000)
 	public void createRemoveTest() {
 		AWMapRef lowMap = new AWMapRef("emptyMapBestMap", bucket, antidoteClient);
 		AntidoteOuterAWMap testMap = lowMap.createAntidoteAWMap();
-		
+
 		String orSetKey = "tempORSetKey";
 		String rwSetKey = "tempRWSetKey";
 		String counterKey = "tempCounterKey";
@@ -508,7 +548,6 @@ public class AntidoteTest{
 		String innerAWMapKey = "tempAWMapKey";
 		String awMapKey = "awMapKey";
 		String gMapKey = "gMapKey";
-
 		AntidoteMapUpdate orSetUpdate = AntidoteMapUpdate.createORSetAdd("yes");
 		AntidoteMapUpdate rwSetUpdate = AntidoteMapUpdate.createRWSetAdd("yes");
 		AntidoteMapUpdate counterUpdate = AntidoteMapUpdate.createCounterIncrement();
@@ -517,7 +556,6 @@ public class AntidoteTest{
 		AntidoteMapUpdate mvRegisterUpdate = AntidoteMapUpdate.createMVRegisterSet("yes");
 		AntidoteMapUpdate innerAWMapUpdate = AntidoteMapUpdate.createAWMapUpdate(orSetKey, orSetUpdate);
 		AntidoteMapUpdate gMapUpdate = AntidoteMapUpdate.createGMapUpdate(orSetKey, orSetUpdate);
-
 		AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate(orSetKey, orSetUpdate);
 		testMap.update(awMapKey, awMapUpdate);
 		awMapUpdate = AntidoteMapUpdate.createAWMapUpdate(rwSetKey, rwSetUpdate);
@@ -534,9 +572,8 @@ public class AntidoteTest{
 		testMap.update(awMapKey, awMapUpdate);
 		awMapUpdate = AntidoteMapUpdate.createAWMapUpdate(gMapKey, gMapUpdate);
 		testMap.update(awMapKey, awMapUpdate);
-		
-		testMap.synchronize();
 
+		testMap.synchronize();
 		AntidoteMapUpdate orSetRemove = AntidoteMapUpdate.createMapRemove(orSetKey, AntidoteType.ORSetType);
 		AntidoteMapUpdate rwSetRemove = AntidoteMapUpdate.createMapRemove(rwSetKey, AntidoteType.RWSetType);
 		AntidoteMapUpdate counterRemove = AntidoteMapUpdate.createMapRemove(counterKey, AntidoteType.CounterType);
@@ -545,7 +582,6 @@ public class AntidoteTest{
 		AntidoteMapUpdate mvRegisterRemove = AntidoteMapUpdate.createMapRemove(mvRegisterKey, AntidoteType.MVRegisterType);
 		AntidoteMapUpdate awMapRemove = AntidoteMapUpdate.createMapRemove(innerAWMapKey, AntidoteType.AWMapType);
 		AntidoteMapUpdate gMapRemove = AntidoteMapUpdate.createMapRemove(gMapKey, AntidoteType.GMapType);
-
 		testMap.update(awMapKey, orSetRemove);
 		testMap.update(awMapKey, rwSetRemove);
 		testMap.update(awMapKey, counterRemove);
@@ -554,14 +590,13 @@ public class AntidoteTest{
 		testMap.update(awMapKey, mvRegisterRemove);
 		testMap.update(awMapKey, awMapRemove);
 		testMap.update(awMapKey, gMapRemove);
-		
-		testMap.synchronize();
 
+		testMap.synchronize();
 		AntidoteInnerAWMap innerMap = testMap.getAWMapEntry(awMapKey);
-		
+
 		assert(innerMap.getEntryList().size()==0);
 	}
-	
+
 	@Test(timeout=10000)
 	public void updateTest() {
 		CounterRef lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
@@ -572,13 +607,11 @@ public class AntidoteTest{
 		RWSetRef lowRWSet = new RWSetRef("testRWSet", bucket, antidoteClient);
 		AWMapRef lowAWMap = new AWMapRef("testAWMap", bucket, antidoteClient);
 		GMapRef lowGMap = new GMapRef("testGMap", bucket, antidoteClient);
-
 		lowCounter.increment(2);
 		lowInteger.set(7);
 		lowInteger.increment(1);
 		lowLWWRegister.set("Hi");
 		lowMVRegister.set("Hi");
-
 		lowORSet.add("Hi");
 		lowRWSet.add("Hi");
 		lowORSet.addBS(ByteString.copyFromUtf8("Hi2"));
@@ -589,7 +622,7 @@ public class AntidoteTest{
 		lowRWSet.removeBS(ByteString.copyFromUtf8("Hi"));
 		lowORSet.remove("Hi3");
 		lowRWSet.remove("Hi3");
-		
+
 		AntidoteMapKey counterKey = new AntidoteMapKey(AntidoteType.CounterType, "testCounter");
 		AntidoteMapKey integerKey = new AntidoteMapKey(AntidoteType.IntegerType, "testInteger");
 		AntidoteMapKey orSetKey = new AntidoteMapKey(AntidoteType.ORSetType, "testORSet");
@@ -598,7 +631,6 @@ public class AntidoteTest{
 		AntidoteMapKey gMapKey = new AntidoteMapKey(AntidoteType.GMapType, "testGMap");
 		AntidoteMapKey registerKey = new AntidoteMapKey(AntidoteType.LWWRegisterType, "testRegister");
 		AntidoteMapKey mvRegisterKey = new AntidoteMapKey(AntidoteType.MVRegisterType, "testMVRegister");
-
 		AntidoteMapUpdate counterUpdate = AntidoteMapUpdate.createCounterIncrement();
 		AntidoteMapUpdate intSet = AntidoteMapUpdate.createIntegerSet(3);
 		AntidoteMapUpdate intInc = AntidoteMapUpdate.createIntegerIncrement(2);
@@ -634,7 +666,7 @@ public class AntidoteTest{
 		lowAWMap.update(awMapKey, awMapUpdate);
 		lowAWMap.update(gMapKey, gMapUpdate);
 		lowGMap.update(counterKey, counterUpdate);
-		
+
 		AntidoteOuterCounter counter = lowCounter.createAntidoteCounter();
 		AntidoteOuterORSet orSet = lowORSet.createAntidoteORSet();
 		AntidoteOuterRWSet rwSet = lowRWSet.createAntidoteRWSet();
@@ -643,7 +675,6 @@ public class AntidoteTest{
 		AntidoteOuterMVRegister mvRegister = lowMVRegister.createAntidoteMVRegister();
 		AntidoteOuterAWMap awMap = lowAWMap.createAntidoteAWMap();
 		AntidoteOuterGMap gMap = lowGMap.createAntidoteGMap();
-
 		assert(counter.getValue() == 2);
 		assert(integer.getValue() == 8);
 		assert(register.getValue().equals("Hi"));
@@ -663,20 +694,20 @@ public class AntidoteTest{
 		assert(awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue() == 1);
 		assert(awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue() == 1);
 		assert(gMap.getCounterEntry("testCounter").getValue() == 1);
-		
+
 		lowAWMap.remove(counterKey);
 		lowLWWRegister.setBS(ByteString.copyFromUtf8("Hi2"));
 		lowMVRegister.setBS(ByteString.copyFromUtf8("Hi2"));
-		
+
 		register.readDatabase();
 		mvRegister.readDatabase();
 		awMap.readDatabase();
-		
+
 		assert(register.getValue().equals("Hi2"));
 		assert(mvRegister.getValueList().contains("Hi2"));
 		assert(awMap.getCounterEntry("testCounter") == null);
 	}
-	
+
 	@Test(timeout=10000)
 	public void transactionTest() {
 		LWWRegisterRef lowLWWRegister = new LWWRegisterRef("testRegister", bucket, antidoteClient);
@@ -685,7 +716,7 @@ public class AntidoteTest{
 		RWSetRef lowRWSet = new RWSetRef("testRWSet", bucket, antidoteClient);
 		AWMapRef lowAWMap = new AWMapRef("testAWMap", bucket, antidoteClient);
 		GMapRef lowGMap = new GMapRef("testGMap", bucket, antidoteClient);
-		
+
 		AntidoteMapKey counterKey = new AntidoteMapKey(AntidoteType.CounterType, "testCounter");
 		AntidoteMapKey integerKey = new AntidoteMapKey(AntidoteType.IntegerType, "testInteger");
 		AntidoteMapKey orSetKey = new AntidoteMapKey(AntidoteType.ORSetType, "testORSet");
@@ -694,7 +725,6 @@ public class AntidoteTest{
 		AntidoteMapKey gMapKey = new AntidoteMapKey(AntidoteType.GMapType, "testGMap");
 		AntidoteMapKey registerKey = new AntidoteMapKey(AntidoteType.LWWRegisterType, "testRegister");
 		AntidoteMapKey mvRegisterKey = new AntidoteMapKey(AntidoteType.MVRegisterType, "testMVRegister");
-
 		AntidoteMapUpdate counterUpdate = AntidoteMapUpdate.createCounterIncrement();
 		AntidoteMapUpdate intSet = AntidoteMapUpdate.createIntegerSet(3);
 		AntidoteMapUpdate intInc = AntidoteMapUpdate.createIntegerIncrement(2);
@@ -715,11 +745,11 @@ public class AntidoteTest{
 		//antidoteTransaction.startTransaction();
 		CounterRef lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
 		IntegerRef lowInteger = new IntegerRef("testInteger", bucket, antidoteClient);
-	//	lowCounter.increment(2, antidoteTransaction);
-	//	lowInteger.set(7, antidoteTransaction);
-	//	lowInteger.increment(1, antidoteTransaction);
-		
-	//	lowORSet.add("Hi", antidoteTransaction);
+		//	lowCounter.increment(2, antidoteTransaction);
+		//	lowInteger.set(7, antidoteTransaction);
+		//	lowInteger.increment(1, antidoteTransaction);
+
+		//	lowORSet.add("Hi", antidoteTransaction);
 	/*	lowRWSet.add("Hi", antidoteTransaction);
 		lowORSet.addBS(ByteString.copyFromUtf8("Hi2"), antidoteTransaction);
 		lowRWSet.addBS(ByteString.copyFromUtf8("Hi2"), antidoteTransaction);
@@ -749,7 +779,7 @@ public class AntidoteTest{
 		lowAWMap.update(awMapKey, awMapUpdate, antidoteTransaction);
 		lowAWMap.update(gMapKey, gMapUpdate, antidoteTransaction);
 		lowGMap.update(counterKey, counterUpdate, antidoteTransaction);
-		
+
 		AntidoteOuterCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
 		AntidoteOuterORSet orSet = lowORSet.createAntidoteORSet(antidoteTransaction);
 		AntidoteOuterRWSet rwSet = lowRWSet.createAntidoteRWSet(antidoteTransaction);
@@ -758,9 +788,8 @@ public class AntidoteTest{
 		AntidoteOuterMVRegister mvRegister = lowMVRegister.createAntidoteMVRegister(antidoteTransaction);
 		AntidoteOuterAWMap awMap = lowAWMap.createAntidoteAWMap(antidoteTransaction);
 		AntidoteOuterGMap gMap = lowGMap.createAntidoteGMap(antidoteTransaction);
-		
-		antidoteTransaction.commitTransaction();
 
+		antidoteTransaction.commitTransaction();
 		assert(counter.getValue() == 2);
 		assert(integer.getValue() == 8);
 		assert(register.getValue().equals("Hi"));
@@ -781,7 +810,7 @@ public class AntidoteTest{
 		assert(awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue() == 1);
 		assert(gMap.getCounterEntry("testCounter").getValue() == 1);
 	}
-	
+
 	@Test(timeout=2000)
 	public void counterTest2() {
 		AntidoteMapUpdate counterUpdate = AntidoteMapUpdate.createCounterIncrement(5);
@@ -789,45 +818,41 @@ public class AntidoteTest{
 		AntidoteMapUpdate gMapUpdate = AntidoteMapUpdate.createGMapUpdate("counterKey", counterUpdate);
 		AntidoteMapUpdate awMapUpdate2 = AntidoteMapUpdate.createAWMapUpdate("innerGMap", gMapUpdate);
 		AntidoteMapUpdate gMapUpdate2 = AntidoteMapUpdate.createGMapUpdate("innerAWMap", awMapUpdate);
-		
+
 		AWMapRef lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
 		GMapRef lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
-		
+
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.CounterType, "counterKey"), counterUpdate);
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate);
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate2);
-		
+
 		AntidoteOuterAWMap testAWMap = lowAWMap.createAntidoteAWMap();
 		AntidoteInnerAWMap testAWMap2 = testAWMap.getAWMapEntry("innerAWMap");
 		AntidoteInnerGMap testGMap3 = testAWMap2.getGMapEntry("innerGMap");
-
 		AntidoteInnerCounter counter1 = testAWMap.getCounterEntry("counterKey");
 		AntidoteInnerCounter counter2 = testAWMap2.getCounterEntry("counterKey");
 		AntidoteInnerCounter counter3 = testGMap3.getCounterEntry("counterKey");
-
 		counter1.increment(1);
 		counter2.increment(2);
 		counter3.increment(3);
 		counter1.synchronize();
 		counter2.synchronize();
 		counter3.synchronize();
-		
+
 		assert(counter1.getValue()==6);
 		assert(counter2.getValue()==7);
 		assert(counter3.getValue()==8);
-		
+
 		lowGMap.update(new AntidoteMapKey(AntidoteType.CounterType, "counterKey"), counterUpdate);
 		lowGMap.update(new AntidoteMapKey(AntidoteType.GMapType, "innerGMap"), gMapUpdate);
 		lowGMap.update(new AntidoteMapKey(AntidoteType.GMapType, "innerGMap"), gMapUpdate2);
-		
+
 		AntidoteOuterGMap testGMap = lowGMap.createAntidoteGMap();
 		AntidoteInnerGMap testGMap2 = testGMap.getGMapEntry("innerGMap");
 		AntidoteInnerAWMap testAWMap3 = testGMap2.getAWMapEntry("innerAWMap");
-
 		counter1 = testGMap.getCounterEntry("counterKey");
 		counter2 = testGMap2.getCounterEntry("counterKey");
 		counter3 = testAWMap3.getCounterEntry("counterKey");
-
 		counter1.increment(1);
 		counter2.increment(2);
 		counter3.increment(3);
@@ -838,58 +863,53 @@ public class AntidoteTest{
 		assert(counter2.getValue()==7);
 		assert(counter3.getValue()==8);*/
 	}
-	
+
 	@Test(timeout=2000)
 	public void integerTest2() {
 		AntidoteMapUpdate integerUpdate = AntidoteMapUpdate.createIntegerIncrement(5);
 		AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate("integerKey", integerUpdate);
 		AntidoteMapUpdate awMapUpdate2 = AntidoteMapUpdate.createAWMapUpdate("innerAWMap", awMapUpdate);
-		
+
 		AWMapRef lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
 		GMapRef lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
-		
+
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.IntegerType, "integerKey"), integerUpdate);
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate);
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate2);
-		
+
 		AntidoteOuterAWMap testAWMap = lowAWMap.createAntidoteAWMap();
 		AntidoteInnerAWMap testAWMap2 = testAWMap.getAWMapEntry("innerAWMap");
 		AntidoteInnerAWMap testAWMap3 = testAWMap2.getAWMapEntry("innerAWMap");
-
 		AntidoteInnerInteger integer1 = testAWMap.getIntegerEntry("integerKey");
 		AntidoteInnerInteger integer2 = testAWMap2.getIntegerEntry("integerKey");
 		AntidoteInnerInteger integer3 = testAWMap3.getIntegerEntry("integerKey");
-
 		integer1.increment(1);
 		integer2.increment(2);
 		integer3.increment(3);
 		integer1.synchronize();
 		integer2.synchronize();
 		integer3.synchronize();
-		
+
 		assert(integer1.getValue()==6);
 		assert(integer2.getValue()==7);
 		assert(integer3.getValue()==8);
-		
+
 		AntidoteMapUpdate gMapUpdate = AntidoteMapUpdate.createGMapUpdate("integerKey", integerUpdate);
 		AntidoteMapUpdate gMapUpdate2 = AntidoteMapUpdate.createGMapUpdate("innerGMap", gMapUpdate);
-		
+
 		lowGMap.update(new AntidoteMapKey(AntidoteType.IntegerType, "integerKey"), integerUpdate);
 		lowGMap.update(new AntidoteMapKey(AntidoteType.GMapType, "innerGMap"), gMapUpdate);
 		lowGMap.update(new AntidoteMapKey(AntidoteType.GMapType, "innerGMap"), gMapUpdate2);
-		
+
 		AntidoteOuterGMap testGMap = lowGMap.createAntidoteGMap();
 		AntidoteInnerGMap testGMap2 = testGMap.getGMapEntry("innerGMap");
 		AntidoteInnerGMap testGMap3 = testGMap2.getGMapEntry("innerGMap");
-
 		integer1 = testGMap.getIntegerEntry("integerKey");
 		integer2 = testGMap2.getIntegerEntry("integerKey");
 		integer3 = testGMap3.getIntegerEntry("integerKey");
-
 		integer1.increment(1);
 		integer2.increment(2);
 		integer3.increment(3);
-
 		integer1.synchronize();
 		integer2.synchronize();
 		integer3.synchronize();
@@ -897,176 +917,161 @@ public class AntidoteTest{
 		assert(integer2.getValue()==7);
 		assert(integer3.getValue()==8);
 	}
-	
+
 	@Test(timeout=3000)
 	public void orSetTest2() {
 		AntidoteMapUpdate orSetUpdate = AntidoteMapUpdate.createORSetAdd("Hi");
 		AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate("orSetKey", orSetUpdate);
 		AntidoteMapUpdate awMapUpdate2 = AntidoteMapUpdate.createAWMapUpdate("innerAWMap", awMapUpdate);
-		
+
 		AWMapRef lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
 		GMapRef lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
-		
+
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.ORSetType, "orSetKey"), orSetUpdate);
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate);
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate2);
-		
+
 		AntidoteOuterAWMap testAWMap = lowAWMap.createAntidoteAWMap();
 		AntidoteInnerAWMap testAWMap2 = testAWMap.getAWMapEntry("innerAWMap");
 		AntidoteInnerAWMap testAWMap3 = testAWMap2.getAWMapEntry("innerAWMap");
-
 		AntidoteInnerORSet orSet1 = testAWMap.getORSetEntry("orSetKey");
 		AntidoteInnerORSet orSet2 = testAWMap2.getORSetEntry("orSetKey");
 		AntidoteInnerORSet orSet3 = testAWMap3.getORSetEntry("orSetKey");
-
 		orSet1.addElement("Hi2");
 		orSet2.addElement("Hi3");
 		orSet3.addElement("Hi4");
 		orSet1.synchronize();
 		orSet2.synchronize();
 		orSet3.synchronize();
-		
+
 		assert(orSet1.getValues().contains("Hi2"));
 		assert(orSet2.getValues().contains("Hi3"));
 		assert(orSet3.getValues().contains("Hi4"));
-		
+
 		AntidoteMapUpdate gMapUpdate = AntidoteMapUpdate.createGMapUpdate("orSetKey", orSetUpdate);
 		AntidoteMapUpdate gMapUpdate2 = AntidoteMapUpdate.createGMapUpdate("innerGMap", gMapUpdate);
-		
+
 		lowGMap.update(new AntidoteMapKey(AntidoteType.ORSetType, "orSetKey"), orSetUpdate);
 		lowGMap.update(new AntidoteMapKey(AntidoteType.GMapType, "innerGMap"), gMapUpdate);
 		lowGMap.update(new AntidoteMapKey(AntidoteType.GMapType, "innerGMap"), gMapUpdate2);
-
 		AntidoteOuterGMap testGMap = lowGMap.createAntidoteGMap();
 		AntidoteInnerGMap testGMap2 = testGMap.getGMapEntry("innerGMap");
 		AntidoteInnerGMap testGMap3 = testGMap2.getGMapEntry("innerGMap");
-
 		orSet1 = testGMap.getORSetEntry("orSetKey");
 		orSet2 = testGMap2.getORSetEntry("orSetKey");
 		orSet3 = testGMap3.getORSetEntry("orSetKey");
-
 		orSet1.addElement("Hi2");
 		orSet2.addElement("Hi3");
 		orSet3.addElement("Hi4");
 		orSet1.synchronize();
 		orSet2.synchronize();
 		orSet3.synchronize();
-		
+
 		assert(orSet1.getValues().contains("Hi2"));
 		assert(orSet2.getValues().contains("Hi3"));
 		assert(orSet3.getValues().contains("Hi4"));
 	}
-	
+
 	@Test(timeout=2000)
 	public void rwSetTest2() {
 		AntidoteMapUpdate rwSetUpdate = AntidoteMapUpdate.createRWSetAdd("Hi");
 		AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate("rwSetKey", rwSetUpdate);
 		AntidoteMapUpdate awMapUpdate2 = AntidoteMapUpdate.createAWMapUpdate("innerAWMap", awMapUpdate);
-		
+
 		AWMapRef lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
 		GMapRef lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
-		
+
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.RWSetType, "rwSetKey"), rwSetUpdate);
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate);
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate2);
-		
+
 		AntidoteOuterAWMap testAWMap = lowAWMap.createAntidoteAWMap();
 		AntidoteInnerAWMap testAWMap2 = testAWMap.getAWMapEntry("innerAWMap");
 		AntidoteInnerAWMap testAWMap3 = testAWMap2.getAWMapEntry("innerAWMap");
-
 		AntidoteInnerRWSet rwSet1 = testAWMap.getRWSetEntry("rwSetKey");
 		AntidoteInnerRWSet rwSet2 = testAWMap2.getRWSetEntry("rwSetKey");
 		AntidoteInnerRWSet rwSet3 = testAWMap3.getRWSetEntry("rwSetKey");
-
 		rwSet1.addElement("Hi2");
 		rwSet2.addElement("Hi3");
 		rwSet3.addElement("Hi4");
 		rwSet1.synchronize();
 		rwSet2.synchronize();
 		rwSet3.synchronize();
-		
+
 		assert(rwSet1.getValues().contains("Hi2"));
 		assert(rwSet2.getValues().contains("Hi3"));
 		assert(rwSet3.getValues().contains("Hi4"));
-		
+
 		AntidoteMapUpdate gMapUpdate = AntidoteMapUpdate.createGMapUpdate("rwSetKey", rwSetUpdate);
 		AntidoteMapUpdate gMapUpdate2 = AntidoteMapUpdate.createGMapUpdate("innerGMap", gMapUpdate);
-		
+
 		lowGMap.update(new AntidoteMapKey(AntidoteType.RWSetType, "rwSetKey"), rwSetUpdate);
 		lowGMap.update(new AntidoteMapKey(AntidoteType.GMapType, "innerGMap"), gMapUpdate);
 		lowGMap.update(new AntidoteMapKey(AntidoteType.GMapType, "innerGMap"), gMapUpdate2);
-		
+
 		AntidoteOuterGMap testGMap = lowGMap.createAntidoteGMap();
 		AntidoteInnerGMap testGMap2 = testGMap.getGMapEntry("innerGMap");
 		AntidoteInnerGMap testGMap3 = testGMap2.getGMapEntry("innerGMap");
-
 		rwSet1 = testGMap.getRWSetEntry("rwSetKey");
 		rwSet2 = testGMap2.getRWSetEntry("rwSetKey");
 		rwSet3 = testGMap3.getRWSetEntry("rwSetKey");
-
 		rwSet1.addElement("Hi2");
 		rwSet2.addElement("Hi3");
 		rwSet3.addElement("Hi4");
 		rwSet1.synchronize();
 		rwSet2.synchronize();
 		rwSet3.synchronize();
-		
+
 		assert(rwSet1.getValues().contains("Hi2"));
 		assert(rwSet2.getValues().contains("Hi3"));
 		assert(rwSet3.getValues().contains("Hi4"));
 	}
-	
+
 	@Test(timeout=2000)
 	public void registerTest2() {
 		AntidoteMapUpdate registerUpdate = AntidoteMapUpdate.createRegisterSet("Hi");
 		AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate("registerKey", registerUpdate);
 		AntidoteMapUpdate awMapUpdate2 = AntidoteMapUpdate.createAWMapUpdate("innerAWMap", awMapUpdate);
-		
+
 		AWMapRef lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
 		GMapRef lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
-		
+
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.LWWRegisterType, "registerKey"), registerUpdate);
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate);
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate2);
-
 		AntidoteOuterAWMap testAWMap = lowAWMap.createAntidoteAWMap();
 		AntidoteInnerAWMap testAWMap2 = testAWMap.getAWMapEntry("innerAWMap");
 		AntidoteInnerAWMap testAWMap3 = testAWMap2.getAWMapEntry("innerAWMap");
-
 		AntidoteInnerLWWRegister register1 = testAWMap.getLWWRegisterEntry("registerKey");
 		AntidoteInnerLWWRegister register2 = testAWMap2.getLWWRegisterEntry("registerKey");
 		AntidoteInnerLWWRegister register3 = testAWMap3.getLWWRegisterEntry("registerKey");
-
 		register1.setValueBS(ByteString.copyFromUtf8("Hi2"));
 		register2.setValueBS(ByteString.copyFromUtf8("Hi3"));
 		register3.setValueBS(ByteString.copyFromUtf8("Hi4"));
 		register1.synchronize();
 		register2.synchronize();
 		register3.synchronize();
-		
+
 		assert(register1.getValue().equals("Hi2"));
 		assert(register2.getValue().equals("Hi3"));
 		assert(register3.getValue().equals("Hi4"));
-		
+
 		AntidoteMapUpdate gMapUpdate = AntidoteMapUpdate.createGMapUpdate("registerKey", registerUpdate);
 		AntidoteMapUpdate gMapUpdate2 = AntidoteMapUpdate.createGMapUpdate("innerGMap", gMapUpdate);
-		
+
 		lowGMap.update(new AntidoteMapKey(AntidoteType.LWWRegisterType, "registerKey"), registerUpdate);
 		lowGMap.update(new AntidoteMapKey(AntidoteType.GMapType, "innerGMap"), gMapUpdate);
 		lowGMap.update(new AntidoteMapKey(AntidoteType.GMapType, "innerGMap"), gMapUpdate2);
-		
+
 		AntidoteOuterGMap testGMap = lowGMap.createAntidoteGMap();
 		AntidoteInnerGMap testGMap2 = testGMap.getGMapEntry("innerGMap");
 		AntidoteInnerGMap testGMap3 = testGMap2.getGMapEntry("innerGMap");
-
 		register1 = testGMap.getLWWRegisterEntry("registerKey");
 		register2 = testGMap2.getLWWRegisterEntry("registerKey");
 		register3 = testGMap3.getLWWRegisterEntry("registerKey");
-
 		register1.setValue("Hi2");
 		register2.setValue("Hi3");
 		register3.setValue("Hi4");
-
 		register1.synchronize();
 		register2.synchronize();
 		register3.synchronize();
@@ -1074,58 +1079,52 @@ public class AntidoteTest{
 		assert(register2.getValue().equals("Hi3"));
 		assert(register3.getValue().equals("Hi4"));
 	}
-	
+
 	@Test(timeout=2000)
 	public void mvRegisterTest2() {
 		AntidoteMapUpdate mvRegisterUpdate = AntidoteMapUpdate.createMVRegisterSet("Hi");
 		AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate("mvRegisterKey", mvRegisterUpdate);
 		AntidoteMapUpdate awMapUpdate2 = AntidoteMapUpdate.createAWMapUpdate("innerAWMap", awMapUpdate);
-		
+
 		AWMapRef lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
 		GMapRef lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
-		
+
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.MVRegisterType, "mvRegisterKey"), mvRegisterUpdate);
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate);
 		lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate2);
-
 		AntidoteOuterAWMap testAWMap = lowAWMap.createAntidoteAWMap();
 		AntidoteInnerAWMap testAWMap2 = testAWMap.getAWMapEntry("innerAWMap");
 		AntidoteInnerAWMap testAWMap3 = testAWMap2.getAWMapEntry("innerAWMap");
-
 		AntidoteInnerMVRegister mvRegister1 = testAWMap.getMVRegisterEntry("mvRegisterKey");
 		AntidoteInnerMVRegister mvRegister2 = testAWMap2.getMVRegisterEntry("mvRegisterKey");
 		AntidoteInnerMVRegister mvRegister3 = testAWMap3.getMVRegisterEntry("mvRegisterKey");
-
 		mvRegister1.setValueBS(ByteString.copyFromUtf8("Hi2"));
 		mvRegister2.setValueBS(ByteString.copyFromUtf8("Hi3"));
 		mvRegister3.setValueBS(ByteString.copyFromUtf8("Hi4"));
 		mvRegister1.synchronize();
 		mvRegister2.synchronize();
 		mvRegister3.synchronize();
-		
+
 		assert(mvRegister1.getValueList().contains("Hi2"));
 		assert(mvRegister2.getValueList().contains("Hi3"));
 		assert(mvRegister3.getValueList().contains("Hi4"));
-		
+
 		AntidoteMapUpdate gMapUpdate = AntidoteMapUpdate.createGMapUpdate("mvRegisterKey", mvRegisterUpdate);
 		AntidoteMapUpdate gMapUpdate2 = AntidoteMapUpdate.createGMapUpdate("innerGMap", gMapUpdate);
-		
+
 		lowGMap.update(new AntidoteMapKey(AntidoteType.MVRegisterType, "mvRegisterKey"), mvRegisterUpdate);
 		lowGMap.update(new AntidoteMapKey(AntidoteType.GMapType, "innerGMap"), gMapUpdate);
 		lowGMap.update(new AntidoteMapKey(AntidoteType.GMapType, "innerGMap"), gMapUpdate2);
-				
+
 		AntidoteOuterGMap testGMap = lowGMap.createAntidoteGMap();
 		AntidoteInnerGMap testGMap2 = testGMap.getGMapEntry("innerGMap");
 		AntidoteInnerGMap testGMap3 = testGMap2.getGMapEntry("innerGMap");
-
 		mvRegister1 = testGMap.getMVRegisterEntry("mvRegisterKey");
 		mvRegister2 = testGMap2.getMVRegisterEntry("mvRegisterKey");
 		mvRegister3 = testGMap3.getMVRegisterEntry("mvRegisterKey");
-
 		mvRegister1.setValue("Hi2");
 		mvRegister2.setValue("Hi3");
 		mvRegister3.setValue("Hi4");
-
 		mvRegister1.synchronize();
 		mvRegister2.synchronize();
 		mvRegister3.synchronize();
