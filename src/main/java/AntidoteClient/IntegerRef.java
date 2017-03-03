@@ -5,6 +5,8 @@ import com.basho.riak.protobuf.AntidotePB.ApbGetIntegerResp;
 import com.basho.riak.protobuf.AntidotePB.ApbIntegerUpdate;
 import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 
+import java.util.List;
+
 /**
  * The Class LowLevelInteger.
  */
@@ -127,5 +129,14 @@ public final class IntegerRef extends ObjectRef{
     public int readValue(AntidoteTransaction antidoteTransaction){
     	ApbGetIntegerResp number = readHelper(getName(), getBucket(), AntidoteType.IntegerType, antidoteTransaction).getObjects(0).getInt();
         return toIntExact(number.getValue());
+    }
+
+    public int getValue(List<AntidoteCRDT> outerObjects){
+        for(AntidoteCRDT object : outerObjects)
+        {
+            if(object.getName() == this.getName() && object.getClient() == this.getClient() && object.getBucket() == this.getBucket())
+                return ((AntidoteOuterInteger) object).getValue();
+        }
+        return 0;
     }
 }

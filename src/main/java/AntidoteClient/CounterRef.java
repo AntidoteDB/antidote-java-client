@@ -4,6 +4,9 @@ import com.basho.riak.protobuf.AntidotePB.ApbCounterUpdate;
 import com.basho.riak.protobuf.AntidotePB.ApbGetCounterResp;
 import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * The Class LowLevelCounter.
  */
@@ -107,9 +110,17 @@ public final class CounterRef extends ObjectRef{
      * @param antidoteTransaction the antidote transaction
      * @return the counter value
      */
-    public int readValue(AntidoteTransaction antidoteTransaction){
-    	ApbGetCounterResp counter = readHelper(getName(), getBucket(), AntidoteType.CounterType, antidoteTransaction).getObjects(0).getCounter();
-        return counter.getValue();
+    public void readValue(AntidoteTransaction antidoteTransaction){
+    	antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.CounterType, antidoteTransaction);
+    }
+
+    public int getValue(List<AntidoteCRDT> outerObjects){
+        for(AntidoteCRDT object : outerObjects)
+        {
+            if(object.getName() == this.getName() && object.getClient() == this.getClient() && object.getBucket() == this.getBucket())
+                return ((AntidoteOuterCounter) object).getValue();
+        }
+        return 0;
     }
 
 }

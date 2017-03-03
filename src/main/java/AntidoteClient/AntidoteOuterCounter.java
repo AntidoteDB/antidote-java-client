@@ -3,6 +3,8 @@ package main.java.AntidoteClient;
 import com.basho.riak.protobuf.AntidotePB;
 import interfaces.CounterCRDT;
 
+import java.util.List;
+
 /**
  * The Class AntidoteOuterCounter.
  */
@@ -102,5 +104,14 @@ public final class AntidoteOuterCounter extends AntidoteCRDT implements CounterC
 		value = value + inc;
 		antidoteTransaction.updateHelper(lowLevelCounter.incrementOpBuilder(inc),getName(),getBucket(),getType());
 
+	}
+
+	public int getValue(List<AntidoteCRDT> outerObjects){
+		for(AntidoteCRDT object : outerObjects)
+		{
+			if(object.getName() == this.getName() && object.getClient() == this.getClient() && object.getBucket() == this.getBucket())
+			return ((AntidoteOuterCounter) object).getValue();
+		}
+		return 0;
 	}
 }
