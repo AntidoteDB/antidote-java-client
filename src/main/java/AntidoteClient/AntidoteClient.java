@@ -61,5 +61,37 @@ public final class AntidoteClient {
         antidoteStaticTransaction.startTransaction();
         return antidoteStaticTransaction;
     }
+    
+    public CounterRef counterRef(String name, String bucket){
+    	return new CounterRef(name, bucket, this);
+    }
+    
+    public AWMapRef awMapRef(String name, String bucket){
+    	return new AWMapRef(name, bucket, this);
+    }
+    
+    public GMapRef gMapRef(String name, String bucket){
+    	return new GMapRef(name, bucket, this);
+    }
+    
+    public ORSetRef orSetRef(String name, String bucket){
+    	return new ORSetRef(name, bucket, this);
+    }
+    
+    public RWSetRef rwSetRef(String name, String bucket){
+    	return new RWSetRef(name, bucket, this);
+    }
+    
+    public LWWRegisterRef lwwRegisterRef(String name, String bucket){
+    	return new LWWRegisterRef(name, bucket, this);
+    }
+    
+    public MVRegisterRef mvRegisterRef(String name, String bucket){
+    	return new MVRegisterRef(name, bucket, this);
+    }
+    
+    public IntegerRef integerRef(String name, String bucket){
+    	return new IntegerRef(name, bucket, this);
+    }
 }
 
