@@ -1,9 +1,11 @@
 package interfaces;
 
+import main.java.AntidoteClient.AntidoteTransaction;
+
 /**
  * The Interface InterfaceInteger.
  */
-public interface IntegerCRDT extends CRDT {
+public interface IntegerCRDT {
 	
 	/**
 	 * Gets the value.
@@ -15,19 +17,15 @@ public interface IntegerCRDT extends CRDT {
 	/**
 	 * Increment by 1.
 	 */
-	void increment();
+	void increment(AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Increment.
-	 *
-	 * @param inc the inc
 	 */
-	void increment(int inc);
+	void increment(int inc, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Sets the value.
-	 *
-	 * @param value the new value
 	 */
-	void setValue(int value); 
+	void setValue(int value, AntidoteTransaction antidoteTransaction); 
 }

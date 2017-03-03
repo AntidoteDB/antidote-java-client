@@ -1,20 +1,17 @@
 package main.java.AntidoteClient;
 
 import com.basho.riak.protobuf.AntidotePB.ApbBoundObject;
-import com.basho.riak.protobuf.AntidotePB.ApbCommitResp;
 import com.basho.riak.protobuf.AntidotePB.ApbReadObjects;
 import com.basho.riak.protobuf.AntidotePB.ApbReadObjectsResp;
 import com.basho.riak.protobuf.AntidotePB.ApbStartTransaction;
 import com.basho.riak.protobuf.AntidotePB.ApbStaticReadObjects;
 import com.basho.riak.protobuf.AntidotePB.ApbStaticReadObjectsResp;
-import com.basho.riak.protobuf.AntidotePB.ApbStaticUpdateObjects;
 import com.basho.riak.protobuf.AntidotePB.ApbTxnProperties;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateObjects;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateOp;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import main.java.AntidoteClient.AntidoteTransaction.TransactionStatus;
 
 /**
  * The Class LowLevelObject.
@@ -68,45 +65,8 @@ public class ObjectRef {
 	public AntidoteClient getClient(){
 		return antidoteClient;
 	}
-	
-	/**
-     * Update helper.
-     *
-     * @param operation the operation
-     * @param name the name
-     * @param bucket the bucket
-     * @param type the type
-     */
-    protected void updateHelper(ApbUpdateOperation.Builder operation, String name, String bucket, CRDT_type type){
-    	ApbStaticUpdateObjects.Builder updateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
-    	
-        ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message
-        object.setKey(ByteString.copyFromUtf8(name));
-        object.setType(type);
-        object.setBucket(ByteString.copyFromUtf8(bucket));
-    	
-    	ApbUpdateOp.Builder updateInstruction = ApbUpdateOp.newBuilder();
-        updateInstruction.setBoundobject(object);
-        updateInstruction.setOperation(operation);
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder writeTransaction = ApbStartTransaction.newBuilder();
-        writeTransaction.setProperties(transactionProperties);
-
-        updateMessage.setTransaction(writeTransaction);
-        updateMessage.addUpdates(updateInstruction);
-
-        ApbStaticUpdateObjects counterUpdateMessageObject = updateMessage.build();
-        AntidoteMessage responseMessage = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, counterUpdateMessageObject));
-        try {
-            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-            System.out.println(commitResponse);
-        } catch (Exception e ) {
-            System.out.println(e);
-        }
-    }
     
+//TODO: Georgios
     /**
      * Read helper.
      *
@@ -153,7 +113,7 @@ public class ObjectRef {
      * @return the apb read objects resp
      */
     protected ApbReadObjectsResp readHelper(String name, String bucket, CRDT_type type, AntidoteTransaction antidoteTransaction){
-    	if (antidoteTransaction.getDescriptor() == null){
+    	if (antidoteTransaction.getTransactionStatus() != TransactionStatus.STARTED){
     		throw new AntidoteException("You need to start the transaction first");
     	}
     	ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message to update

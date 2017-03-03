@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
-
 import interfaces.IntegerCRDT;
 
 /**
@@ -30,22 +29,6 @@ public final class AntidoteInnerInteger extends AntidoteInnerCRDT implements Int
 		this.value = value;
 	}
 	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.IntegerInterface#rollBack()
-	 */
-	public void rollBack(){
-		clearUpdateList();
-		readDatabase();
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.IntegerInterface#synchronize()
-	 */
-	public void synchronize(){
-		push();
-		readDatabase();
-	}
-	
 	/**
 	 * Gets the value.
 	 *
@@ -58,14 +41,11 @@ public final class AntidoteInnerInteger extends AntidoteInnerCRDT implements Int
 	/**
 	 * Gets the most recent state from the database.
 	 */
-	public void readDatabase(){
-		if (getUpdateList().size() > 0){
-			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
-		}
+	public void readDatabase(AntidoteTransaction antidoteTransaction){
 		AntidoteInnerInteger integer;
 		if (getType() == AntidoteType.GMapType){
 			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
-			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
+			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap(antidoteTransaction);
 			if (getPath().size() == 1){
 				integer = outerMap.getIntegerEntry(getPath().get(0).getKey().toStringUtf8());
 			}
@@ -76,7 +56,7 @@ public final class AntidoteInnerInteger extends AntidoteInnerCRDT implements Int
 		}
 		else if (getType() == AntidoteType.AWMapType){ 
 			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
-			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
+			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap(antidoteTransaction);
 			if (getPath().size() == 1){
 				integer = outerMap.getIntegerEntry(getPath().get(0).getKey().toStringUtf8());
 			}
@@ -95,13 +75,6 @@ public final class AntidoteInnerInteger extends AntidoteInnerCRDT implements Int
 	protected void incrementLocal(int inc){
 		value = value + inc;
 	}
-	
-	/**
-	 * Increment by one.
-	 */
-	public void increment(){
-		increment(1);
-	}
 
 	/**
 	 * Increment by one.
@@ -110,18 +83,6 @@ public final class AntidoteInnerInteger extends AntidoteInnerCRDT implements Int
 	 */
 	public void increment(AntidoteTransaction antidoteTransaction){
 		increment(1, antidoteTransaction);
-	}
-	
-	/**
-	 * Increment the value.
-	 *
-	 * @param inc the increment by which the value is incremented
-	 */
-	public void increment(int inc){
-		incrementLocal(inc);
-		List<AntidoteMapUpdate> integerIncrement = new ArrayList<AntidoteMapUpdate>(); 
-		integerIncrement.add(AntidoteMapUpdate.createIntegerIncrement(inc));
-		updateHelper(integerIncrement);
 	}
 
 	/**
@@ -144,18 +105,6 @@ public final class AntidoteInnerInteger extends AntidoteInnerCRDT implements Int
 	 */
 	protected void setLocal(int value){
 		this.value = value;
-	}
-	
-	/**
-	 * Sets the integer to a new value.
-	 *
-	 * @param value the new value
-	 */
-	public void setValue(int value){
-		setLocal(value);
-		List<AntidoteMapUpdate> integerSet = new ArrayList<AntidoteMapUpdate>(); 
-		integerSet.add(AntidoteMapUpdate.createIntegerSet(value));
-		updateHelper(integerSet);
 	}
 
 	/**

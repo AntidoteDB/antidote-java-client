@@ -2,6 +2,8 @@ package main.java.AntidoteClient;
 
 import java.util.List;
 
+import com.google.protobuf.ByteString;
+
 import interfaces.SetCRDT;
 
 /**
@@ -20,7 +22,7 @@ public final class AntidoteOuterRWSet extends AntidoteOuterSet implements SetCRD
 	 * @param valueList the value list
 	 * @param antidoteClient the antidote client
 	 */
-	public AntidoteOuterRWSet(String name, String bucket, List<String> valueList, AntidoteClient antidoteClient){
+	public AntidoteOuterRWSet(String name, String bucket, List<ByteString> valueList, AntidoteClient antidoteClient){
 		super(name, bucket, valueList, antidoteClient, AntidoteType.RWSetType);
 		lowLevelSet = new RWSetRef(name, bucket, antidoteClient);
 	}
@@ -28,26 +30,7 @@ public final class AntidoteOuterRWSet extends AntidoteOuterSet implements SetCRD
 	/**
 	 * Gets the most recent state from the database.
 	 */
-	public void readDatabase(){
-		if (getUpdateList().size() > 0){
-			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
-		}
-		setValues(lowLevelSet.readValueList());
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.SetInterface#rollBack()
-	 */
-	public void rollBack(){
-		clearUpdateList();
-		readDatabase();
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.SetInterface#synchronize()
-	 */
-	public void synchronize(){
-		push();
-		readDatabase();
+	public void readDatabase(AntidoteTransaction antidoteTransaction){
+		setValues(lowLevelSet.readValueListBS(antidoteTransaction));
 	}
 }

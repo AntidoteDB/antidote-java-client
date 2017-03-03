@@ -25,78 +25,6 @@ public final class ORSetRef extends SetRef{
      * Removes the element.
      *
      * @param element the element
-     */
-    public void removeBS(ByteString element){
-    	super.removeBS(element, AntidoteType.ORSetType);
-    }
-
-    /**
-     * Adds the element.
-     *
-     * @param element the element
-     */
-    public void addBS(ByteString element){
-    	super.addBS(element, AntidoteType.ORSetType);
-    }
-    
-    /**
-     * Removes the element.
-     *
-     * @param element the element
-     */
-    public void remove(String element){
-    	super.remove(element, AntidoteType.ORSetType);
-    }
-    
-    /**
-     * Adds the element.
-     *
-     * @param element the element
-     */
-    public void add(String element){
-    	super.add(element, AntidoteType.ORSetType);
-    }
-
-    /**
-     * Removes the element.
-     *
-     * @param elements the elements
-     */
-    public void removeBS(List<ByteString> elements){
-    	super.removeBS(elements, AntidoteType.ORSetType);
-    }
-
-    /**
-     * Adds the element.
-     *
-     * @param elements the elements
-     */
-    public void addBS(List<ByteString> elements){
-    	super.addBS(elements, AntidoteType.ORSetType);
-    }
-    
-    /**
-     * Removes the element.
-     *
-     * @param elements the elements
-     */
-    public void remove(List<String> elements){
-    	super.remove(elements, AntidoteType.ORSetType);
-    }
-
-    /**
-     * Adds the element.
-     *
-     * @param elements the elements
-     */
-    public void add(List<String> elements){
-    	super.add(elements, AntidoteType.ORSetType);
-    }
-    
-    /**
-     * Removes the element.
-     *
-     * @param element the element
      * @param antidoteTransaction the antidote transaction
      */
     public void removeBS(ByteString element, AntidoteTransaction antidoteTransaction){
@@ -176,46 +104,13 @@ public final class ORSetRef extends SetRef{
     /**
      * Read OR-Set from database.
      *
-     * @return the antidote RW-Set
-     */
-    public AntidoteOuterORSet createAntidoteORSet() {
-        ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.ORSetType).getObjects().getObjects(0).getSet();
-        List<String> entriesList = new ArrayList<String>();
-        for (ByteString e : set.getValueList()){
-          	entriesList.add(e.toStringUtf8());
-        }
-        AntidoteOuterORSet antidoteSet = new AntidoteOuterORSet(getName(), getBucket(), entriesList, getClient());
-        return antidoteSet;
-    }
-    
-    /**
-     * Read OR-Set from database.
-     *
      * @param antidoteTransaction the antidote transaction
      * @return the antidote OR set
      */
     public AntidoteOuterORSet createAntidoteORSet(AntidoteTransaction antidoteTransaction){
     	ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.ORSetType, antidoteTransaction).getObjects(0).getSet();
-        List<String> entriesList = new ArrayList<String>();
-        for (ByteString e : set.getValueList()){
-          	entriesList.add(e.toStringUtf8());
-        }
-        AntidoteOuterORSet antidoteSet = new AntidoteOuterORSet(getName(), getBucket(), entriesList, getClient());
+        AntidoteOuterORSet antidoteSet = new AntidoteOuterORSet(getName(), getBucket(), set.getValueList(), getClient());
         return antidoteSet;
-    }
-    
-    /**
-     * Read the value list from the data base.
-     *
-     * @return the value list as Strings
-     */
-    public List<String> readValueList() {
-        ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.ORSetType).getObjects().getObjects(0).getSet();
-        List<String> valueList = new ArrayList<String>();
-        for (ByteString e : set.getValueList()){
-        	valueList.add(e.toStringUtf8());
-        }
-        return valueList;
     }
     
     /**
@@ -231,16 +126,6 @@ public final class ORSetRef extends SetRef{
         	valueList.add(e.toStringUtf8());
         }
         return valueList;
-    }
-    
-    /**
-     * Read the value list from the data base.
-     *
-     * @return the value list as ByteStrings
-     */
-    public List<ByteString> readValueListBS() {
-        ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.ORSetType).getObjects().getObjects(0).getSet();
-        return set.getValueList();
     }
     
     /**

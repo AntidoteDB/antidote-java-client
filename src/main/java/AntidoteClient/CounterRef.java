@@ -18,22 +18,6 @@ public final class CounterRef extends ObjectRef{
 	public CounterRef(String name, String bucket, AntidoteClient antidoteClient){
 		super(name, bucket, antidoteClient);
 	}
-	
-	/**
-	 * Increment.
-	 */
-	public void increment() {
-        updateHelper(incrementOpBuilder(1), getName(), getBucket(), AntidoteType.CounterType);
-    }
-	
-	/**
-	 * Increment.
-	 *
-	 * @param inc the increment, by which the counter shall be incremented
-	 */
-    public void increment(int inc) {
-        updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.CounterType);
-    }
     
     /**
      * Increment.
@@ -71,17 +55,6 @@ public final class CounterRef extends ObjectRef{
     /**
      * Read counter from database.
      *
-     * @return the antidote counter
-     */
-    public AntidoteOuterCounter createAntidoteCounter() {
-        ApbGetCounterResp counter = readHelper(getName(), getBucket(), AntidoteType.CounterType).getObjects().getObjects(0).getCounter();
-        AntidoteOuterCounter antidoteCounter = new AntidoteOuterCounter(getName(), getBucket(), counter.getValue(), getClient());
-        return antidoteCounter;
-    }
-    
-    /**
-     * Read counter from database.
-     *
      * @param antidoteTransaction the antidote transaction
      * @return the antidote counter
      */
@@ -89,16 +62,6 @@ public final class CounterRef extends ObjectRef{
     	ApbGetCounterResp counter = readHelper(getName(), getBucket(), AntidoteType.CounterType, antidoteTransaction).getObjects(0).getCounter();
         AntidoteOuterCounter antidoteCounter = new AntidoteOuterCounter(getName(), getBucket(), counter.getValue(), getClient());
         return antidoteCounter;
-    }
-    
-    /**
-     * Read counter from database.
-     *
-     * @return the counter value
-     */
-    public int readValue() {
-        ApbGetCounterResp counter = readHelper(getName(), getBucket(), AntidoteType.CounterType).getObjects().getObjects(0).getCounter();
-        return counter.getValue();
     }
     
     /**

@@ -60,7 +60,7 @@ public class AntidoteTransaction implements Closeable{
      *
      * @param transactionStatus the transaction status
      */
-    public void setTransactionStatus(TransactionStatus transactionStatus){
+    protected void setTransactionStatus(TransactionStatus transactionStatus){
         this.transactionStatus = transactionStatus;
     }
 

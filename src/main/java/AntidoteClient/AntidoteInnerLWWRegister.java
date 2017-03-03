@@ -1,3 +1,4 @@
+
 package main.java.AntidoteClient;
 
 import java.util.ArrayList;
@@ -5,7 +6,6 @@ import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
-
 import interfaces.LWWRegisterCRDT;
 
 /**
@@ -14,7 +14,7 @@ import interfaces.LWWRegisterCRDT;
 public final class AntidoteInnerLWWRegister extends AntidoteInnerCRDT implements LWWRegisterCRDT{
 	
 	/** The value. */
-	private String value;
+	private ByteString value;
 	
 	/**
 	 * Instantiates a new antidote map register entry.
@@ -28,54 +28,50 @@ public final class AntidoteInnerLWWRegister extends AntidoteInnerCRDT implements
 	 */
 	public AntidoteInnerLWWRegister(String value, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
 		super(antidoteClient, name, bucket, path, outerMapType);
+		this.value = ByteString.copyFromUtf8(value);
+	}
+	
+	/**
+	 * Instantiates a new antidote map register entry.
+	 *
+	 * @param value the value
+	 * @param antidoteClient the antidote client
+	 * @param name the name
+	 * @param bucket the bucket
+	 * @param path the path
+	 * @param outerMapType the outer map type
+	 */
+	public AntidoteInnerLWWRegister(ByteString value, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
+		super(antidoteClient, name, bucket, path, outerMapType);
 		this.value = value;
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.RegisterInterface#rollBack()
-	 */
-	public void rollBack(){
-		clearUpdateList();
-		readDatabase();
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.RegisterInterface#synchronize()
-	 */
-	public void synchronize(){
-		push();
-		readDatabase();
 	}
 	
 	/**
 	 * Gets the most recent state from the database.
 	 */
-	public void readDatabase(){	
-		if (getUpdateList().size() > 0){
-			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
-		}
+	public void readDatabase(AntidoteTransaction antidoteTransaction){	
 		AntidoteInnerLWWRegister register;
 		if (getType() == AntidoteType.GMapType){
 			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
-			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
+			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap(antidoteTransaction);
 			if (getPath().size() == 1){
 				register = outerMap.getLWWRegisterEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
 				register = readDatabaseHelper(getPath(), outerMap).getLWWRegisterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
 			}		
-			value = register.getValue();
+			value = register.getValueBS();
 		}
 		else if (getType() == AntidoteType.AWMapType){ 
 			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
-			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
+			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap(antidoteTransaction);
 			if (getPath().size() == 1){
 				register = outerMap.getLWWRegisterEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
 				register = readDatabaseHelper(getPath(), outerMap).getLWWRegisterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
 			}		
-			value = register.getValue();
+			value = register.getValueBS();
 		}
 	}
 	
@@ -85,14 +81,14 @@ public final class AntidoteInnerLWWRegister extends AntidoteInnerCRDT implements
 	 * @return the value
 	 */
 	public String getValue(){
-		return value;
+		return value.toStringUtf8();
 	}
 	
 	/* (non-Javadoc)
 	 * @see main.java.AntidoteClient.RegisterInterface#getValueBS()
 	 */
 	public ByteString getValueBS(){
-		return ByteString.copyFromUtf8(value);
+		return value;
 	}
 	
 	/**
@@ -100,22 +96,10 @@ public final class AntidoteInnerLWWRegister extends AntidoteInnerCRDT implements
 	 *
 	 * @param value the value
 	 */
-	protected void setLocal(String value){
+	protected void setLocal(ByteString value){
 		this.value = value;
 	}
-
-	/**
-	 * Set the register to a new value.
-	 *
-	 * @param value the value
-	 */
-	public void setValue(String value){
-		setLocal(value);
-		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
-		registerSet.add(AntidoteMapUpdate.createRegisterSet(value));
-		updateHelper(registerSet);
-	}
-
+	
 	/**
 	 * Set the register to a new value.
 	 *
@@ -123,24 +107,14 @@ public final class AntidoteInnerLWWRegister extends AntidoteInnerCRDT implements
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void setValue(String value, AntidoteTransaction antidoteTransaction){
-		setLocal(value);
+		setLocal(ByteString.copyFromUtf8(value));
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>();
 		registerSet.add(AntidoteMapUpdate.createRegisterSet(value));
 		updateHelper(registerSet, antidoteTransaction);
 	}
 
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.RegisterInterface#setValue(com.google.protobuf.ByteString)
-	 */
-	public void setValueBS(ByteString value){
-		setLocal(value.toStringUtf8());
-		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>(); 
-		registerSet.add(AntidoteMapUpdate.createRegisterSet(value.toStringUtf8()));
-		updateHelper(registerSet);
-	}
-
 	public void setValueBS(ByteString value, AntidoteTransaction antidoteTransaction){
-		setLocal(value.toStringUtf8());
+		setLocal(value);
 		List<AntidoteMapUpdate> registerSet = new ArrayList<AntidoteMapUpdate>();
 		registerSet.add(AntidoteMapUpdate.createRegisterSet(value.toStringUtf8()));
 		updateHelper(registerSet, antidoteTransaction);

@@ -30,26 +30,6 @@ public final class AWMapRef extends MapRef{
 	 *
 	 * @param mapKey the map key
 	 * @param update the update
-	 */
-	public void update(AntidoteMapKey mapKey, AntidoteMapUpdate update) {
-	    super.update(mapKey, update, AntidoteType.AWMapType);
-	}
-		
-	/**
-	 * Update.
-	 *
-	 * @param mapKey the map key
-	 * @param updates the updates
-	 */
-	public void update(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates) { 
-	    super.update(mapKey, updates, AntidoteType.AWMapType);
-	}
-	
-	/**
-	 * Update.
-	 *
-	 * @param mapKey the map key
-	 * @param update the update
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void update(AntidoteMapKey mapKey, AntidoteMapUpdate update, AntidoteTransaction antidoteTransaction) {
@@ -88,26 +68,6 @@ public final class AWMapRef extends MapRef{
         updateOperation.setMapop(mapUpdateInstruction);
         return updateOperation;
 	}
-
-    /**
-     * Removes the element with given key.
-     *
-     * @param key the key
-     */
-    public void remove(AntidoteMapKey key) {
-        List<AntidoteMapKey> keys = new ArrayList<>();
-        keys.add(key);
-        remove(keys);
-    }
-    
-    /**
-     * Removes the elements with given key.
-     *
-     * @param keys the keys
-     */
-    public void remove(List<AntidoteMapKey> keys) {
-        updateHelper(removeOpBuilder(keys), getName(), getBucket(), AntidoteType.AWMapType);
-    }
     
     /**
      * Removes the element with given key.
@@ -130,21 +90,6 @@ public final class AWMapRef extends MapRef{
     public void remove(List<AntidoteMapKey> keys, AntidoteTransaction antidoteTransaction) {
         antidoteTransaction.updateHelper(removeOpBuilder(keys), getName(), getBucket(), AntidoteType.AWMapType);
     }
-    
-    /**
-	 * Read AW map from database.
-	 * 
-	 * @return the antidote AW-Map
-	 */
-	public AntidoteOuterAWMap createAntidoteAWMap() {
-        ApbGetMapResp map = readHelper(getName(), getBucket(), AntidoteType.AWMapType).getObjects().getObjects(0).getMap();
-        List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
-        apbEntryList = map.getEntriesList();
-        List<AntidoteInnerCRDT> antidoteEntryList = new ArrayList<AntidoteInnerCRDT>();
-    	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
-        antidoteEntryList = readMapHelper(path, apbEntryList, AntidoteType.AWMapType);     
-        return new AntidoteOuterAWMap(getName(), getBucket(), antidoteEntryList, getClient());   
-    }
 	
 	/**
      * Read AW map from database.
@@ -160,19 +105,6 @@ public final class AWMapRef extends MapRef{
     	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
         antidoteEntryList = readMapHelper(path, apbEntryList, AntidoteType.AWMapType);     
         return new AntidoteOuterAWMap(getName(), getBucket(), antidoteEntryList, getClient());   
-    }
-    
-    /**
-	 * Read AW map from database.
-	 *
-	 * @return the antidote AW-Map entry list
-	 */
-	public List<AntidoteInnerCRDT> readEntryList() {
-        ApbGetMapResp map = readHelper(getName(), getBucket(), AntidoteType.AWMapType).getObjects().getObjects(0).getMap();
-        List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
-        apbEntryList = map.getEntriesList();
-    	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
-        return readMapHelper(path, apbEntryList, AntidoteType.AWMapType);  
     }
 	
 	/**

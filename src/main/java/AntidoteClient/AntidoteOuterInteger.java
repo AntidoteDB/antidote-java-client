@@ -35,16 +35,6 @@ public final class AntidoteOuterInteger extends AntidoteCRDT implements IntegerC
 	public int getValue(){
 		return value;
 	}
-	
-	/**
-	 * Sets the value.
-	 *
-	 * @param newValue the new value
-	 */
-	public void setValue(int newValue){
-		value = newValue;
-		updateAdd(lowLevelInteger.setOpBuilder(newValue));
-	}
 
 	/**
 	 * Sets the value.
@@ -60,36 +50,10 @@ public final class AntidoteOuterInteger extends AntidoteCRDT implements IntegerC
 	/**
 	 * Gets the most recent state from the database.
 	 */
-	public void readDatabase(){
-		if (getUpdateList().size() > 0){
-			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
-		}
-		value = lowLevelInteger.readValue();
+	public void readDatabase(AntidoteTransaction antidoteTransaction){
+		value = lowLevelInteger.readValue(antidoteTransaction);
 	}
 	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.IntegerInterface#rollBack()
-	 */
-	public void rollBack(){
-		clearUpdateList();
-		readDatabase();
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.IntegerInterface#synchronize()
-	 */
-	public void synchronize(){
-		push();
-		readDatabase();
-	}
-	
-	/**
-	 * Increment by one.
-	 */
-	public void increment(){
-		increment(1);
-	}
-
 	/**
 	 * Increment by one.
 	 *
@@ -97,16 +61,6 @@ public final class AntidoteOuterInteger extends AntidoteCRDT implements IntegerC
 	 */
 	public void increment(AntidoteTransaction antidoteTransaction){
 		increment(1, antidoteTransaction);
-	}
-	
-	/**
-	 * Increment by inc.
-	 *
-	 * @param inc the value by which the integer is incremented
-	 */
-	public void increment(int inc){
-		value = value + inc;
-		updateAdd(lowLevelInteger.incrementOpBuilder(inc));
 	}
 
 	/**

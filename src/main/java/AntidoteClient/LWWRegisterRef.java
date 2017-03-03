@@ -23,24 +23,6 @@ public final class LWWRegisterRef extends RegisterRef{
 	 * Sets the value.
 	 *
 	 * @param value the value
-	 */
-	public void set(String value){
-		super.set(value, AntidoteType.LWWRegisterType);
-	}
-	
-	/**
-	 * Sets the value.
-	 *
-	 * @param value the new value
-	 */
-	public void setBS(ByteString value){
-		super.setBS(value, AntidoteType.LWWRegisterType);
-	}
-	
-	/**
-	 * Sets the value.
-	 *
-	 * @param value the value
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void setBS(ByteString value, AntidoteTransaction antidoteTransaction){
@@ -57,16 +39,6 @@ public final class LWWRegisterRef extends RegisterRef{
 		super.set(value, AntidoteType.LWWRegisterType, antidoteTransaction);
 	}
 	
-	/**
-     * Read register from database.
-     *
-     * @return the antidote register
-     */
-    public AntidoteOuterLWWRegister createAntidoteLWWRegister() {
-        ApbGetRegResp reg = readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType).getObjects().getObjects(0).getReg();
-        return new AntidoteOuterLWWRegister(getName(), getBucket(), reg.getValue().toStringUtf8(), getClient()); 
-    }
-    
     /**
      * Read register from database.
      *
@@ -75,17 +47,7 @@ public final class LWWRegisterRef extends RegisterRef{
      */
     public AntidoteOuterLWWRegister createAntidoteLWWRegister(AntidoteTransaction antidoteTransaction){
     	ApbGetRegResp reg = readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType, antidoteTransaction).getObjects(0).getReg();
-        return new AntidoteOuterLWWRegister(getName(), getBucket(), reg.getValue().toStringUtf8(), getClient()); 
-    }
-    
-    /**
-     * Read register from database.
-     *
-     * @return the register value as ByteString
-     */
-    public ByteString readRegisterValueBS() {
-        ApbGetRegResp reg = readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType).getObjects().getObjects(0).getReg();
-        return reg.getValue(); 
+        return new AntidoteOuterLWWRegister(getName(), getBucket(), reg.getValue(), getClient()); 
     }
     
     /**
@@ -97,16 +59,6 @@ public final class LWWRegisterRef extends RegisterRef{
     public ByteString readRegisterValueBS(AntidoteTransaction antidoteTransaction){
     	ApbGetRegResp reg = readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType, antidoteTransaction).getObjects(0).getReg();
         return reg.getValue(); 
-    }
-    
-    /**
-     * Read register from database.
-     *
-     * @return the register value as String
-     */
-    public String readRegisterValue() {
-        ApbGetRegResp reg = readHelper(getName(), getBucket(), AntidoteType.LWWRegisterType).getObjects().getObjects(0).getReg();
-        return reg.getValue().toStringUtf8(); 
     }
     
     /**

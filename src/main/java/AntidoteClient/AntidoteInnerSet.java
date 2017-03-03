@@ -1,3 +1,4 @@
+
 package main.java.AntidoteClient;
 
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 public class AntidoteInnerSet extends AntidoteInnerCRDT {
 	
 	/** The value list. */
-	private Set<String> values;
+	private Set<ByteString> values;
 	
 	/**
 	 * Instantiates a new antidote map set entry.
@@ -28,7 +29,7 @@ public class AntidoteInnerSet extends AntidoteInnerCRDT {
 	 * @param path the path
 	 * @param outerMapType the outer map type
 	 */
-	public AntidoteInnerSet(List<String> valueList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
+	public AntidoteInnerSet(List<ByteString> valueList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType){
 		super(antidoteClient, name, bucket, path, outerMapType);
 		this.values = new HashSet<>(valueList);
 	}
@@ -39,7 +40,11 @@ public class AntidoteInnerSet extends AntidoteInnerCRDT {
 	 * @return the value list
 	 */
 	public Set<String> getValues(){
-		return Collections.unmodifiableSet(values);
+		Set<String> valuesString = new HashSet<String>();
+		for (ByteString s : values){
+			valuesString.add(s.toStringUtf8());
+		}
+		return Collections.unmodifiableSet(valuesString);
 	}
 	
 	/**
@@ -48,11 +53,7 @@ public class AntidoteInnerSet extends AntidoteInnerCRDT {
 	 * @return the value list as ByteStrings
 	 */
 	public Set<ByteString> getValuesBS(){
-		Set<ByteString> valueListBS = new HashSet<ByteString>();
-		for (String s : values){
-			valueListBS.add(ByteString.copyFromUtf8(s));
-		}
-		return Collections.unmodifiableSet(valueListBS);
+		return Collections.unmodifiableSet(values);
 	}
 
 	/**
@@ -60,8 +61,8 @@ public class AntidoteInnerSet extends AntidoteInnerCRDT {
 	 *
 	 * @param valueList the new value list
 	 */
-	protected void setValues(Set<String> valueList){
-		this.values = new HashSet<>(valueList);
+	protected void setValues(Set<ByteString> values){
+		this.values = new HashSet<>(values);
 	}
 	
 	
@@ -70,7 +71,7 @@ public class AntidoteInnerSet extends AntidoteInnerCRDT {
 	 *
 	 * @param elementList the element list
 	 */
-	protected void addElementLocal(List<String> elementList){
+	protected void addElementLocal(List<ByteString> elementList){
 		values.addAll(elementList);
 	}
 	
@@ -79,8 +80,8 @@ public class AntidoteInnerSet extends AntidoteInnerCRDT {
 	 *
 	 * @param element the element
 	 */
-	protected void addElementLocal(String element){
-		List<String> elementList = new ArrayList<String>();
+	protected void addElementLocal(ByteString element){
+		List<ByteString> elementList = new ArrayList<ByteString>();
 		elementList.add(element);
 		addElementLocal(elementList);
 	}
@@ -90,8 +91,8 @@ public class AntidoteInnerSet extends AntidoteInnerCRDT {
 	 *
 	 * @param element the element
 	 */
-	protected void removeElementLocal(String element){
-		List<String> elementList = new ArrayList<String>();
+	protected void removeElementLocal(ByteString element){
+		List<ByteString> elementList = new ArrayList<ByteString>();
 		elementList.add(element);
 		removeElementLocal(elementList);
 	}
@@ -101,7 +102,7 @@ public class AntidoteInnerSet extends AntidoteInnerCRDT {
 	 *
 	 * @param elementList the element list
 	 */
-	protected void removeElementLocal(List<String> elementList){
+	protected void removeElementLocal(List<ByteString> elementList){
 		values.removeAll(elementList);
 	}
 }

@@ -27,55 +27,6 @@ public class AntidoteInnerCRDT extends AntidoteCRDT{
 		super(name, bucket, antidoteClient, outerMapType);
 		this.path = path;
 	}
-	
-	/**
-	 * Update helper.
-	 *
-	 * @param innerUpdate the inner update
-	 */
-	protected void updateHelper(List<AntidoteMapUpdate> innerUpdate){
-		AntidoteMapUpdate mapUpdate = null;
-		List<AntidoteMapUpdate> mapUpdateList = new ArrayList<AntidoteMapUpdate>();
-		ApbMapKey apbKey;
-		for (int i = getPath().size()-1; i>0; i--){
-			apbKey = getPath().get(i);
-			if (i == getPath().size()-1){
-				if (getPath().get(i-1).getType() == AntidoteType.GMapType){
-					mapUpdate = AntidoteMapUpdate.createGMapUpdate(apbKey.getKey().toStringUtf8(), innerUpdate);
-				}
-				else{
-					mapUpdate = AntidoteMapUpdate.createAWMapUpdate(apbKey.getKey().toStringUtf8(), innerUpdate);
-				}
-				mapUpdateList.add(mapUpdate);
-			}
-			else{
-				if (getPath().get(i-1).getType() == AntidoteType.GMapType){
-					mapUpdate = AntidoteMapUpdate.createGMapUpdate(apbKey.getKey().toStringUtf8(), mapUpdateList);
-				}
-				else{
-					mapUpdate = AntidoteMapUpdate.createAWMapUpdate(apbKey.getKey().toStringUtf8(), mapUpdateList);
-				}
-				mapUpdateList = new ArrayList<AntidoteMapUpdate>();
-				mapUpdateList.add(mapUpdate);
-			}
-		}
-		if (getPath().size()>1){
-			if (getType() == AntidoteType.GMapType){
-				updateAdd(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), mapUpdateList));	
-			}
-			else if (getType() == AntidoteType.AWMapType){
-				updateAdd(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), mapUpdateList));	
-			}
-		}
-		else if (getPath().size()==1){
-			if (getType() == AntidoteType.GMapType){
-				updateAdd(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), innerUpdate));	
-			}
-			else if (getType() == AntidoteType.AWMapType){
-				updateAdd(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), innerUpdate));	
-			}
-		}
-	}
 
 	/**
 	 * Update helper.
@@ -127,6 +78,7 @@ public class AntidoteInnerCRDT extends AntidoteCRDT{
 		}
 	}
 	
+// TODO: Georgios
 	/**
 	 * Read database helper.
 	 *
@@ -178,7 +130,7 @@ public class AntidoteInnerCRDT extends AntidoteCRDT{
 		}
 		return innerMap;
 	}
-		
+	
 	/**
 	 * Gets the path.
 	 *

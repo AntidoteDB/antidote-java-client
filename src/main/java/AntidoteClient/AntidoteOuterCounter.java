@@ -1,6 +1,5 @@
 package main.java.AntidoteClient;
 
-import com.basho.riak.protobuf.AntidotePB;
 import interfaces.CounterCRDT;
 
 /**
@@ -34,54 +33,16 @@ public final class AntidoteOuterCounter extends AntidoteCRDT implements CounterC
 	 * @return the value
 	 */
 	public int getValue(){
-
 		return value;
 	}
 
 	/**
 	 * Gets the most recent state from the database.
 	 */
-	public void readDatabase(){
-		if (getUpdateList().size() > 0){
-			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
-		}
-		value = lowLevelCounter.readValue();
+	public void readDatabase(AntidoteTransaction antidoteTransaction){
+		value = lowLevelCounter.readValue(antidoteTransaction);
 	}
 	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.CounterInterface#rollBack()
-	 */
-	public void rollBack(){
-		clearUpdateList();
-		readDatabase();
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.CounterInterface#synchronize()
-	 */
-	public void synchronize(){
-		push();
-		readDatabase();
-	}
-	
-	/**
-	 * Increment by one.
-	 */
-	public void increment(){
-		increment(1);
-	}
-
-	/**
-	 * Increment.
-	 *
-	 * @param inc the value by which the counter is incremented
-	 */
-
-	public void increment(int inc){
-		value = value + inc;
-		updateAdd(lowLevelCounter.incrementOpBuilder(inc));
-	}
-
 	/**
 	 * Increment by one.
 	 *
@@ -101,6 +62,5 @@ public final class AntidoteOuterCounter extends AntidoteCRDT implements CounterC
 	public void increment(int inc, AntidoteTransaction antidoteTransaction){
 		value = value + inc;
 		antidoteTransaction.updateHelper(lowLevelCounter.incrementOpBuilder(inc),getName(),getBucket(),getType());
-
 	}
 }

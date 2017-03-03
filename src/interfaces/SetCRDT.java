@@ -3,10 +3,12 @@ import java.util.Set;
 import java.util.List;
 import com.google.protobuf.ByteString;
 
+import main.java.AntidoteClient.AntidoteTransaction;
+
 /**
  * The Interface InterfaceSet.
  */
-public interface SetCRDT extends CRDT {
+public interface SetCRDT {
 	
 	/**
 	 * Gets the value list.
@@ -24,57 +26,41 @@ public interface SetCRDT extends CRDT {
 	
 	/**
 	 * Adds the element.
-	 *
-	 * @param element the element
 	 */
-	void addElement(String element);
+	void addElement(String element, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Adds the elements.
-	 *
-	 * @param elementList the element list
 	 */
-	void addElement(List<String> elementList);
+	void addElement(List<String> elementList, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Removes the element.
-	 *
-	 * @param element the element
 	 */
-	void removeElement(String element);
+	void removeElement(String element, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Removes the elements.
-	 *
-	 * @param elementList the element list
 	 */
-	void removeElement(List<String> elementList);
+	void removeElement(List<String> elementList, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Adds the element, given as ByteString.
-	 *
-	 * @param element the element
 	 */
-	void addElementBS(ByteString element);
+	void addElementBS(ByteString element, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Adds the elements, given as ByteString.
-	 *
-	 * @param elementList the element list
 	 */
-	void addElementBS(List<ByteString> elementList);
+	void addElementBS(List<ByteString> elementList, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Removes the elements, given as ByteString.
-	 *
-	 * @param element the element
 	 */
-	void removeElementBS(ByteString element);
+	void removeElementBS(ByteString element, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Removes the elements, given as ByteString.
-	 *
-	 * @param elementList the element list
 	 */
-	void removeElementBS(List<ByteString> elementList);
+	void removeElementBS(List<ByteString> elementList, AntidoteTransaction antidoteTransaction);
 }

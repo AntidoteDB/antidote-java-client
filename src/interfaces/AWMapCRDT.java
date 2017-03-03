@@ -14,11 +14,12 @@ import main.java.AntidoteClient.AntidoteInnerORSet;
 import main.java.AntidoteClient.AntidoteInnerCRDT;
 import main.java.AntidoteClient.AntidoteInnerRWSet;
 import main.java.AntidoteClient.AntidoteMapUpdate;
+import main.java.AntidoteClient.AntidoteTransaction;
 
 /**
  * The Interface InterfaceAWMap.
  */
-public interface AWMapCRDT extends CRDT{
+public interface AWMapCRDT{
 
 /**
  * Gets the entry list.
@@ -29,19 +30,13 @@ List<AntidoteInnerCRDT> getEntryList();
 	
 	/**
 	 * Update the entry with the given key by applying the given update (update contain type information).
-	 *
-	 * @param key the key
-	 * @param update the update
 	 */
-	void update(String key, AntidoteMapUpdate update);
+	void update(String key, AntidoteMapUpdate update, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Update the entry with the given key by applying the given updates (updates contain type information).
-	 *
-	 * @param key the key
-	 * @param updateList the update list
 	 */
-	void update(String key, List<AntidoteMapUpdate> updateList);
+	void update(String key, List<AntidoteMapUpdate> updateList, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Gets the OR set entry.
@@ -108,19 +103,13 @@ List<AntidoteInnerCRDT> getEntryList();
 	AntidoteInnerGMap getGMapEntry(String key);
 	
 	/**
-	 * Removes the.
-	 *
-	 * @param key the key
-	 * @param type the type
+	 * Removes the entry.
 	 */
-	void remove(String key, CRDT_type type);
+	void remove(String key, CRDT_type type, AntidoteTransaction antidoteTransaction);
 	
 	/**
-	 * Removes the.
-	 *
-	 * @param keyList the key list
-	 * @param type the type
+	 * Removes the entries.
 	 */
-	void remove(List<String> keyList, CRDT_type type);
+	void remove(List<String> keyList, CRDT_type type, AntidoteTransaction antidoteTransaction);
 
 }

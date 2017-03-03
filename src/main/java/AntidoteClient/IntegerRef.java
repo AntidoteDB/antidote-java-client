@@ -48,24 +48,6 @@ public final class IntegerRef extends ObjectRef{
         updateOperation.setIntegerop(intUpdateInstruction);
         return updateOperation;
     }
-	
-    /**
-     * Increments the value of the integer.
-     * 
-     * @param inc the increment, by which the integer is incremented
-     */
-    public void increment(int inc) {
-    	updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.IntegerType);
-    }
-    
-    /**
-     * Sets the value of the integer.
-     *
-     * @param number the number, to which the integer is set
-     */
-    public void set(int number) {
-    	updateHelper(setOpBuilder(number), getName(), getBucket(), AntidoteType.IntegerType);
-    }
         
     /**
      * Sets the value of the integer.
@@ -90,32 +72,12 @@ public final class IntegerRef extends ObjectRef{
     /**
      * Read integer from database.
      *
-     * @return the antidote integer
-     */
-    public AntidoteOuterInteger createAntidoteInteger() {
-        ApbGetIntegerResp number = readHelper(getName(), getBucket(), AntidoteType.IntegerType).getObjects().getObjects(0).getInt();
-        return new AntidoteOuterInteger(getName(), getBucket(), toIntExact(number.getValue()), getClient());  
-    }
-    
-    /**
-     * Read integer from database.
-     *
      * @param antidoteTransaction the transaction
      * @return the antidote integer
      */
     public AntidoteOuterInteger createAntidoteInteger(AntidoteTransaction antidoteTransaction){
     	ApbGetIntegerResp number = readHelper(getName(), getBucket(), AntidoteType.IntegerType, antidoteTransaction).getObjects(0).getInt();
         return new AntidoteOuterInteger(getName(), getBucket(), toIntExact(number.getValue()), getClient());  
-    }
-    
-    /**
-     * Read integer from database.
-     *
-     * @return the integer value
-     */
-    public int readValue() {
-        ApbGetIntegerResp number = readHelper(getName(), getBucket(), AntidoteType.IntegerType).getObjects().getObjects(0).getInt();
-        return toIntExact(number.getValue()); 
     }
     
     /**

@@ -2,10 +2,12 @@ package interfaces;
 
 import com.google.protobuf.ByteString;
 
+import main.java.AntidoteClient.AntidoteTransaction;
+
 /**
  * The Interface InterfaceLWWRegister.
  */
-public interface LWWRegisterCRDT extends CRDT {
+public interface LWWRegisterCRDT {
 	
 	/**
 	 * Gets the value.
@@ -26,12 +28,12 @@ public interface LWWRegisterCRDT extends CRDT {
 	 *
 	 * @param value the new value
 	 */
-	void setValue(String value);
+	void setValue(String value, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Sets the value, given as ByteString.
 	 *
 	 * @param value the new value
 	 */
-	void setValueBS (ByteString value);
+	void setValueBS (ByteString value, AntidoteTransaction antidoteTransaction);
 }

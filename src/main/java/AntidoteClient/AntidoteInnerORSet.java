@@ -6,7 +6,6 @@ import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
-
 import interfaces.SetCRDT;
 
 /**
@@ -24,35 +23,8 @@ public final class AntidoteInnerORSet extends AntidoteInnerSet implements SetCRD
 	 * @param path the path
 	 * @param outerMapType the outer map type
 	 */
-	public AntidoteInnerORSet(List<String> valueList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType) {
+	public AntidoteInnerORSet(List<ByteString> valueList, AntidoteClient antidoteClient, String name, String bucket, List<ApbMapKey> path, CRDT_type outerMapType) {
 		super(valueList, antidoteClient, name, bucket, path, outerMapType);
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.SetInterface#rollBack()
-	 */
-	public void rollBack(){
-		clearUpdateList();
-		readDatabase();
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.SetInterface#synchronize()
-	 */
-	public void synchronize(){
-		push();
-		readDatabase();
-	}
-
-	/**
-	 * Adds the element, given as ByteString.
-	 *
-	 * @param element the element
-	 */
-	public void addElementBS(ByteString element){
-		List<ByteString> elementList = new ArrayList<ByteString>();
-		elementList.add(element);
-		addElementBS(elementList);
 	}
 
 	/**
@@ -71,46 +43,15 @@ public final class AntidoteInnerORSet extends AntidoteInnerSet implements SetCRD
 	 * Adds the elements, given as ByteStrings.
 	 *
 	 * @param elementList the element list
-	 */
-	public void addElementBS(List<ByteString> elementList){
-		List<String> stringElementList = new ArrayList<>();
-		for (ByteString elt : elementList){
-			stringElementList.add(elt.toStringUtf8());
-		}
-		addElementLocal(stringElementList);
-		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>(); 
-		setAdd.add(AntidoteMapUpdate.createORSetAddBS(elementList));
-		updateHelper(setAdd);
-	}
-
-	/**
-	 * Adds the elements, given as ByteStrings.
-	 *
-	 * @param elementList the element list
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void addElementBS(List<ByteString> elementList, AntidoteTransaction antidoteTransaction){
-		List<String> stringElementList = new ArrayList<>();
-		for (ByteString elt : elementList){
-			stringElementList.add(elt.toStringUtf8());
-		}
-		addElementLocal(stringElementList);
+		addElementLocal(elementList);
 		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>();
 		setAdd.add(AntidoteMapUpdate.createORSetAddBS(elementList));
 		updateHelper(setAdd, antidoteTransaction);
 	}
-
-	/**
-	 * Removes the elements, given as ByteString.
-	 *
-	 * @param element the element
-	 */
-	public void removeElementBS(ByteString element){
-		List<ByteString> elementList = new ArrayList<ByteString>();
-		elementList.add(element);
-		removeElementBS(elementList);
-	}
-
+	
 	/**
 	 * Removes the element, given as ByteString.
 	 *
@@ -127,44 +68,13 @@ public final class AntidoteInnerORSet extends AntidoteInnerSet implements SetCRD
 	 * Removes the elements, given as ByteStrings.
 	 *
 	 * @param elementList the element list
-	 */
-	public void removeElementBS(List<ByteString> elementList){
-		List<String> stringElementList = new ArrayList<>();
-		for (ByteString elt : elementList){
-			stringElementList.add(elt.toStringUtf8());
-		}
-		removeElementLocal(stringElementList);
-		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>(); 
-		setRemove.add(AntidoteMapUpdate.createORSetRemoveBS(elementList));
-		updateHelper(setRemove);
-	}
-
-	/**
-	 * Removes the elements, given as ByteStrings.
-	 *
-	 * @param elementList the element list
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void removeElementBS(List<ByteString> elementList, AntidoteTransaction antidoteTransaction){
-		List<String> stringElementList = new ArrayList<>();
-		for (ByteString elt : elementList){
-			stringElementList.add(elt.toStringUtf8());
-		}
-		removeElementLocal(stringElementList);
+		removeElementLocal(elementList);
 		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>();
 		setRemove.add(AntidoteMapUpdate.createORSetRemoveBS(elementList));
 		updateHelper(setRemove, antidoteTransaction);
-	}
-	
-	/**
-	 * Adds the element.
-	 *
-	 * @param element the element
-	 */
-	public void addElement(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		addElement(elementList);
 	}
 
 	/**
@@ -183,36 +93,17 @@ public final class AntidoteInnerORSet extends AntidoteInnerSet implements SetCRD
 	 * Adds the elements.
 	 *
 	 * @param elementList the element list
-	 */
-	public void addElement(List<String> elementList){
-		addElementLocal(elementList);
-		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>(); 
-		setAdd.add(AntidoteMapUpdate.createORSetAdd(elementList));
-		updateHelper(setAdd);
-	}
-
-	/**
-	 * Adds the elements.
-	 *
-	 * @param elementList the element list
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void addElement(List<String> elementList, AntidoteTransaction antidoteTransaction){
-		addElementLocal(elementList);
+		List<ByteString> elementListBS = new ArrayList<>();
+		for (String elt : elementList){
+			elementListBS.add(ByteString.copyFromUtf8(elt));
+		}
+		addElementLocal(elementListBS);
 		List<AntidoteMapUpdate> setAdd = new ArrayList<AntidoteMapUpdate>();
 		setAdd.add(AntidoteMapUpdate.createORSetAdd(elementList));
 		updateHelper(setAdd, antidoteTransaction);
-	}
-	
-	/**
-	 * Removes the element.
-	 *
-	 * @param element the element
-	 */
-	public void removeElement(String element){
-		List<String> elementList = new ArrayList<String>();
-		elementList.add(element);
-		removeElement(elementList);
 	}
 
 	/**
@@ -226,18 +117,6 @@ public final class AntidoteInnerORSet extends AntidoteInnerSet implements SetCRD
 		elementList.add(element);
 		removeElement(elementList, antidoteTransaction);
 	}
-	
-	/**
-	 * Removes the elements.
-	 *
-	 * @param elementList the element list
-	 */
-	public void removeElement(List<String> elementList){
-		removeElementLocal(elementList);
-		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>(); 
-		setRemove.add(AntidoteMapUpdate.createORSetRemove(elementList));
-		updateHelper(setRemove);
-	}
 
 	/**
 	 * Removes the elements.
@@ -246,7 +125,11 @@ public final class AntidoteInnerORSet extends AntidoteInnerSet implements SetCRD
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void removeElement(List<String> elementList, AntidoteTransaction antidoteTransaction){
-		removeElementLocal(elementList);
+		List<ByteString> elementListBS = new ArrayList<>();
+		for (String elt : elementList){
+			elementListBS.add(ByteString.copyFromUtf8(elt));
+		}
+		removeElementLocal(elementListBS);
 		List<AntidoteMapUpdate> setRemove = new ArrayList<AntidoteMapUpdate>();
 		setRemove.add(AntidoteMapUpdate.createORSetRemove(elementList));
 		updateHelper(setRemove, antidoteTransaction);
@@ -255,32 +138,29 @@ public final class AntidoteInnerORSet extends AntidoteInnerSet implements SetCRD
 	/**
 	 * Gets the most recent state from the database.
 	 */
-	public void readDatabase(){
-		if (getUpdateList().size() > 0){
-			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
-		}
+	public void readDatabase(AntidoteTransaction antidoteTransaction){
 		AntidoteInnerORSet set;
 		if (getType() == AntidoteType.GMapType){
 			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
-			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
+			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap(antidoteTransaction);
 			if (getPath().size() == 1){
 				set = outerMap.getORSetEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
 				set = readDatabaseHelper(getPath(), outerMap).getORSetEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
 			}		
-			setValues(set.getValues());
+			setValues(set.getValuesBS());
 		}
 		else if (getType() == AntidoteType.AWMapType){ 
 			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
-			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
+			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap(antidoteTransaction);
 			if (getPath().size() == 1){
 				set = outerMap.getORSetEntry(getPath().get(0).getKey().toStringUtf8());
 			}
 			else{
 				set = readDatabaseHelper(getPath(), outerMap).getORSetEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
 			}		
-			setValues(new HashSet<>(set.getValues()));
+			setValues(new HashSet<>(set.getValuesBS()));
 		}
 	}
 }

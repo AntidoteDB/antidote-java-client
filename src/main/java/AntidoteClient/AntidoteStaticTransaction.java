@@ -1,10 +1,7 @@
 package main.java.AntidoteClient;
 
 import com.basho.riak.protobuf.AntidotePB.*;
-import com.google.protobuf.*;
 import java.io.Closeable;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by george on 2/22/17.

@@ -1,9 +1,7 @@
 package main.java.AntidoteClient;
 import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
-
 import interfaces.CounterCRDT;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,34 +28,14 @@ public final class AntidoteInnerCounter extends AntidoteInnerCRDT implements Cou
 		this.value = value;
 	}
 	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.CounterInterface#rollBack()
-	 */
-	public void rollBack(){
-		clearUpdateList();
-		readDatabase();
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.CounterInterface#synchronize()
-	 */
-	public void synchronize(){
-		push();
-		readDatabase();
-	}	
-	
-	
 	/**
 	 * Gets the most recent state from the database.
 	 */
-	public void readDatabase(){
-		if (getUpdateList().size() > 0){
-			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
-		}
+	public void readDatabase(AntidoteTransaction antidoteTransaction){
 		AntidoteInnerCounter counter;
 		if (getType() == AntidoteType.GMapType){
 			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
-			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
+			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap(antidoteTransaction);
 			if (getPath().size() == 1){
 				counter = outerMap.getCounterEntry(getPath().get(0).getKey().toStringUtf8());
 			}
@@ -68,7 +46,7 @@ public final class AntidoteInnerCounter extends AntidoteInnerCRDT implements Cou
 		}
 		else if (getType() == AntidoteType.AWMapType){ 
 			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
-			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
+			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap(antidoteTransaction);
 			if (getPath().size() == 1){
 				counter = outerMap.getCounterEntry(getPath().get(0).getKey().toStringUtf8());
 			}
@@ -87,13 +65,6 @@ public final class AntidoteInnerCounter extends AntidoteInnerCRDT implements Cou
 	public int getValue(){
 		return value;
 	}
-	
-	/**
-	 * Increment the value by one.
-	 */
-	public void increment(){
-		increment(1);
-	}
 
 	/**
 	 * Increment the value by one.
@@ -102,18 +73,6 @@ public final class AntidoteInnerCounter extends AntidoteInnerCRDT implements Cou
 	 */
 	public void increment(AntidoteTransaction antidoteTransaction){
 		increment(1, antidoteTransaction);
-	}
-
-	/**
-	 * Increment the value.
-	 *
-	 * @param inc the increment by which the value is incremented
-	 */
-	public void increment(int inc){
-		incrementLocal(inc);
-		List<AntidoteMapUpdate> counterIncrement = new ArrayList<AntidoteMapUpdate>(); 
-		counterIncrement.add(AntidoteMapUpdate.createCounterIncrement(inc));
-		updateHelper(counterIncrement);
 	}
 
 	/**

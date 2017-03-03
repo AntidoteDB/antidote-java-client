@@ -3,6 +3,7 @@ package main.java.AntidoteClient;
 import java.util.ArrayList;
 import java.util.List;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import com.google.protobuf.ByteString;
 
 import interfaces.AWMapCRDT;
 
@@ -29,39 +30,8 @@ public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapC
 	/**
 	 * Gets the most recent state from the database.
 	 */
-	public void readDatabase(){
-		if (getUpdateList().size() > 0){
-			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
-		}
-		setEntryList(lowLevelMap.readEntryList());
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.AWMapInterface#rollBack()
-	 */
-	public void rollBack(){
-		clearUpdateList();
-		readDatabase();
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.AWMapInterface#synchronize()
-	 */
-	public void synchronize(){
-		push();
-		readDatabase();
-	}
-	
-	/**
-	 * Update the entry with given key. Type information is contained in the AntidoteMapUpdate.
-	 *
-	 * @param key the key of the entry which is updated
-	 * @param update the update which is executed on that entry
-	 */
-	public void update(String key, AntidoteMapUpdate update){
-		List<AntidoteMapUpdate> updateList = new ArrayList<AntidoteMapUpdate>();
-		updateList.add(update);
-		update(key, updateList);
+	public void readDatabase(AntidoteTransaction antidoteTransaction){
+		setEntryList(lowLevelMap.readEntryList(antidoteTransaction));
 	}
 
 	/**
@@ -72,19 +42,7 @@ public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapC
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void update(String key, AntidoteMapUpdate update, AntidoteTransaction antidoteTransaction){
-		List<AntidoteMapUpdate> updateList = new ArrayList<AntidoteMapUpdate>();
-		updateList.add(update);
-		update(key, updateList, antidoteTransaction);
-	}
-	
-	/**
-	 * Update the entry with given key. Type information is contained in the AntidoteMapUpdate.
-	 *
-	 * @param key the key of the entry which is updated
-	 * @param updateList updates which are executed on that entry, type must be the same for all of them
-	 */
-	public void update(String key, List<AntidoteMapUpdate> updateList){
-		super.update(key, updateList, AntidoteType.AWMapType);
+		super.updateBS(ByteString.copyFromUtf8(key), update, AntidoteType.AWMapType, antidoteTransaction);
 	}
 
 	/**
@@ -95,7 +53,29 @@ public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapC
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void update(String key, List<AntidoteMapUpdate> updateList, AntidoteTransaction antidoteTransaction){
-		super.update(key, updateList, AntidoteType.AWMapType, antidoteTransaction);
+		super.updateBS(ByteString.copyFromUtf8(key), updateList, AntidoteType.AWMapType, antidoteTransaction);
+	}
+	
+	/**
+	 * Update the entry with given key. Type information is contained in the AntidoteMapUpdate.
+	 *
+	 * @param key the key of the entry which is updated
+	 * @param update the update which is executed on that entry
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void updateBS(ByteString key, AntidoteMapUpdate update, AntidoteTransaction antidoteTransaction){
+		super.updateBS(key, update, AntidoteType.AWMapType, antidoteTransaction);
+	}
+
+	/**
+	 * Update the entry with given key. Type information is contained in the AntidoteMapUpdate.
+	 *
+	 * @param key the key of the entry which is updated
+	 * @param updateList updates which are executed on that entry, type must be the same for all of them
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void updateBS(ByteString key, List<AntidoteMapUpdate> updateList, AntidoteTransaction antidoteTransaction){
+		super.updateBS(key, updateList, AntidoteType.AWMapType, antidoteTransaction);
 	}
 
 	/**
@@ -112,18 +92,6 @@ public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapC
 		}
 		setEntryList(entriesValid);
 	}
-	
-	/**
-	 * Removes an entry of given type.
-	 *
-	 * @param key the key
-	 * @param type the type, use AntidoteType._Type in the method call (AntidoteType.CounterType for example)
-	 */
-	public void remove(String key, CRDT_type type){
-		List<String> keyList = new ArrayList<String>();
-		keyList.add(key);
-		remove(keyList, type);
-	}
 
 	/**
 	 * Removes an entry of given type.
@@ -133,24 +101,7 @@ public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapC
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void remove(String key, CRDT_type type,AntidoteTransaction antidoteTransaction){
-		List<String> keyList = new ArrayList<String>();
-		keyList.add(key);
-		remove(keyList, type, antidoteTransaction);
-	}
-
-	/**
-	 * Removes a list of entries of the same type.
-	 *
-	 * @param keyList the key list
-     * @param type the type, use AntidoteType._Type in the method call (AntidoteType.CounterType for example)
-	 */
-	public void remove(List<String> keyList, CRDT_type type){
-		List<AntidoteMapKey> mapKeyList = new ArrayList<AntidoteMapKey>();
-		for (String key : keyList){
-			mapKeyList.add(new AntidoteMapKey(type, key));
-		}
-		removeLocal(mapKeyList);
-		addRemoveToList(mapKeyList);
+		removeBS(ByteString.copyFromUtf8(key), type, antidoteTransaction);
 	}
 
 	/**
@@ -163,6 +114,35 @@ public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapC
 	public void remove(List<String> keyList, CRDT_type type, AntidoteTransaction antidoteTransaction){
 		List<AntidoteMapKey> mapKeyList = new ArrayList<AntidoteMapKey>();
 		for (String key : keyList){
+			mapKeyList.add(new AntidoteMapKey(type, key));
+		}
+		removeLocal(mapKeyList);
+		addRemoveToList(mapKeyList, antidoteTransaction);
+	}
+	
+	/**
+	 * Removes an entry of given type.
+	 *
+	 * @param key the key
+	 * @param type the type, use AntidoteType._Type in the method call (AntidoteType.CounterType for example)
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void removeBS(ByteString key, CRDT_type type,AntidoteTransaction antidoteTransaction){
+		List<ByteString> keyList = new ArrayList<>();
+		keyList.add(key);
+		removeBS(keyList, type, antidoteTransaction);
+	}
+
+	/**
+	 * Removes a list of entries of the same type.
+	 *
+	 * @param keyList the key list
+	 * @param type the type, use AntidoteType._Type in the method call (AntidoteType.CounterType for example)
+	 * @param antidoteTransaction the antidote transaction
+	 */
+	public void removeBS(List<ByteString> keyList, CRDT_type type, AntidoteTransaction antidoteTransaction){
+		List<AntidoteMapKey> mapKeyList = new ArrayList<AntidoteMapKey>();
+		for (ByteString key : keyList){
 			mapKeyList.add(new AntidoteMapKey(type, key));
 		}
 		removeLocal(mapKeyList);

@@ -4,10 +4,12 @@ import java.util.List;
 
 import com.google.protobuf.ByteString;
 
+import main.java.AntidoteClient.AntidoteTransaction;
+
 /**
  * The Interface InterfaceMVRegister.
  */
-public interface MVRegisterCRDT extends CRDT{
+public interface MVRegisterCRDT{
 	
 	/**
 	 * Gets the value list.
@@ -29,12 +31,12 @@ public interface MVRegisterCRDT extends CRDT{
 	 *
 	 * @param value the new value
 	 */
-	void setValue(String value);
+	void setValue(String value, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Sets the value, given as ByteString.
 	 *
 	 * @param value the new value
 	 */
-	void setValueBS(ByteString value);
+	void setValueBS(ByteString value, AntidoteTransaction antidoteTransaction);
 }

@@ -28,26 +28,6 @@ public final class GMapRef extends MapRef{
 	 *
 	 * @param mapKey the map key
 	 * @param update the update
-	 */
-	public void update(AntidoteMapKey mapKey, AntidoteMapUpdate update) {
-	    super.update(mapKey, update, AntidoteType.GMapType);
-	}
-		
-	/**
-	 * Update.
-	 *
-	 * @param mapKey the map key
-	 * @param updates the updates
-	 */
-	public void update(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates) { 
-	    super.update(mapKey, updates, AntidoteType.GMapType);
-	}
-	
-	/**
-	 * Update.
-	 *
-	 * @param mapKey the map key
-	 * @param update the update
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void update(AntidoteMapKey mapKey, AntidoteMapUpdate update, AntidoteTransaction antidoteTransaction) {
@@ -66,21 +46,6 @@ public final class GMapRef extends MapRef{
 	}
 	
 	/**
-	 * Read G map from database.
-	 * 
-	 * @return the antidote G-Map
-	 */
-	public AntidoteOuterGMap createAntidoteGMap() {
-        ApbGetMapResp map = readHelper(getName(), getBucket(), AntidoteType.GMapType).getObjects().getObjects(0).getMap();
-        List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
-        apbEntryList = map.getEntriesList();
-        List<AntidoteInnerCRDT> antidoteEntryList = new ArrayList<AntidoteInnerCRDT>();
-    	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
-        antidoteEntryList = readMapHelper(path, apbEntryList, AntidoteType.GMapType);     
-        return new AntidoteOuterGMap(getName(), getBucket(), antidoteEntryList, getClient());   
-    }
-	
-	/**
      * Read G map from database.
      *
      * @param antidoteTransaction the transaction
@@ -94,19 +59,6 @@ public final class GMapRef extends MapRef{
     	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
         antidoteEntryList = readMapHelper(path, apbEntryList, AntidoteType.GMapType);     
         return new AntidoteOuterGMap(getName(), getBucket(), antidoteEntryList, getClient());   
-    }
-    
-    /**
-	 * Read G map from database.
-	 *
-	 * @return the antidote G-Map entry list
-	 */
-	public List<AntidoteInnerCRDT> readEntryList() {
-        ApbGetMapResp map = readHelper(getName(), getBucket(), AntidoteType.GMapType).getObjects().getObjects(0).getMap();
-        List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
-        apbEntryList = map.getEntriesList();
-    	List<ApbMapKey> path = new ArrayList<ApbMapKey>();
-        return readMapHelper(path, apbEntryList, AntidoteType.GMapType);  
     }
 	
 	/**

@@ -1,11 +1,8 @@
 package main.java.AntidoteClient;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-
 import com.google.protobuf.ByteString;
-
 import interfaces.MVRegisterCRDT;
 
 /**
@@ -14,7 +11,7 @@ import interfaces.MVRegisterCRDT;
 public final class AntidoteOuterMVRegister extends AntidoteCRDT implements MVRegisterCRDT{
 	
 	/** The value list. */
-	private List<String> valueList;
+	private List<ByteString> valueList;
 
 	/** The low level register. */
 	private final MVRegisterRef lowLevelRegister;
@@ -27,7 +24,7 @@ public final class AntidoteOuterMVRegister extends AntidoteCRDT implements MVReg
 	 * @param valueList the values of the MV-Register
 	 * @param antidoteClient the antidote client
 	 */
-	public AntidoteOuterMVRegister(String name, String bucket, List<String> valueList, AntidoteClient antidoteClient) {
+	public AntidoteOuterMVRegister(String name, String bucket, List<ByteString> valueList, AntidoteClient antidoteClient) {
 		super(name, bucket, antidoteClient, AntidoteType.MVRegisterType);
 		this.valueList = valueList;
 		lowLevelRegister = new MVRegisterRef(name, bucket, antidoteClient);
@@ -39,55 +36,25 @@ public final class AntidoteOuterMVRegister extends AntidoteCRDT implements MVReg
 	 * @return the value list
 	 */
 	public List<String> getValueList(){
-		return Collections.unmodifiableList(valueList);
+		List<String> valueListString = new ArrayList<>();
+		for (ByteString value : valueList){
+			valueListString.add(value.toStringUtf8());
+		}
+		return new ArrayList<String>(valueListString);
 	}
 	
 	/* (non-Javadoc)
 	 * @see main.java.AntidoteClient.MVRegisterInterface#getValueListBS()
 	 */
 	public List<ByteString> getValueListBS(){
-		List<ByteString> valueListBS = new ArrayList<>();
-		for (String value : valueList){
-			valueListBS.add(ByteString.copyFromUtf8(value));
-		}
-		return valueListBS;
+		return new ArrayList<ByteString>(valueList);
 	}
 	
 	/**
 	 * Gets the most recent state from the database.
 	 */
-	public void readDatabase(){
-		if (getUpdateList().size() > 0){
-			throw new AntidoteException("You can't read the database without pushing your changes first or rolling back");
-		}
-		valueList = lowLevelRegister.readRegisterValues();
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.MVRegisterInterface#rollBack()
-	 */
-	public void rollBack(){
-		clearUpdateList();
-		readDatabase();
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.MVRegisterInterface#synchronize()
-	 */
-	public void synchronize(){
-		push();
-		readDatabase();
-	}
-	
-	/**
-	 * Update the MV-Register.
-	 *
-	 * @param element the element
-	 */
-	public void setValue(String element){
-		valueList.clear();
-		valueList.add(element);
-		updateAdd(lowLevelRegister.setOpBuilder(ByteString.copyFromUtf8(element)));
+	public void readDatabase(AntidoteTransaction antidoteTransaction){
+		valueList = new ArrayList<ByteString>(lowLevelRegister.readRegisterValuesBS(antidoteTransaction));
 	}
 
 	/**
@@ -97,23 +64,14 @@ public final class AntidoteOuterMVRegister extends AntidoteCRDT implements MVReg
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void setValue(String element, AntidoteTransaction antidoteTransaction){
-		valueList.clear();
-		valueList.add(element);
+		valueList = new ArrayList<>();
+		valueList.add(ByteString.copyFromUtf8(element));
 		antidoteTransaction.updateHelper(lowLevelRegister.setOpBuilder(ByteString.copyFromUtf8(element)),getName(),getBucket(),getType());
-	}
-	
-	/* (non-Javadoc)
-	 * @see main.java.AntidoteClient.MVRegisterInterface#setValue(com.google.protobuf.ByteString)
-	 */
-	public void setValueBS(ByteString element){
-		valueList.clear();
-		valueList.add(element.toStringUtf8());
-		updateAdd(lowLevelRegister.setOpBuilder(element));
 	}
 
 	public void setValueBS(ByteString element, AntidoteTransaction antidoteTransaction){
-		valueList.clear();
-		valueList.add(element.toStringUtf8());
+		valueList = new ArrayList<>();
+		valueList.add(element);
 		antidoteTransaction.updateHelper(lowLevelRegister.setOpBuilder(element),getName(),getBucket(),getType());
 	}
 }

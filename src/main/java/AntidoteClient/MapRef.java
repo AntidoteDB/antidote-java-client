@@ -10,7 +10,6 @@ import com.basho.riak.protobuf.AntidotePB.ApbMapNestedUpdate;
 import com.basho.riak.protobuf.AntidotePB.ApbMapUpdate;
 import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
-import com.google.protobuf.ByteString;
 
 /**
  * The Class LowLevelMap.
@@ -51,30 +50,6 @@ public class MapRef extends ObjectRef{
 	    ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
 	    updateOperation.setMapop(mapUpdateInstruction);
 	    return updateOperation;
-	}
-		
-	/**
-	 * Update.
-	 *
-	 * @param mapKey the map key
-	 * @param update the update
-	 * @param type the type
-	 */
-	public void update(AntidoteMapKey mapKey, AntidoteMapUpdate update, CRDT_type type) {
-	    List<AntidoteMapUpdate> updates = new ArrayList<>();
-	    updates.add(update);
-	    update(mapKey, updates, type);
-	}
-		
-	/**
-	 * Update.
-	 *
-	 * @param mapKey the map key
-	 * @param updates the updates
-	 * @param type the type
-	 */
-	public void update(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates, CRDT_type type) { 
-		updateHelper(updateOpBuilder(mapKey, updates), getName(), getBucket(), type);
 	}
 	
 	/**
@@ -128,22 +103,14 @@ public class MapRef extends ObjectRef{
          		case ORSET :
          			path2 = new ArrayList<ApbMapKey>();
         			path2.addAll(path);
-         			List<String> orSetEntryList = new ArrayList<String>();
-         	        for (ByteString elt : e.getValue().getSet().getValueList()){
-         	        	orSetEntryList.add(elt.toStringUtf8());
-         	        }
              		antidoteEntryList.add(new AntidoteInnerORSet(
-             				orSetEntryList, getClient(), getName(), getBucket(), path2, outerMapType));
+             				e.getValue().getSet().getValueList(), getClient(), getName(), getBucket(), path2, outerMapType));
              		break;
          		case RWSET : 
          			path2 = new ArrayList<ApbMapKey>();
         			path2.addAll(path);
-         			List<String> rwSetEntryList = new ArrayList<String>();
-         	        for (ByteString elt : e.getValue().getSet().getValueList()){
-         	        	rwSetEntryList.add(elt.toStringUtf8());
-         	        }
              		antidoteEntryList.add(new AntidoteInnerRWSet(
-             				rwSetEntryList, getClient(), getName(), getBucket(), path2, outerMapType));
+             				e.getValue().getSet().getValueList(), getClient(), getName(), getBucket(), path2, outerMapType));
              		break;
          		case AWMAP :
          			path2 = new ArrayList<ApbMapKey>();
@@ -161,16 +128,12 @@ public class MapRef extends ObjectRef{
         			path2 = new ArrayList<ApbMapKey>();
         			path2.addAll(path);
              		antidoteEntryList.add(new AntidoteInnerLWWRegister(
-             				e.getValue().getReg().getValue().toStringUtf8(), getClient(), getName(), getBucket(), path2, outerMapType));
+             				e.getValue().getReg().getValue(), getClient(), getName(), getBucket(), path2, outerMapType));
              		break;
          		case MVREG :
         			path2 = new ArrayList<ApbMapKey>();
         			path2.addAll(path);
-        			List<String> values = new ArrayList<String>();
-        			for (ByteString elt : e.getValue().getMvreg().getValuesList()){
-        				values.add(elt.toStringUtf8());
-        			}
-             		antidoteEntryList.add(new AntidoteInnerMVRegister(values, getClient(), getName(), getBucket(), path2, outerMapType));
+             		antidoteEntryList.add(new AntidoteInnerMVRegister(e.getValue().getMvreg().getValuesList(), getClient(), getName(), getBucket(), path2, outerMapType));
              		break;
          		case GMAP : 
          			path2 = new ArrayList<ApbMapKey>();

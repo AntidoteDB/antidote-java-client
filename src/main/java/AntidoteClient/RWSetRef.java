@@ -20,78 +20,6 @@ public final class RWSetRef extends SetRef{
 	public RWSetRef(String name, String bucket, AntidoteClient antidoteClient){
 		super(name, bucket, antidoteClient);
 	}
-	
-    /**
-     * Removes the value.
-     *
-     * @param element the element
-     */
-    public void removeBS(ByteString element){
-    	super.removeBS(element, AntidoteType.RWSetType);
-    }
-
-    /**
-     * Adds the value.
-     *
-     * @param element the element
-     */
-    public void addBS(ByteString element){
-    	super.addBS(element, AntidoteType.RWSetType);
-    }
-    
-    /**
-     * Removes the value.
-     *
-     * @param element the element
-     */
-    public void remove(String element){
-    	super.remove(element, AntidoteType.RWSetType);
-    }
-    
-    /**
-     * Adds the value.
-     *
-     * @param element the element
-     */
-    public void add(String element){
-    	super.add(element, AntidoteType.RWSetType);
-    }
-
-    /**
-     * Removes the value.
-     *
-     * @param elements the elements
-     */
-    public void removeBS(List<ByteString> elements){
-    	super.removeBS(elements, AntidoteType.RWSetType);
-    }
-
-    /**
-     * Adds the value.
-     *
-     * @param elements the elements
-     */
-    public void addBS(List<ByteString> elements){
-    	super.addBS(elements, AntidoteType.RWSetType);
-    }
-    
-    /**
-     * Removes the value.
-     *
-     * @param elements the elements
-     */
-    public void remove(List<String> elements){
-    	super.remove(elements, AntidoteType.RWSetType);
-    }
-
-    /**
-     * Adds the value.
-     *
-     * @param elements the elements
-     */
-    public void add(List<String> elements){
-    	super.add(elements, AntidoteType.RWSetType);
-    }
     
     /**
      * Removes the value.
@@ -176,46 +104,13 @@ public final class RWSetRef extends SetRef{
     /**
      * Read RW-Set from database.
      *
-     * @return the antidote RW set
-     */
-    public AntidoteOuterRWSet createAntidoteRWSet(){
-    	ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType).getObjects().getObjects(0).getSet();
-        List<String> entriesList = new ArrayList<String>();
-        for (ByteString e : set.getValueList()){
-          	entriesList.add(e.toStringUtf8());
-        }
-        AntidoteOuterRWSet antidoteSet = new AntidoteOuterRWSet(getName(), getBucket(), entriesList, getClient());
-        return antidoteSet;
-    }
-    
-    /**
-     * Read RW-Set from database.
-     *
      * @param antidoteTransaction the antidote transaction
      * @return the antidote RW set
      */
     public AntidoteOuterRWSet createAntidoteRWSet(AntidoteTransaction antidoteTransaction){
     	ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType, antidoteTransaction).getObjects(0).getSet();
-        List<String> entriesList = new ArrayList<String>();
-        for (ByteString e : set.getValueList()){
-          	entriesList.add(e.toStringUtf8());
-        }
-        AntidoteOuterRWSet antidoteSet = new AntidoteOuterRWSet(getName(), getBucket(), entriesList, getClient());
+        AntidoteOuterRWSet antidoteSet = new AntidoteOuterRWSet(getName(), getBucket(), set.getValueList(), getClient());
         return antidoteSet;
-    }
-    
-    /**
-     * Read the value list from the data base.
-     *
-     * @return the value list as Strings
-     */
-    public List<String> readValueList() {
-        ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType).getObjects().getObjects(0).getSet();
-        List<String> valueList = new ArrayList<String>();
-        for (ByteString e : set.getValueList()){
-        	valueList.add(e.toStringUtf8());
-        }
-        return valueList;
     }
     
     /**
@@ -231,16 +126,6 @@ public final class RWSetRef extends SetRef{
         	valueList.add(e.toStringUtf8());
         }
         return valueList;
-    }
-    
-    /**
-     * Read the value list from the data base.
-     *
-     * @return the value list as ByteStrings
-     */
-    public List<ByteString> readValueListBS() {
-        ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType).getObjects().getObjects(0).getSet();
-        return set.getValueList();
     }
     
     /**

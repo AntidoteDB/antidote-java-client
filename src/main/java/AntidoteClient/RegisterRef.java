@@ -25,26 +25,6 @@ public class RegisterRef extends ObjectRef {
      *
      * @param value the value
      * @param type the type
-     */
-    public void set(String value, CRDT_type type){
-        updateHelper(setOpBuilder(ByteString.copyFromUtf8(value)), getName(), getBucket(), type);
-    }  
-    
-    /**
-     * Sets the value.
-     *
-     * @param value the value
-     * @param type the type
-     */
-    public void setBS(ByteString value, CRDT_type type){
-        updateHelper(setOpBuilder(value), getName(), getBucket(), type);
-    }  
-
-    /**
-     * Sets the value.
-     *
-     * @param value the value
-     * @param type the type
      * @param antidoteTransaction the antidote transaction
      */
     public void setBS(ByteString value, CRDT_type type, AntidoteTransaction antidoteTransaction){

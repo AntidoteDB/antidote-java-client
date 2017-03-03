@@ -411,7 +411,7 @@ public final class AntidoteMapUpdate {
 	 * @return the antidote map update
 	 */
 	public static AntidoteMapUpdate createGMapUpdate(String key, List<AntidoteMapUpdate> updateList) {
-		return createMapUpdateHelper(key, updateList, AntidoteType.GMapType);
+		return createMapUpdateHelper(ByteString.copyFromUtf8(key), updateList, AntidoteType.GMapType);
 	}
 	
 	/**
@@ -435,6 +435,54 @@ public final class AntidoteMapUpdate {
 	 * @return the antidote map update
 	 */
 	public static AntidoteMapUpdate createAWMapUpdate(String key, List<AntidoteMapUpdate> updateList) {
+		return createMapUpdateHelper(ByteString.copyFromUtf8(key), updateList, AntidoteType.AWMapType);
+	}
+	
+	/**
+	 * Creates the G-Map update.
+	 *
+	 * @param key the key of the entry to be updated
+	 * @param update the update which is executed on a particular entry of the map
+	 * @return the antidote map update
+	 */
+	public static AntidoteMapUpdate createGMapUpdateBS(ByteString key, AntidoteMapUpdate update) {
+		List<AntidoteMapUpdate> updateList = new ArrayList<AntidoteMapUpdate>();
+		updateList.add(update);
+		return createGMapUpdateBS(key, updateList);
+	}
+	
+	/**
+	 * Creates the G-Map update.
+	 *
+	 * @param key the key of the entry to be updated
+	 * @param updateList the list of updates which are executed on a particular entry of the map
+	 * @return the antidote map update
+	 */
+	public static AntidoteMapUpdate createGMapUpdateBS(ByteString key, List<AntidoteMapUpdate> updateList) {
+		return createMapUpdateHelper(key, updateList, AntidoteType.GMapType);
+	}
+	
+	/**
+	 * Creates the AW-Map update.
+	 *
+	 * @param key the key of the entry to be updated
+	 * @param update the update which is executed on a particular entry of the map
+	 * @return the antidote map update
+	 */
+	public static AntidoteMapUpdate createAWMapUpdateBS(ByteString key, AntidoteMapUpdate update) {
+		List<AntidoteMapUpdate> updateList = new ArrayList<AntidoteMapUpdate>();
+		updateList.add(update);
+		return createAWMapUpdateBS(key, updateList);
+	}
+	
+	/**
+	 * Creates the AW-Map update.
+	 *
+	 * @param key the key
+	 * @param updateList the list of updates which are executed on a particular entry of the map
+	 * @return the antidote map update
+	 */
+	public static AntidoteMapUpdate createAWMapUpdateBS(ByteString key, List<AntidoteMapUpdate> updateList) {
 		return createMapUpdateHelper(key, updateList, AntidoteType.AWMapType);
 	}
 	
@@ -446,7 +494,7 @@ public final class AntidoteMapUpdate {
 	 * @param mapType the map type
 	 * @return the antidote map update
 	 */
-	private static AntidoteMapUpdate createMapUpdateHelper(String key, List<AntidoteMapUpdate> updateList, CRDT_type mapType) {
+	private static AntidoteMapUpdate createMapUpdateHelper(ByteString key, List<AntidoteMapUpdate> updateList, CRDT_type mapType) {
 		CRDT_type type = updateList.get(0).getType();
 		List<ApbUpdateOperation> apbUpdateList = new ArrayList<ApbUpdateOperation>();
 		for (AntidoteMapUpdate u : updateList){
@@ -456,7 +504,7 @@ public final class AntidoteMapUpdate {
 			apbUpdateList.add(u.getOperation());
 		}
 		ApbMapKey.Builder apbKeyBuilder = ApbMapKey.newBuilder();
-		apbKeyBuilder.setKey(ByteString.copyFromUtf8(key));
+		apbKeyBuilder.setKey(key);
 		apbKeyBuilder.setType(type);
 		ApbMapKey apbKey = apbKeyBuilder.build();
 		ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
@@ -504,6 +552,43 @@ public final class AntidoteMapUpdate {
 		keyBuilder.setType(type);
 		for (String key : keyList){
 			keyBuilder.setKey(ByteString.copyFromUtf8(key));
+			apbKeyList.add(keyBuilder.build());
+		}
+    	ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();
+    	ApbMapUpdate.Builder upBuilder = ApbMapUpdate.newBuilder();
+    	upBuilder.addAllRemovedKeys(apbKeyList);
+    	ApbMapUpdate up = upBuilder.build();
+    	opBuilder.setMapop(up);
+    	ApbUpdateOperation op = opBuilder.build();
+    	return new AntidoteMapUpdate(AntidoteType.AWMapType, op);
+    }
+    
+    /**
+     * Creates the map remove.
+     *
+     * @param key the key
+     * @param type the type, use AntidoteType._Type in the method call (AntidoteType.CounterType for example)
+     * @return the antidote map update
+     */
+    public static AntidoteMapUpdate createMapRemoveBS(ByteString key, CRDT_type type){
+    	List<ByteString> keyList = new ArrayList<>();
+    	keyList.add(key);
+    	return createMapRemoveBS(keyList, type);
+    }
+	
+    /**
+     * Creates the map remove.
+     *
+     * @param keyList the key list
+     * @param type the type, use AntidoteType._Type in the method call (AntidoteType.CounterType for example)
+     * @return the antidote map update
+     */
+    public static AntidoteMapUpdate createMapRemoveBS(List<ByteString> keyList, CRDT_type type){
+    	List<ApbMapKey> apbKeyList = new ArrayList<ApbMapKey>();
+		ApbMapKey.Builder keyBuilder = ApbMapKey.newBuilder();
+		keyBuilder.setType(type);
+		for (ByteString key : keyList){
+			keyBuilder.setKey(key);
 			apbKeyList.add(keyBuilder.build());
 		}
     	ApbUpdateOperation.Builder opBuilder = ApbUpdateOperation.newBuilder();

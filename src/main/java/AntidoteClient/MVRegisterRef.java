@@ -25,24 +25,6 @@ public final class MVRegisterRef extends RegisterRef {
 	 * Sets the value.
 	 *
 	 * @param value the value
-	 */
-	public void set(String value){
-		super.set(value, AntidoteType.MVRegisterType);
-	}
-	
-	/**
-	 * Sets the value.
-	 *
-	 * @param value the new bs
-	 */
-	public void setBS(ByteString value){
-		super.setBS(value, AntidoteType.MVRegisterType);
-	}
-	
-	/**
-	 * Sets the value.
-	 *
-	 * @param value the value
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	public void setBS(ByteString value, AntidoteTransaction antidoteTransaction){
@@ -58,20 +40,6 @@ public final class MVRegisterRef extends RegisterRef {
 	public void set(String value, AntidoteTransaction antidoteTransaction){
 		super.set(value, AntidoteType.MVRegisterType, antidoteTransaction);
 	}
-	
-	 /**
-     * Read register from database.
-     *
-     * @return the antidote register
-     */
-    public AntidoteOuterMVRegister createAntidoteMVRegister() {
-        ApbGetMVRegResp reg = readHelper(getName(), getBucket(), AntidoteType.MVRegisterType).getObjects().getObjects(0).getMvreg();
-        List<String> entriesList = new ArrayList<String>();
-        for (ByteString e : reg.getValuesList()){
-          	entriesList.add(e.toStringUtf8());
-        }
-        return new AntidoteOuterMVRegister(getName(), getBucket(), entriesList, getClient()); 
-    }
     
     /**
      * Read register from database.
@@ -81,21 +49,7 @@ public final class MVRegisterRef extends RegisterRef {
      */
     public AntidoteOuterMVRegister createAntidoteMVRegister(AntidoteTransaction antidoteTransaction){
         ApbGetMVRegResp reg = readHelper(getName(), getBucket(), AntidoteType.MVRegisterType, antidoteTransaction).getObjects(0).getMvreg();         
-    	List<String> entriesList = new ArrayList<String>();
-        for (ByteString e : reg.getValuesList()){
-          	entriesList.add(e.toStringUtf8());
-        }
-        return new AntidoteOuterMVRegister(getName(), getBucket(), entriesList, getClient()); 
-    }
-    
-    /**
-     * Read register from database.
-     *
-     * @return the register value as ByteString
-     */
-    public List<ByteString> readRegisterValuesBS() {
-        ApbGetMVRegResp reg = readHelper(getName(), getBucket(), AntidoteType.MVRegisterType).getObjects().getObjects(0).getMvreg();
-        return reg.getValuesList(); 
+        return new AntidoteOuterMVRegister(getName(), getBucket(), new ArrayList<>(reg.getValuesList()), getClient()); 
     }
     
     /**
@@ -107,20 +61,6 @@ public final class MVRegisterRef extends RegisterRef {
     public List<ByteString> readRegisterValuesBS(AntidoteTransaction antidoteTransaction){
     	ApbGetMVRegResp reg = readHelper(getName(), getBucket(), AntidoteType.MVRegisterType, antidoteTransaction).getObjects(0).getMvreg();
         return reg.getValuesList(); 
-    }
-    
-    /**
-     * Read register from database.
-     *
-     * @return the register value as String
-     */
-    public List<String> readRegisterValues() {
-        ApbGetMVRegResp reg = readHelper(getName(), getBucket(), AntidoteType.MVRegisterType).getObjects().getObjects(0).getMvreg();
-        List<String> entriesList = new ArrayList<String>();
-        for (ByteString e : reg.getValuesList()){
-          	entriesList.add(e.toStringUtf8());
-        }
-        return entriesList; 
     }
     
     /**

@@ -12,11 +12,12 @@ import main.java.AntidoteClient.AntidoteInnerORSet;
 import main.java.AntidoteClient.AntidoteInnerCRDT;
 import main.java.AntidoteClient.AntidoteInnerRWSet;
 import main.java.AntidoteClient.AntidoteMapUpdate;
+import main.java.AntidoteClient.AntidoteTransaction;
 
 /**
  * The Interface InterfaceGMap.
  */
-public interface GMapCRDT extends CRDT{
+public interface GMapCRDT{
 	
 	/**
 	 * Gets the entry list.
@@ -27,19 +28,13 @@ public interface GMapCRDT extends CRDT{
 	
 	/**
 	 * Update the element with the given key by applying the given update (update contains type information).
-	 *
-	 * @param key the key
-	 * @param update the update
 	 */
-	void update(String key, AntidoteMapUpdate update);
+	void update(String key, AntidoteMapUpdate update, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Update the element with the given key by applying the given updates (update contains type information).
-	 *
-	 * @param key the key
-	 * @param updateList the updateList
 	 */
-	void update(String key, List<AntidoteMapUpdate> updateList);
+	void update(String key, List<AntidoteMapUpdate> updateList, AntidoteTransaction antidoteTransaction);
 	
 	/**
 	 * Gets the OR set entry with the given key.
