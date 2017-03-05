@@ -66,6 +66,35 @@ public final class AntidoteInnerInteger extends AntidoteInnerCRDT implements Int
 			value = integer.getValue();
 		}
 	}
+
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){
+		AntidoteInnerInteger integer;
+		if (getType() == AntidoteType.GMapType){
+			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
+			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
+			if (getPath().size() == 1){
+				integer = outerMap.getIntegerEntry(getPath().get(0).getKey().toStringUtf8());
+			}
+			else{
+				integer = readDatabaseHelper(getPath(), outerMap).getIntegerEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
+			}
+			value = integer.getValue();
+		}
+		else if (getType() == AntidoteType.AWMapType){
+			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
+			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
+			if (getPath().size() == 1){
+				integer = outerMap.getIntegerEntry(getPath().get(0).getKey().toStringUtf8());
+			}
+			else{
+				integer = readDatabaseHelper(getPath(), outerMap).getIntegerEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
+			}
+			value = integer.getValue();
+		}
+	}
 	
 	/**
 	 * Execute increment locally.

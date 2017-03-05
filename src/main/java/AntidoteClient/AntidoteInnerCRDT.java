@@ -62,23 +62,22 @@ public class AntidoteInnerCRDT extends AntidoteCRDT{
 		}
 		if (getPath().size()>1){
 			if (getType() == AntidoteType.GMapType){
-				antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), mapUpdateList),getName(),getBucket(),getType());
+				antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient(), getType()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), mapUpdateList),getName(),getBucket(),getType());
 			}
 			else if (getType() == AntidoteType.AWMapType){
-				antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), mapUpdateList),getName(),getBucket(),getType());
+				antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient(), getType()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), mapUpdateList),getName(),getBucket(),getType());
 			}
 		}
 		else if (getPath().size()==1){
 			if (getType() == AntidoteType.GMapType){
-				antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), innerUpdate),getName(),getBucket(),getType());
+				antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient(), getType()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), innerUpdate),getName(),getBucket(),getType());
 			}
 			else if (getType() == AntidoteType.AWMapType){
-				antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), innerUpdate),getName(),getBucket(),getType());
+				antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient(), getType()).updateOpBuilder(new AntidoteMapKey(getPath().get(0)), innerUpdate),getName(),getBucket(),getType());
 			}
 		}
 	}
-	
-// TODO: Georgios
+
 	/**
 	 * Read database helper.
 	 *

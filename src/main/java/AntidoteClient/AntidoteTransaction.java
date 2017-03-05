@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by george on 1/21/17.
+ * The Class AntidoteTransaction.
  */
 public class AntidoteTransaction implements Closeable{
 
@@ -21,7 +21,7 @@ public class AntidoteTransaction implements Closeable{
     private ByteString descriptor;
 
     /** The list of the update operations. */
-    private List<ApbUpdateOp.Builder> transactionList;
+    private List<ApbUpdateOp.Builder> transactionUpdateList;
 
     /**
      * Instantiates a new antidote transaction.
@@ -31,7 +31,7 @@ public class AntidoteTransaction implements Closeable{
     public AntidoteTransaction(AntidoteClient antidoteClient){
       this.antidoteClient=antidoteClient;
       this.descriptor = null;
-      transactionList = new ArrayList<>();
+      transactionUpdateList = new ArrayList<>();
       this.transactionStatus = TransactionStatus.INACTIVE;
     }
 
@@ -40,19 +40,19 @@ public class AntidoteTransaction implements Closeable{
      *
      * @return the antidote client
      */
-    public AntidoteClient getClient(){
+    protected AntidoteClient getClient(){
         return antidoteClient;
     }
 
     /** The enum types of the transaction status. */
-    public enum TransactionStatus { CREATED, STARTED, CLOSING, CLOSED, INACTIVE };
+    protected enum TransactionStatus { CREATED, STARTED, CLOSING, CLOSED, INACTIVE };
 
     /**
      * Get the transaction status.
      *
      * @return the transaction status
      */
-    public TransactionStatus getTransactionStatus(){
+    protected TransactionStatus getTransactionStatus(){
         return transactionStatus;
     }
 
@@ -69,7 +69,7 @@ public class AntidoteTransaction implements Closeable{
      *
      * @return the byte string
      */
-    public void startTransaction(){
+    protected void startTransaction(){
         if(getTransactionStatus() != TransactionStatus.CREATED){
             throw new AntidoteException("You need to create the transaction before starting it");
         }
@@ -135,7 +135,7 @@ public class AntidoteTransaction implements Closeable{
         ApbAbortTransaction abortTransactionMessage = abortTransaction.build();
         descriptor = null;
         getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbAbortTransaction, abortTransactionMessage));
-        clearTransactionList();
+        clearTransactionUpdateList();
         setTransactionStatus(TransactionStatus.CLOSING);
     }
 
@@ -161,7 +161,7 @@ public class AntidoteTransaction implements Closeable{
         updateInstruction.setOperation(operation);
 
         if(this instanceof AntidoteStaticTransaction){
-            transactionAdd(updateInstruction);
+            transactionUpdateListAdd(updateInstruction);
         }
         else{
             if (getDescriptor() == null){
@@ -176,8 +176,43 @@ public class AntidoteTransaction implements Closeable{
         }
     }
 
-    public ByteString getDescriptor(){
-    	return descriptor;
+    /**
+     * Read helper that has the generic part of the code.
+     *
+     * @param name the name
+     * @param bucket the bucket
+     * @param type the type
+     * @return the apb read objects resp
+     */
+    protected ApbReadObjectsResp readHelper(String name, String bucket, CRDT_type type){
+        if (getDescriptor() == null){
+            throw new AntidoteException("You need to start the transaction first");
+        }
+        if(getTransactionStatus() != TransactionStatus.STARTED){
+            throw new AntidoteException("You need to start the transaction first");
+        }
+        ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message to update
+        object.setKey(ByteString.copyFromUtf8(name));
+        object.setType(type);
+        object.setBucket(ByteString.copyFromUtf8(bucket));
+
+        ApbReadObjects.Builder readObject = ApbReadObjects.newBuilder();
+        readObject.addBoundobjects(object);
+        readObject.setTransactionDescriptor(getDescriptor());
+
+        ApbReadObjects readObjectsMessage = readObject.build();
+        AntidoteMessage readMessage = antidoteClient.sendMessage(new AntidoteRequest(RiakPbMsgs.ApbReadObjects, readObjectsMessage));
+        ApbReadObjectsResp readResponse = null;
+            try {
+                readResponse = ApbReadObjectsResp.parseFrom(readMessage.getMessage());
+            }catch (Exception e){
+                System.out.println(e);
+            }
+        return readResponse;
+    }
+
+    protected ByteString getDescriptor(){
+        return descriptor;
     }
 
     /**
@@ -185,8 +220,8 @@ public class AntidoteTransaction implements Closeable{
      *
      * @return the transaction list
      */
-    protected List<ApbUpdateOp.Builder> getTransactionList(){
-        return transactionList;
+    protected List<ApbUpdateOp.Builder> getTransactionUpdateList(){
+        return transactionUpdateList;
     }
 
     /**
@@ -194,13 +229,13 @@ public class AntidoteTransaction implements Closeable{
      *
      * @param update the update operation
      */
-    protected void transactionAdd(ApbUpdateOp.Builder update){
-        transactionList.add(update);
+    protected void transactionUpdateListAdd(ApbUpdateOp.Builder update){
+        transactionUpdateList.add(update);
     }
 
     /** Clear the transaction list. */
-    protected void clearTransactionList(){
-        transactionList.clear();
+    protected void clearTransactionUpdateList(){
+        transactionUpdateList.clear();
     }
 
     /** Close the transaction. */

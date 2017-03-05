@@ -58,6 +58,35 @@ private List<ByteString> valueList;
 			valueList = new ArrayList<>(mvRegister.getValueListBS());
 		}
 	}
+
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){
+		AntidoteInnerMVRegister mvRegister;
+		if (getType() == AntidoteType.GMapType){
+			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
+			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
+			if (getPath().size() == 1){
+				mvRegister = outerMap.getMVRegisterEntry(getPath().get(0).getKey().toStringUtf8());
+			}
+			else{
+				mvRegister = readDatabaseHelper(getPath(), outerMap).getMVRegisterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
+			}
+			valueList = new ArrayList<>(mvRegister.getValueListBS());
+		}
+		else if (getType() == AntidoteType.AWMapType){
+			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
+			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
+			if (getPath().size() == 1){
+				mvRegister = outerMap.getMVRegisterEntry(getPath().get(0).getKey().toStringUtf8());
+			}
+			else{
+				mvRegister = readDatabaseHelper(getPath(), outerMap).getMVRegisterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
+			}
+			valueList = new ArrayList<>(mvRegister.getValueListBS());
+		}
+	}
 	
 	/**
 	 * Gets the value list.

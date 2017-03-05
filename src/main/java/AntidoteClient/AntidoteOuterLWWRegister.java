@@ -36,6 +36,10 @@ public final class AntidoteOuterLWWRegister extends AntidoteCRDT implements LWWR
 	public String getValue(){
 		return value.toStringUtf8();
 	}
+
+	protected void readValueList(ByteString newValueList){
+		value = newValueList;
+	}
 	
 	/* (non-Javadoc)
 	 * @see main.java.AntidoteClient.RegisterInterface#getValueBS()
@@ -49,6 +53,13 @@ public final class AntidoteOuterLWWRegister extends AntidoteCRDT implements LWWR
 	 */
 	public void readDatabase(AntidoteTransaction antidoteTransaction){
 		value = lowLevelRegister.readRegisterValueBS(antidoteTransaction);
+	}
+
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){
+		value = lowLevelRegister.readRegisterValueBS();
 	}
 	
 	/**

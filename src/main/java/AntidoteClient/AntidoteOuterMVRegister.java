@@ -42,6 +42,10 @@ public final class AntidoteOuterMVRegister extends AntidoteCRDT implements MVReg
 		}
 		return new ArrayList<String>(valueListString);
 	}
+
+	protected void readValueList(List<ByteString> newValueList){
+		valueList = new ArrayList<ByteString>(newValueList);
+	}
 	
 	/* (non-Javadoc)
 	 * @see main.java.AntidoteClient.MVRegisterInterface#getValueListBS()
@@ -55,6 +59,13 @@ public final class AntidoteOuterMVRegister extends AntidoteCRDT implements MVReg
 	 */
 	public void readDatabase(AntidoteTransaction antidoteTransaction){
 		valueList = new ArrayList<ByteString>(lowLevelRegister.readRegisterValuesBS(antidoteTransaction));
+	}
+
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){
+		valueList = new ArrayList<ByteString>(lowLevelRegister.readRegisterValuesBS());
 	}
 
 	/**

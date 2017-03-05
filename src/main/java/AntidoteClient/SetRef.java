@@ -19,8 +19,8 @@ public class SetRef extends ObjectRef {
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public SetRef(String name, String bucket, AntidoteClient antidoteClient){
-		super(name, bucket, antidoteClient);
+	public SetRef(String name, String bucket, AntidoteClient antidoteClient, CRDT_type type){
+		super(name, bucket, antidoteClient, type);
 	}
 	
 	/**

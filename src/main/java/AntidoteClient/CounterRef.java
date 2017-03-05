@@ -1,6 +1,7 @@
 package main.java.AntidoteClient;
 
 import com.basho.riak.protobuf.AntidotePB.ApbCounterUpdate;
+import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.basho.riak.protobuf.AntidotePB.ApbGetCounterResp;
 import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 
@@ -11,6 +12,7 @@ import java.util.List;
  * The Class LowLevelCounter.
  */
 public final class CounterRef extends ObjectRef{
+
 	/**
 	 * Instantiates a new low level counter.
 	 *
@@ -19,16 +21,16 @@ public final class CounterRef extends ObjectRef{
 	 * @param antidoteClient the antidote client
 	 */
 	public CounterRef(String name, String bucket, AntidoteClient antidoteClient){
-		super(name, bucket, antidoteClient);
+		super(name, bucket, antidoteClient, AntidoteType.CounterType);
 	}
-    
+
     /**
      * Increment.
      *
      * @param antidoteTransaction the antidote transaction
      */
     public void increment(AntidoteTransaction antidoteTransaction){
-        antidoteTransaction.updateHelper(incrementOpBuilder(1), getName(), getBucket(), AntidoteType.CounterType);
+        antidoteTransaction.updateHelper(incrementOpBuilder(1), getName(), getBucket(), getType());
     }
 
     /**
@@ -38,7 +40,7 @@ public final class CounterRef extends ObjectRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void increment(int inc, AntidoteTransaction antidoteTransaction){
-        antidoteTransaction.updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.CounterType);
+        antidoteTransaction.updateHelper(incrementOpBuilder(inc), getName(), getBucket(), getType());
     }
     
     /**
@@ -62,8 +64,18 @@ public final class CounterRef extends ObjectRef{
      * @return the antidote counter
      */
     public AntidoteOuterCounter createAntidoteCounter(AntidoteTransaction antidoteTransaction){
-    	ApbGetCounterResp counter = readHelper(getName(), getBucket(), AntidoteType.CounterType, antidoteTransaction).getObjects(0).getCounter();
-        AntidoteOuterCounter antidoteCounter = new AntidoteOuterCounter(getName(), getBucket(), counter.getValue(), getClient());
+    	ApbGetCounterResp counter = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getCounter();
+        return new AntidoteOuterCounter(getName(), getBucket(), counter.getValue(), getClient());
+    }
+
+    /**
+     * Read counter from database.
+     *
+     * @return the antidote counter
+     */
+    public AntidoteOuterCounter createAntidoteCounter(){
+        int counterValue =  (Integer)getObjectRefValue(this);
+        AntidoteOuterCounter antidoteCounter = new AntidoteOuterCounter(getName(), getBucket(), counterValue, getClient());
         return antidoteCounter;
     }
     
@@ -73,17 +85,18 @@ public final class CounterRef extends ObjectRef{
      * @param antidoteTransaction the antidote transaction
      * @return the counter value
      */
-    public void readValue(AntidoteTransaction antidoteTransaction){
-    	antidoteTransaction.readHelper(getName(), getBucket(), AntidoteType.CounterType, antidoteTransaction);
+    public int readValue(AntidoteTransaction antidoteTransaction){
+        int counterValue = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getCounter().getValue();
+        return counterValue;
     }
 
-    public int getValue(List<AntidoteCRDT> outerObjects){
-        for(AntidoteCRDT object : outerObjects)
-        {
-            if(object.getName() == this.getName() && object.getClient() == this.getClient() && object.getBucket() == this.getBucket())
-                return ((AntidoteOuterCounter) object).getValue();
-        }
-        return 0;
+    /**
+     * Read counter from database.
+     *
+     * @return the counter value
+     */
+    public int readValue(){
+        int counterValue =  (Integer)getObjectRefValue(this);
+        return counterValue;
     }
-
 }

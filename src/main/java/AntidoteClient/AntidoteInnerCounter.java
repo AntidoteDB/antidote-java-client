@@ -56,6 +56,35 @@ public final class AntidoteInnerCounter extends AntidoteInnerCRDT implements Cou
 			value = counter.getValue();
 		}
 	}
+
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){
+		AntidoteInnerCounter counter;
+		if (getType() == AntidoteType.GMapType){
+			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
+			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
+			if (getPath().size() == 1){
+				counter = outerMap.getCounterEntry(getPath().get(0).getKey().toStringUtf8());
+			}
+			else{
+				counter = readDatabaseHelper(getPath(), outerMap).getCounterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
+			}
+			value = counter.getValue();
+		}
+		else if (getType() == AntidoteType.AWMapType){
+			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
+			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
+			if (getPath().size() == 1){
+				counter = outerMap.getCounterEntry(getPath().get(0).getKey().toStringUtf8());
+			}
+			else{
+				counter = readDatabaseHelper(getPath(), outerMap).getCounterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
+			}
+			value = counter.getValue();
+		}
+	}
 	
 	/**
 	 * Gets the value.

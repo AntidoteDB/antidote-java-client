@@ -48,7 +48,7 @@ public class AntidoteOuterMap extends AntidoteCRDT {
 	 * @param antidoteTransaction the antidote transaction
 	 */
 	protected void addUpdateToList(AntidoteMapKey mapKey, List<AntidoteMapUpdate> update, AntidoteTransaction antidoteTransaction){
-		antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient()).updateOpBuilder(mapKey, update),getName(),getBucket(),getType());
+		antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient(), getType()).updateOpBuilder(mapKey, update),getName(),getBucket(),getType());
 	}
 	
 	/**
@@ -73,7 +73,7 @@ public class AntidoteOuterMap extends AntidoteCRDT {
 	 * Update.
 	 *
 	 * @param key the key of the entry which is updated
-	 * @param updateList the updates which are executed on that entry, must all be of the same type
+	 * @param update the updates which are executed on that entry, must all be of the same type
 	 * @param mapType the type of the map
 	 * @param antidoteTransaction the antidote transaction
 	 */

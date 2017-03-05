@@ -1,6 +1,8 @@
 package main.java.AntidoteClient;
 
 import static java.lang.Math.toIntExact;
+
+import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.basho.riak.protobuf.AntidotePB.ApbGetIntegerResp;
 import com.basho.riak.protobuf.AntidotePB.ApbIntegerUpdate;
 import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
@@ -20,7 +22,8 @@ public final class IntegerRef extends ObjectRef{
 	 * @param antidoteClient the antidote client
 	 */
 	public IntegerRef(String name, String bucket, AntidoteClient antidoteClient){
-		super(name, bucket, antidoteClient);
+		super(name, bucket, antidoteClient, AntidoteType.IntegerType);
+
 	}
 	
     /**
@@ -58,7 +61,7 @@ public final class IntegerRef extends ObjectRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void set(int number, AntidoteTransaction antidoteTransaction) {
-        antidoteTransaction.updateHelper(setOpBuilder(number), getName(), getBucket(), AntidoteType.IntegerType);
+        antidoteTransaction.updateHelper(setOpBuilder(number), getName(), getBucket(), getType());
     }
 
     /**
@@ -68,7 +71,7 @@ public final class IntegerRef extends ObjectRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void increment(int inc, AntidoteTransaction antidoteTransaction) {
-        antidoteTransaction.updateHelper(incrementOpBuilder(inc), getName(), getBucket(), AntidoteType.IntegerType);
+        antidoteTransaction.updateHelper(incrementOpBuilder(inc), getName(), getBucket(), getType());
     }
     
     /**
@@ -78,8 +81,18 @@ public final class IntegerRef extends ObjectRef{
      * @return the antidote integer
      */
     public AntidoteOuterInteger createAntidoteInteger(AntidoteTransaction antidoteTransaction){
-    	ApbGetIntegerResp number = readHelper(getName(), getBucket(), AntidoteType.IntegerType, antidoteTransaction).getObjects(0).getInt();
+    	ApbGetIntegerResp number = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getInt();
         return new AntidoteOuterInteger(getName(), getBucket(), toIntExact(number.getValue()), getClient());  
+    }
+
+    /**
+     * Read integer from database.
+     *
+     * @return the antidote integer
+     */
+    public AntidoteOuterInteger createAntidoteInteger(){
+        int integerNumber = (Integer)getObjectRefValue(this);
+        return new AntidoteOuterInteger(getName(), getBucket(), integerNumber, getClient());
     }
     
     /**
@@ -89,16 +102,17 @@ public final class IntegerRef extends ObjectRef{
      * @return the integer value
      */
     public int readValue(AntidoteTransaction antidoteTransaction){
-    	ApbGetIntegerResp number = readHelper(getName(), getBucket(), AntidoteType.IntegerType, antidoteTransaction).getObjects(0).getInt();
+    	ApbGetIntegerResp number = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getInt();
         return toIntExact(number.getValue());
     }
 
-    public int getValue(List<AntidoteCRDT> outerObjects){
-        for(AntidoteCRDT object : outerObjects)
-        {
-            if(object.getName() == this.getName() && object.getClient() == this.getClient() && object.getBucket() == this.getBucket())
-                return ((AntidoteOuterInteger) object).getValue();
-        }
-        return 0;
+    /**
+     * Read integer from database.
+     *
+     * @return the integer value
+     */
+    public int readValue(){
+        int integerNumber = (Integer)getObjectRefValue(this);
+        return integerNumber;
     }
 }

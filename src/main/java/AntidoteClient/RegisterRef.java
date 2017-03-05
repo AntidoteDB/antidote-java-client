@@ -8,7 +8,7 @@ import com.google.protobuf.ByteString;
  * The Class LowLevelRegister.
  */
 public class RegisterRef extends ObjectRef {
-	
+
 	/**
 	 * Instantiates a new low level register.
 	 *
@@ -16,8 +16,8 @@ public class RegisterRef extends ObjectRef {
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public RegisterRef(String name, String bucket, AntidoteClient antidoteClient){
-		super(name, bucket, antidoteClient);
+	public RegisterRef(String name, String bucket, AntidoteClient antidoteClient, CRDT_type type){
+		super(name, bucket, antidoteClient, type);
 	}
 
     /**

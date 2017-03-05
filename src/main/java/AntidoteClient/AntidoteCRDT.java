@@ -2,7 +2,6 @@ package main.java.AntidoteClient;
 
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 
-
 /**
  * The Class AntidoteObject.
  */

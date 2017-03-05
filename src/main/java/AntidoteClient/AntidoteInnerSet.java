@@ -59,7 +59,7 @@ public class AntidoteInnerSet extends AntidoteInnerCRDT {
 	/**
 	 * Sets the value list.
 	 *
-	 * @param valueList the new value list
+	 * @param values the new value list
 	 */
 	protected void setValues(Set<ByteString> values){
 		this.values = new HashSet<>(values);

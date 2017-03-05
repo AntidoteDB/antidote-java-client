@@ -33,4 +33,15 @@ public final class AntidoteOuterORSet extends AntidoteOuterSet implements SetCRD
 	public void readDatabase(AntidoteTransaction antidoteTransaction){
 		setValues(lowLevelSet.readValueListBS(antidoteTransaction));
 	}
+
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){
+		setValues(lowLevelSet.readValueListBS());
+	}
+
+	protected void readValueList(List<ByteString> newValueList){
+		setValues(newValueList);
+	}
 }

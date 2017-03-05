@@ -107,7 +107,33 @@ public class AntidoteInnerMap extends AntidoteInnerCRDT {
 		}
 		entryList = new ArrayList<>(innerMap.getEntryList());
 	}
-	
+
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){
+		AntidoteInnerMap innerMap = null;
+		if (getType() == AntidoteType.GMapType){
+			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
+			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
+			innerMap = getUpdateHelper(outerMap);
+		}
+		else if (getType() == AntidoteType.AWMapType){
+			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
+			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
+			innerMap = getUpdateHelper(outerMap);
+		}
+		for (int i = 1; i<getPath().size()-1; i++){
+			if (getPath().get(i).getType() == AntidoteType.GMapType){
+				innerMap = innerMap.getGMapEntry(getPath().get(i).getKey().toStringUtf8());
+			}
+			else if(getPath().get(i).getType() == AntidoteType.AWMapType){
+				innerMap = innerMap.getAWMapEntry(getPath().get(i).getKey().toStringUtf8());
+			}
+		}
+		entryList = new ArrayList<>(innerMap.getEntryList());
+	}
+
 	/**
 	 * Execute update locally.
 	 *

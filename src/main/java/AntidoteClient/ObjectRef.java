@@ -13,6 +13,9 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import main.java.AntidoteClient.AntidoteTransaction.TransactionStatus;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * The Class LowLevelObject.
  */
@@ -22,6 +25,8 @@ public class ObjectRef {
     
     /** The bucket. */
     private final String bucket;
+
+    private CRDT_type type;
     
 	/** The antidote client. */
 	private final AntidoteClient antidoteClient;
@@ -33,12 +38,17 @@ public class ObjectRef {
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public ObjectRef(String name, String bucket, AntidoteClient antidoteClient){
+	public ObjectRef(String name, String bucket, AntidoteClient antidoteClient, CRDT_type type){
 		this.name = name;
         this.bucket = bucket;
         this.antidoteClient = antidoteClient;
+        this.type = type;
 	}
- 
+
+	public CRDT_type getType(){
+        return type;
+    }
+
     /**
      * Gets the name.
      *
@@ -65,75 +75,18 @@ public class ObjectRef {
 	public AntidoteClient getClient(){
 		return antidoteClient;
 	}
-    
-//TODO: Georgios
-    /**
-     * Read helper.
-     *
-     * @param name the name
-     * @param bucket the bucket
-     * @param type the type
-     * @return the apb static read objects resp
-     */
-    protected ApbStaticReadObjectsResp readHelper(String name, String bucket, CRDT_type type){
-    	ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message
-        object.setKey(ByteString.copyFromUtf8(name));
-        object.setType(type);
-        object.setBucket(ByteString.copyFromUtf8(bucket));
-
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
-
-        ApbStartTransaction.Builder readTransaction = ApbStartTransaction.newBuilder();
-        readTransaction.setProperties(transactionProperties);
-
-        ApbStaticReadObjects.Builder readMessage = ApbStaticReadObjects.newBuilder();
-        readMessage.setTransaction(readTransaction);
-        readMessage.addObjects(object);
-
-        ApbStaticReadObjects readMessageObject = readMessage.build();
-        AntidoteMessage responseMessage = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
-        
-        ApbStaticReadObjectsResp readResponse = null;
-		try {
-			readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
-		} catch (InvalidProtocolBufferException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return readResponse;
-    }
 
     /**
-     * Read helper that has the generic part of the code.
+     * Gets the object value.
      *
-     * @param name the name
-     * @param bucket the bucket
-     * @param type the type
-     * @param antidoteTransaction the antidote transaction
-     * @return the apb read objects resp
+     * @return the value
      */
-    protected ApbReadObjectsResp readHelper(String name, String bucket, CRDT_type type, AntidoteTransaction antidoteTransaction){
-    	if (antidoteTransaction.getTransactionStatus() != TransactionStatus.STARTED){
-    		throw new AntidoteException("You need to start the transaction first");
-    	}
-    	ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message to update
-    	object.setKey(ByteString.copyFromUtf8(name));
-    	object.setType(type);
-        object.setBucket(ByteString.copyFromUtf8(bucket));
-
-        ApbReadObjects.Builder readObject = ApbReadObjects.newBuilder();
-        readObject.addBoundobjects(object);
-        readObject.setTransactionDescriptor(antidoteTransaction.getDescriptor());
-
-        ApbReadObjects readObjectsMessage = readObject.build();
-        AntidoteMessage readMessage = antidoteClient.sendMessage(new AntidoteRequest(RiakPbMsgs.ApbReadObjects, readObjectsMessage));
-
-        ApbReadObjectsResp readResponse = null;
-        try {
-            readResponse = ApbReadObjectsResp.parseFrom(readMessage.getMessage());
-        }catch (Exception e){
-            System.out.println(e);
-        }
-        return readResponse;
+    protected Object getObjectRefValue(ObjectRef objectRef){
+        List<ObjectRef> objectRefs = new ArrayList<>();
+        objectRefs.add(objectRef);
+        List<Object> objectRefValue = getClient().readObjects(objectRefs);
+        Object object = objectRefValue.get(0);
+        objectRefs.clear();
+        return object;
     }
 }

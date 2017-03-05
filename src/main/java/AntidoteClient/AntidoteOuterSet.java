@@ -186,10 +186,10 @@ public class AntidoteOuterSet extends AntidoteCRDT {
 	 */
 	private void addUpdate(List<ByteString> elements, int type, AntidoteTransaction antidoteTransaction){
 		if(type == AntidoteSetOpType.SetAdd){
-			antidoteTransaction.updateHelper(new SetRef(getName(), getBucket(), getClient()).addOpBuilder(elements),getName(),getBucket(),getType());
+			antidoteTransaction.updateHelper(new SetRef(getName(), getBucket(), getClient(), getType()).addOpBuilder(elements),getName(),getBucket(),getType());
 		}
 		else if(type == AntidoteSetOpType.SetRemove){
-			antidoteTransaction.updateHelper(new SetRef(getName(), getBucket(), getClient()).removeOpBuilder(elements),getName(),getBucket(),getType());
+			antidoteTransaction.updateHelper(new SetRef(getName(), getBucket(), getClient(), getType()).removeOpBuilder(elements),getName(),getBucket(),getType());
 		}
 	}
 }

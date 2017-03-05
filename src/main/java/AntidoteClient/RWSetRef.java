@@ -18,7 +18,7 @@ public final class RWSetRef extends SetRef{
 	 * @param antidoteClient the antidote client
 	 */
 	public RWSetRef(String name, String bucket, AntidoteClient antidoteClient){
-		super(name, bucket, antidoteClient);
+		super(name, bucket, antidoteClient, AntidoteType.RWSetType);
 	}
     
     /**
@@ -28,7 +28,7 @@ public final class RWSetRef extends SetRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void removeBS(ByteString element, AntidoteTransaction antidoteTransaction){
-    	super.removeBS(element, AntidoteType.RWSetType, antidoteTransaction);
+    	super.removeBS(element, getType(), antidoteTransaction);
     }
 
     /**
@@ -38,7 +38,7 @@ public final class RWSetRef extends SetRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void addBS(ByteString element, AntidoteTransaction antidoteTransaction){
-    	super.addBS(element, AntidoteType.RWSetType, antidoteTransaction);
+    	super.addBS(element, getType(), antidoteTransaction);
     }
     
     /**
@@ -48,7 +48,7 @@ public final class RWSetRef extends SetRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void remove(String element, AntidoteTransaction antidoteTransaction){
-    	super.remove(element, AntidoteType.RWSetType, antidoteTransaction);
+    	super.remove(element, getType(), antidoteTransaction);
     }
     
     /**
@@ -58,7 +58,7 @@ public final class RWSetRef extends SetRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void add(String element, AntidoteTransaction antidoteTransaction){
-    	super.add(element, AntidoteType.RWSetType, antidoteTransaction);
+    	super.add(element, getType(), antidoteTransaction);
     }
 
     /**
@@ -68,7 +68,7 @@ public final class RWSetRef extends SetRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void removeBS(List<ByteString> elements, AntidoteTransaction antidoteTransaction){
-    	super.removeBS(elements, AntidoteType.RWSetType, antidoteTransaction);
+    	super.removeBS(elements, getType(), antidoteTransaction);
     }
 
     /**
@@ -78,7 +78,7 @@ public final class RWSetRef extends SetRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void addBS(List<ByteString> elements, AntidoteTransaction antidoteTransaction){
-    	super.addBS(elements, AntidoteType.RWSetType, antidoteTransaction);
+    	super.addBS(elements, getType(), antidoteTransaction);
     }
     
     /**
@@ -88,7 +88,7 @@ public final class RWSetRef extends SetRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void remove(List<String> elements, AntidoteTransaction antidoteTransaction){
-    	super.remove(elements, AntidoteType.RWSetType, antidoteTransaction);
+    	super.remove(elements, getType(), antidoteTransaction);
     }
 
     /**
@@ -98,7 +98,7 @@ public final class RWSetRef extends SetRef{
      * @param antidoteTransaction the antidote transaction
      */
     public void add(List<String> elements, AntidoteTransaction antidoteTransaction){
-    	super.add(elements, AntidoteType.RWSetType, antidoteTransaction);
+    	super.add(elements, getType(), antidoteTransaction);
     }
     
     /**
@@ -108,8 +108,19 @@ public final class RWSetRef extends SetRef{
      * @return the antidote RW set
      */
     public AntidoteOuterRWSet createAntidoteRWSet(AntidoteTransaction antidoteTransaction){
-    	ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType, antidoteTransaction).getObjects(0).getSet();
-        AntidoteOuterRWSet antidoteSet = new AntidoteOuterRWSet(getName(), getBucket(), set.getValueList(), getClient());
+    	ApbGetSetResp set = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getSet();
+        return new AntidoteOuterRWSet(getName(), getBucket(), set.getValueList(), getClient());
+
+    }
+
+    /**
+     * Read RW-Set from database.
+     *
+     * @return the antidote RW set
+     */
+    public AntidoteOuterRWSet createAntidoteRWSet(){
+        List<ByteString> rwSetValueList = (List<ByteString>) getObjectRefValue(this);
+        AntidoteOuterRWSet antidoteSet = new AntidoteOuterRWSet(getName(), getBucket(), rwSetValueList, getClient());
         return antidoteSet;
     }
     
@@ -120,10 +131,24 @@ public final class RWSetRef extends SetRef{
      * @return the value list as Strings
      */
     public List<String> readValueList(AntidoteTransaction antidoteTransaction){
-    	ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType, antidoteTransaction).getObjects(0).getSet();
+    	ApbGetSetResp set = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getSet();
     	List<String> valueList = new ArrayList<String>();
         for (ByteString e : set.getValueList()){
         	valueList.add(e.toStringUtf8());
+        }
+        return valueList;
+    }
+
+    /**
+     * Read the value list from the data base.
+     *
+     * @return the value list as Strings
+     */
+    public List<String> readValueList(){
+        List<ByteString> rwSetValueList = (List<ByteString>) getObjectRefValue(this);
+        List<String> valueList = new ArrayList<String>();
+        for (ByteString e : rwSetValueList){
+            valueList.add(e.toStringUtf8());
         }
         return valueList;
     }
@@ -135,7 +160,17 @@ public final class RWSetRef extends SetRef{
      * @return the value list as ByteStrings
      */
     public List<ByteString> readValueListBS(AntidoteTransaction antidoteTransaction){
-    	ApbGetSetResp set = readHelper(getName(), getBucket(), AntidoteType.RWSetType, antidoteTransaction).getObjects(0).getSet();
+    	ApbGetSetResp set = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getSet();
         return set.getValueList();
+    }
+
+    /**
+     * Read the value list from the data base.
+     *
+     * @return the value list as ByteStrings
+     */
+    public List<ByteString> readValueListBS(){
+        List<ByteString> rwSetValueList = (List<ByteString>) getObjectRefValue(this);
+        return rwSetValueList;
     }
 }

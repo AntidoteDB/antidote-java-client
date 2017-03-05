@@ -74,6 +74,35 @@ public final class AntidoteInnerLWWRegister extends AntidoteInnerCRDT implements
 			value = register.getValueBS();
 		}
 	}
+
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){
+		AntidoteInnerLWWRegister register;
+		if (getType() == AntidoteType.GMapType){
+			GMapRef lowGMap = new GMapRef(getName(), getBucket(), getClient());
+			AntidoteOuterGMap outerMap = lowGMap.createAntidoteGMap();
+			if (getPath().size() == 1){
+				register = outerMap.getLWWRegisterEntry(getPath().get(0).getKey().toStringUtf8());
+			}
+			else{
+				register = readDatabaseHelper(getPath(), outerMap).getLWWRegisterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
+			}
+			value = register.getValueBS();
+		}
+		else if (getType() == AntidoteType.AWMapType){
+			AWMapRef lowAWMap = new AWMapRef(getName(), getBucket(), getClient());
+			AntidoteOuterAWMap outerMap = lowAWMap.createAntidoteAWMap();
+			if (getPath().size() == 1){
+				register = outerMap.getLWWRegisterEntry(getPath().get(0).getKey().toStringUtf8());
+			}
+			else{
+				register = readDatabaseHelper(getPath(), outerMap).getLWWRegisterEntry(getPath().get(getPath().size()-1).getKey().toStringUtf8());
+			}
+			value = register.getValueBS();
+		}
+	}
 	
 	/**
 	 * Gets the value.

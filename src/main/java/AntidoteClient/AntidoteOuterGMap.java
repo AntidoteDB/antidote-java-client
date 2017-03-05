@@ -1,6 +1,9 @@
 package main.java.AntidoteClient;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import com.basho.riak.protobuf.AntidotePB.ApbMapEntry;
 import com.google.protobuf.ByteString;
 import interfaces.GMapCRDT;
 
@@ -30,6 +33,17 @@ public final class AntidoteOuterGMap extends AntidoteOuterMap implements GMapCRD
 	 */
 	public void readDatabase(AntidoteTransaction antidoteTransaction){
 		setEntryList(lowLevelMap.readEntryList(antidoteTransaction));
+	}
+
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){
+		setEntryList(lowLevelMap.readEntryList());
+	}
+
+	protected void readSetValue(List<ApbMapEntry> apbMapEntries){
+		setEntryList(lowLevelMap.readSetMapHelper(new ArrayList<>(apbMapEntries)));
 	}
 	
 	/**

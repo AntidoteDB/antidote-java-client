@@ -23,8 +23,8 @@ public class MapRef extends ObjectRef{
 	 * @param bucket the bucket
 	 * @param antidoteClient the antidote client
 	 */
-	public MapRef(String name, String bucket, AntidoteClient antidoteClient){
-		super(name, bucket, antidoteClient);
+	public MapRef(String name, String bucket, AntidoteClient antidoteClient, CRDT_type type){
+		super(name, bucket, antidoteClient, type);
 	}
 	
 	/**

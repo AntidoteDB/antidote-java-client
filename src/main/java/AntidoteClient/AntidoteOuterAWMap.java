@@ -2,6 +2,8 @@ package main.java.AntidoteClient;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.basho.riak.protobuf.AntidotePB.ApbMapEntry;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
@@ -32,6 +34,17 @@ public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapC
 	 */
 	public void readDatabase(AntidoteTransaction antidoteTransaction){
 		setEntryList(lowLevelMap.readEntryList(antidoteTransaction));
+	}
+
+	/**
+	 * Gets the most recent state from the database.
+	 */
+	public void readDatabase(){
+		setEntryList(lowLevelMap.readEntryList());
+	}
+
+	protected void readSetValue(List<ApbMapEntry> apbMapEntries){
+		setEntryList(lowLevelMap.readSetMapHelper(new ArrayList<>(apbMapEntries)));
 	}
 
 	/**
