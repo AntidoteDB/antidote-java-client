@@ -37,3 +37,22 @@ For example a reference to a set datatype stored under key "users" in a specifie
 
     RWSetRef  userSetRef = antidoteClient.rwSetRef("users", bucket);
     AntidoteOuterRWSet userSetRef.createAntidoteRWSet();
+
+## Reading Objects
+
+Depending on the object type, every object has a getValue(), getValues(), or getValueList() method to fetch its values.
+The result is returned as a String or a Set of Strings.
+
+    userSetRef.readDatabase();
+    Set<String> setValues = userSetRef.getValues();
+
+## Updating Objects
+
+Objects are updated by creating an AntidoteTransaction object which is then passed as a parameter to the update method of
+the specified object.
+
+    AntidoteTransaction tx = antidoteClient.createStaticTransaction();
+    userSet.addElement("UserTest", tx);
+    tx.commitTransaction();
+    tx.close();
+
