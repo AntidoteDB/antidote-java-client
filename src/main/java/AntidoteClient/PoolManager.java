@@ -3,6 +3,7 @@ package main.java.AntidoteClient;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
+import java.security.PublicKey;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -18,16 +19,45 @@ public class PoolManager {
     private int retries = 0;
 
     /**
-     * Instantiates a new pool manager.
+     * Generates pool.
      *
      * @param maxPoolSize the max pool size
      * @param initialPoolSize the initial pool size
      * @param hosts the hosts
      */
-    public PoolManager(int maxPoolSize, int initialPoolSize, List<Host> hosts) {
+    private void createPool(int maxPoolSize, int initialPoolSize, List<Host> hosts) {
         for (Host h : hosts) {
             pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
         }
+    }
+
+    /**
+     * Instantiates a new pool manager.
+     *
+     * @param maxPoolSize the max pool size
+     * @param initialPoolSize the initial pool size
+     * @param configFilePath the path of config file
+     */
+    public PoolManager(int maxPoolSize, int initialPoolSize, String configFilePath) {
+        AntidoteConfigManager cfgMgr = new AntidoteConfigManager();
+        if (!cfgMgr.configExist(configFilePath)) {
+            throw new RuntimeException("Config File not found!");
+        }
+        List<Host> hosts = cfgMgr.getConfigHosts(configFilePath);
+        createPool(maxPoolSize, initialPoolSize, hosts);
+    }
+
+    /**
+     * Instantiates a new pool manager.
+     *
+     * @param maxPoolSize the max pool size
+     * @param initialPoolSize the initial pool size
+     */
+    public PoolManager(int maxPoolSize, int initialPoolSize) {
+        AntidoteConfigManager cfgMgr = new AntidoteConfigManager();
+        cfgMgr.generateDefaultConfig();
+        List<Host> hosts = cfgMgr.getConfigHosts();
+        createPool(maxPoolSize, initialPoolSize, hosts);
     }
 
     /**

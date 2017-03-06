@@ -20,16 +20,7 @@ public class AntidoteTest{
 	AntidoteTransaction antidoteTransaction;
 
 	public AntidoteTest() {
-		AntidoteConfigManager cfgMgr = new AntidoteConfigManager();
-		if (!cfgMgr.configExist()) {
-			cfgMgr.generateDefaultConfig();
-		}
-		List<Host> hosts = cfgMgr.getConfigHosts();
-		if (hosts.size() == 0) {
-			// Should throuw error here
-			System.out.println("NO HOSTS FOUND!!!");
-		}
-		antidotePoolManager = new PoolManager(20, 5, hosts);
+		antidotePoolManager = new PoolManager(20, 5);
 		antidoteClient = new AntidoteClient(antidotePoolManager);
 		bucket = nextSessionId();
 	}
@@ -37,26 +28,6 @@ public class AntidoteTest{
 	public String nextSessionId() {
 		SecureRandom random = new SecureRandom();
 		return new BigInteger(130, random).toString(32);
-	}
-	@Test(timeout=10000)
-	public void defaultConfigGeneration() {
-		String fileName = "config.xml";
-		AntidoteConfigManager cfgMgr = new AntidoteConfigManager();
-		if (!cfgMgr.configExist()) {
-			cfgMgr.generateDefaultConfig();
-			String path = System.getProperty("user.dir") + "/" + fileName;
-			File tmpFile = new File(path);
-			Assert.assertEquals(tmpFile.exists(), true);
-		}
-	}
-	@Test(timeout=10000)
-	public void configHosts() {
-		AntidoteConfigManager cfgMgr = new AntidoteConfigManager();
-		if (!cfgMgr.configExist()) {
-			cfgMgr.generateDefaultConfig();
-		}
-		List<Host> hosts = cfgMgr.getConfigHosts();
-		Assert.assertTrue(hosts.size() > 0);
 	}
 	@Test(timeout=10000)
 	public void readStaticTransaction() {
@@ -131,7 +102,7 @@ public class AntidoteTest{
 		Assert.assertEquals(objects.get(0), 3);
 		Assert.assertEquals(objects.get(1), 4);
 		Assert.assertEquals(integer.getValue(), 1);
-		Assert.assertEquals(integer.getValue(), 2);
+		Assert.assertEquals(counter.getValue(), 2);
 		Assert.assertTrue(orSet.getValues().contains("hi"));
 		Assert.assertTrue(orSet.getValues().contains("bye"));
 		Assert.assertTrue(orSet.getValues().contains("ciao"));
@@ -600,6 +571,7 @@ public class AntidoteTest{
 		counter.increment(5, antidoteTransaction);
 		counter.increment(5, antidoteTransaction);
 		antidoteTransaction.commitTransaction();
+		counterValue = testMap.getCounterEntry(counterKey).getValue();
 		Assert.assertEquals(counterValue, 15);
 	}
 
@@ -680,7 +652,7 @@ public class AntidoteTest{
 		antidoteTransaction = antidoteClient.createTransaction();
 		register.setValue("no", antidoteTransaction);
 		register.setValueBS(ByteString.copyFromUtf8("maybe"), antidoteTransaction);
-		Assert.assertThat(registerValueList, CoreMatchers.hasItem("maybe"));
+		Assert.assertThat(register.getValueList(), CoreMatchers.hasItem("maybe"));
 		antidoteTransaction.commitTransaction();
 
 	/*	register.setValue("no");
