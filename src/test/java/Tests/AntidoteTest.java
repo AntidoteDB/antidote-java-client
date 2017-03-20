@@ -7,6 +7,9 @@ import java.security.SecureRandom;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.ArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
@@ -31,6 +34,15 @@ public class AntidoteTest {
     public String nextSessionId() {
         SecureRandom random = new SecureRandom();
         return new BigInteger(130, random).toString(32);
+    }
+
+    public static void main(String[] args) {
+        AntidoteTest a = new AntidoteTest();
+    }
+
+    @Test(timeout = 1000)
+    public void tp() {
+        AntidoteTest a = new AntidoteTest();
     }
 
     @Test(timeout = 10000)

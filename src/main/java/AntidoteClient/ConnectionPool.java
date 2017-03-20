@@ -12,64 +12,67 @@ import java.util.logging.Logger;
  */
 public class ConnectionPool {
 
-    /** The Constant logger. */
+    /**
+     * The Constant logger.
+     */
     private static final Logger logger = Logger.getLogger(ConnectionPool.class.getCanonicalName());
 
-    /** The pool. */
+    /**
+     * The pool.
+     */
     private BlockingQueue<Socket> pool;
-    
-    /**  Maximum number of connections that the pool can have. */
+
     private int maxPoolSize;
-    
-    /**  Number of connections that should be created initially. */
+
     private int initialPoolSize;
-    
-    /**  Number of connections generated so far. */
+
     private int currentPoolSize;
 
-    /** The host. */
     private String host;
-    
-    /** The port. */
+
     private int port;
 
-    /** The healthy. */
     private boolean healthy;
-    
-    /** The failures. */
+
+    /**
+     * The failures.
+     */
     private int failures;
-    
-    /** The active connections. */
+
+    /**
+     * The active connections.
+     */
     private int activeConnections;
 
     /**
      * Instantiates a new connection pool.
      *
-     * @param maxPoolSize the max pool size
+     * @param maxPoolSize     the max pool size
      * @param initialPoolSize the initial pool size
-     * @param host the host
-     * @param port the port
+     * @param host            the host
+     * @param port            the port
      */
     public ConnectionPool(int maxPoolSize, int initialPoolSize, String host, int port) {
 
-        if( (initialPoolSize > maxPoolSize) || initialPoolSize < 1 || maxPoolSize < 1 ) {
+        if ((initialPoolSize > maxPoolSize) || initialPoolSize < 1 || maxPoolSize < 1) {
             throw new IllegalArgumentException("Invalid pool size parameters");
         }
 
         // default max pool size to 10
-        this.maxPoolSize = maxPoolSize>0 ? maxPoolSize : 10;
-        this.initialPoolSize = initialPoolSize;
-        this.host = host;
-        this.port = port;
+        this.setMaxPoolSize(maxPoolSize > 0 ? maxPoolSize : 10);
+        this.setInitialPoolSize(initialPoolSize);
+        this.setHost(host);
+        this.setPort(port);
         this.pool = new LinkedBlockingQueue<Socket>(maxPoolSize);
-        this.healthy = true;
+        this.setHealthy(true);
         this.failures = 0;
 
-        for(int i=0; i<initialPoolSize; i++) {
-            if (this.healthy && currentPoolSize < maxPoolSize) {
-                if(!openAndPoolConnection()) {
+        for (int i = 0; i < initialPoolSize; i++) {
+            if (this.isHealthy() && getCurrentPoolSize() < maxPoolSize) {
+                if (!openAndPoolConnection()) {
                     if (++failures >= 3) {
-                        this.healthy = false;
+                        this.setHealthy(false);
+
                     }
                 }
             } else {
@@ -77,12 +80,26 @@ public class ConnectionPool {
             }
         }
 
-        if(pool.size() != initialPoolSize) {
+        if (pool.size() != initialPoolSize) {
             logger.log(Level.WARNING,
                     "Initial sized pool creation failed. InitializedPoolSize={0}, initialPoolSize={1}",
                     new Object[]{pool.size(), initialPoolSize});
         }
 
+    }
+
+    public boolean checkHealth(ConnectionPool p) {
+        try {
+            Socket s = new Socket();
+            s.setSoTimeout(200);
+            s.connect(new InetSocketAddress(p.getHost(), p.getPort()), 200);
+            System.out.println("Connected !");
+            return true;
+        } catch (Exception e) {
+            System.out.println("Not Connected !");
+            return false;
+
+        }
     }
 
     /**
@@ -95,13 +112,13 @@ public class ConnectionPool {
 
             Socket s = new Socket();
             s.setSoTimeout(200);
-            s.connect(new InetSocketAddress(host, port), 200);
+            s.connect(new InetSocketAddress(getHost(), getPort()), 200);
             pool.offer(s);
-            currentPoolSize++;
-            this.healthy = true;
+            setCurrentPoolSize(getCurrentPoolSize() + 1);
+            this.setHealthy(true);
             this.failures = 0;
             logger.log(Level.FINE, "Created connection {0}, currentPoolSize={1}, maxPoolSize={2}",
-                    new Object[]{s, currentPoolSize, maxPoolSize});
+                    new Object[]{s, getCurrentPoolSize(), getMaxPoolSize()});
             return true;
         } catch (Exception e) {
             return false;
@@ -115,7 +132,7 @@ public class ConnectionPool {
      * @throws InterruptedException the interrupted exception
      */
     public Socket getConnection() throws InterruptedException {
-        if (pool.peek() == null && currentPoolSize < maxPoolSize) {
+        if (pool.peek() == null && getCurrentPoolSize() < getMaxPoolSize()) {
             if (!openAndPoolConnection()) {
                 failures++;
             } else {
@@ -133,10 +150,15 @@ public class ConnectionPool {
      */
     public void surrenderConnection(Socket s) {
         activeConnections--;
-        if(!(s instanceof Socket)) { return; }
+        if (!(s instanceof Socket)) {
+            return;
+        }
         pool.offer(s); // offer() as we do not want to go beyond capacity
     }
 
+    /**
+     * The healthy.
+     */
     /**
      * Checks if is healthy.
      *
@@ -144,5 +166,64 @@ public class ConnectionPool {
      */
     public boolean isHealthy() {
         return healthy;
+    }
+
+    /**
+     * The host.
+     */
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    /**
+     * The port.
+     */
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public void setHealthy(boolean healthy) {
+        this.healthy = healthy;
+    }
+
+    /**
+     * Maximum number of connections that the pool can have.
+     */
+    public int getMaxPoolSize() {
+        return maxPoolSize;
+    }
+
+    public void setMaxPoolSize(int maxPoolSize) {
+        this.maxPoolSize = maxPoolSize;
+    }
+
+    /**
+     * Number of connections that should be created initially.
+     */
+    public int getInitialPoolSize() {
+        return initialPoolSize;
+    }
+
+    public void setInitialPoolSize(int initialPoolSize) {
+        this.initialPoolSize = initialPoolSize;
+    }
+
+    /**
+     * Number of connections generated so far.
+     */
+    public int getCurrentPoolSize() {
+        return currentPoolSize;
+    }
+
+    public void setCurrentPoolSize(int currentPoolSize) {
+        this.currentPoolSize = currentPoolSize;
     }
 }

@@ -6,6 +6,9 @@ import java.net.Socket;
 import java.security.PublicKey;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The Class PoolManager.
@@ -64,6 +67,7 @@ public class PoolManager {
         }
         List<Host> hosts = cfgMgr.getConfigHosts();
         createPool(maxPoolSize, initialPoolSize, hosts);
+        unhealthyHostRecovery();
     }
 
     /**
@@ -75,6 +79,32 @@ public class PoolManager {
      */
     public void addHost(int maxPoolSize, int initialPoolSize, Host h) {
         pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
+    }
+
+
+    public void unhealthyHostRecovery() {
+        System.out.println("Start Scheduling");
+        ScheduledExecutorService executor =
+                Executors.newSingleThreadScheduledExecutor();
+        Runnable periodicTask = new Runnable() {
+            public void run() {
+                // Invoke method(s) to do the work
+                System.out.println("Pool Size :" + pools.size());
+                for (ConnectionPool p : pools) {
+                    if (!p.isHealthy()) {
+                        try {
+                            System.out.println("Unhealthy Pool :" + p.getHost());
+                            if (p.checkHealth(p)) {
+                                p.setHealthy(true);
+                            }
+                            ;
+                        } catch (Exception e) {
+                        }
+                    }
+                }
+            }
+        };
+        executor.scheduleAtFixedRate(periodicTask, 0, 5, TimeUnit.SECONDS);
     }
 
     /**
