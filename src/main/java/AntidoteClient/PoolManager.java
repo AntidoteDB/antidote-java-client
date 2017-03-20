@@ -11,19 +11,23 @@ import java.util.List;
  * The Class PoolManager.
  */
 public class PoolManager {
-    
-    /** The pools. */
+
+    /**
+     * The pools.
+     */
     private List<ConnectionPool> pools = new LinkedList<ConnectionPool>();
-    
-    /** The retries. */
+
+    /**
+     * The retries.
+     */
     private int retries = 0;
 
     /**
      * Generates pool.
      *
-     * @param maxPoolSize the max pool size
+     * @param maxPoolSize     the max pool size
      * @param initialPoolSize the initial pool size
-     * @param hosts the hosts
+     * @param hosts           the hosts
      */
     private void createPool(int maxPoolSize, int initialPoolSize, List<Host> hosts) {
         for (Host h : hosts) {
@@ -34,9 +38,9 @@ public class PoolManager {
     /**
      * Instantiates a new pool manager.
      *
-     * @param maxPoolSize the max pool size
+     * @param maxPoolSize     the max pool size
      * @param initialPoolSize the initial pool size
-     * @param configFilePath the path of config file
+     * @param configFilePath  the path of config file
      */
     public PoolManager(int maxPoolSize, int initialPoolSize, String configFilePath) {
         AntidoteConfigManager cfgMgr = new AntidoteConfigManager();
@@ -47,10 +51,16 @@ public class PoolManager {
         createPool(maxPoolSize, initialPoolSize, hosts);
     }
 
+
+    public void addHost(Host h) {
+//        ConnectionPool pool = pools.get(0);
+//        pools.add(new ConnectionPool(pool.getMaxPoolSize(), pool.getInitialPoolSize(), h.getHostname(), h.getPort()));
+    }
+
     /**
      * Instantiates a new pool manager.
      *
-     * @param maxPoolSize the max pool size
+     * @param maxPoolSize     the max pool size
      * @param initialPoolSize the initial pool size
      */
     public PoolManager(int maxPoolSize, int initialPoolSize) {
@@ -128,8 +138,8 @@ public class PoolManager {
      */
     private List<ConnectionPool> getHealthyPools() {
         List<ConnectionPool> healthyPools = new LinkedList<ConnectionPool>();
-        for (ConnectionPool p: pools) {
-            if(p.isHealthy()) {
+        for (ConnectionPool p : pools) {
+            if (p.isHealthy()) {
                 healthyPools.add(p);
             }
         }
