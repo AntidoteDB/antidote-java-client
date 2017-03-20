@@ -51,12 +51,6 @@ public class PoolManager {
         createPool(maxPoolSize, initialPoolSize, hosts);
     }
 
-
-    public void addHost(Host h) {
-//        ConnectionPool pool = pools.get(0);
-//        pools.add(new ConnectionPool(pool.getMaxPoolSize(), pool.getInitialPoolSize(), h.getHostname(), h.getPort()));
-    }
-
     /**
      * Instantiates a new pool manager.
      *
@@ -65,9 +59,22 @@ public class PoolManager {
      */
     public PoolManager(int maxPoolSize, int initialPoolSize) {
         AntidoteConfigManager cfgMgr = new AntidoteConfigManager();
-        cfgMgr.generateDefaultConfig();
+        if (!cfgMgr.configExist()) {
+            cfgMgr.generateDefaultConfig();
+        }
         List<Host> hosts = cfgMgr.getConfigHosts();
         createPool(maxPoolSize, initialPoolSize, hosts);
+    }
+
+    /**
+     * Instantiates a new pool manager.
+     *
+     * @param maxPoolSize     the max pool size
+     * @param initialPoolSize the initial pool size
+     * @param h               Host to add into pool
+     */
+    public void addHost(int maxPoolSize, int initialPoolSize, Host h) {
+        pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
     }
 
     /**
