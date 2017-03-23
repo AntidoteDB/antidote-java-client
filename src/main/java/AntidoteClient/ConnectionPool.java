@@ -16,6 +16,7 @@ public class ConnectionPool {
      * The Constant logger.
      */
     private static final Logger logger = Logger.getLogger(ConnectionPool.class.getCanonicalName());
+    private static final int DEFAULT_TIMEOUT = 200;
 
     /**
      * The pool.
@@ -91,12 +92,11 @@ public class ConnectionPool {
     public boolean checkHealth(ConnectionPool p) {
         try {
             Socket s = new Socket();
-            s.setSoTimeout(200);
-            s.connect(new InetSocketAddress(p.getHost(), p.getPort()), 200);
-            System.out.println("Connected !");
+            s.setSoTimeout(DEFAULT_TIMEOUT);
+            s.connect(new InetSocketAddress(p.getHost(), p.getPort()), DEFAULT_TIMEOUT);
+            s.close();
             return true;
         } catch (Exception e) {
-            System.out.println("Not Connected !");
             return false;
 
         }
@@ -111,14 +111,15 @@ public class ConnectionPool {
         try {
 
             Socket s = new Socket();
-            s.setSoTimeout(200);
-            s.connect(new InetSocketAddress(getHost(), getPort()), 200);
+            s.setSoTimeout(DEFAULT_TIMEOUT);
+            s.connect(new InetSocketAddress(getHost(), getPort()), DEFAULT_TIMEOUT);
             pool.offer(s);
             setCurrentPoolSize(getCurrentPoolSize() + 1);
             this.setHealthy(true);
             this.failures = 0;
-            logger.log(Level.FINE, "Created connection {0}, currentPoolSize={1}, maxPoolSize={2}",
-                    new Object[]{s, getCurrentPoolSize(), getMaxPoolSize()});
+
+//            logger.log(Level.INFO, "Created connection {0}, currentPoolSize={1}, maxPoolSize={2}, activeConnection={3}",
+//                    new Object[]{s, getCurrentPoolSize(), getMaxPoolSize(), activeConnections});
             return true;
         } catch (Exception e) {
             return false;
@@ -138,8 +139,11 @@ public class ConnectionPool {
             } else {
                 activeConnections++;
             }
-
         }
+
+        logger.log(Level.INFO, "Requested Connection {0}, currentPoolSize={1}, maxPoolSize={2}, activeConnection={3}",
+                new Object[]{pool.take(), getCurrentPoolSize(), getMaxPoolSize(), activeConnections});
+        activeConnections++; //I have to add because it not incrmenting the active connection
         return pool.take();
     }
 
@@ -149,10 +153,8 @@ public class ConnectionPool {
      * @param s the s
      */
     public void surrenderConnection(Socket s) {
+//        System.out.println("Surrender :" + s + " pool size : " + pool.size() + "removeing" + pool.offer(s));
         activeConnections--;
-        if (!(s instanceof Socket)) {
-            return;
-        }
         pool.offer(s); // offer() as we do not want to go beyond capacity
     }
 
@@ -166,6 +168,10 @@ public class ConnectionPool {
      */
     public boolean isHealthy() {
         return healthy;
+    }
+
+    public void setHealthy(boolean healthy) {
+        this.healthy = healthy;
     }
 
     /**
@@ -188,10 +194,6 @@ public class ConnectionPool {
 
     public void setPort(int port) {
         this.port = port;
-    }
-
-    public void setHealthy(boolean healthy) {
-        this.healthy = healthy;
     }
 
     /**

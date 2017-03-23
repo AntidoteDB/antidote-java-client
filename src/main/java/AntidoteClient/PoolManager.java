@@ -36,6 +36,13 @@ public class PoolManager {
         for (Host h : hosts) {
             pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
         }
+        System.out.println("pool size : " + pools.size());
+//        for (ConnectionPool p : pools) {
+//            if (!p.isHealthy()) {
+        unhealthyHostRecovery();
+
+//            }
+//        }
     }
 
     /**
@@ -67,7 +74,7 @@ public class PoolManager {
         }
         List<Host> hosts = cfgMgr.getConfigHosts();
         createPool(maxPoolSize, initialPoolSize, hosts);
-        unhealthyHostRecovery();
+
     }
 
     /**
@@ -82,29 +89,31 @@ public class PoolManager {
     }
 
 
+    /**
+     * Recover unhealthy pools.
+     */
     public void unhealthyHostRecovery() {
-        System.out.println("Start Scheduling");
         ScheduledExecutorService executor =
                 Executors.newSingleThreadScheduledExecutor();
         Runnable periodicTask = new Runnable() {
             public void run() {
                 // Invoke method(s) to do the work
-                System.out.println("Pool Size :" + pools.size());
                 for (ConnectionPool p : pools) {
                     if (!p.isHealthy()) {
                         try {
-                            System.out.println("Unhealthy Pool :" + p.getHost());
                             if (p.checkHealth(p)) {
-                                p.setHealthy(true);
+                                pools.add(p);
                             }
                             ;
                         } catch (Exception e) {
+                            throw new RuntimeException(e);
                         }
                     }
                 }
             }
+
         };
-        executor.scheduleAtFixedRate(periodicTask, 0, 5, TimeUnit.SECONDS);
+        executor.scheduleAtFixedRate(periodicTask, 0, 5, TimeUnit.MINUTES);
     }
 
     /**

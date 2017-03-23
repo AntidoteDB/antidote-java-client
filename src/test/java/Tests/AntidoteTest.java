@@ -26,7 +26,7 @@ public class AntidoteTest {
 
     public AntidoteTest() {
         antidotePoolManager = new PoolManager(20, 5);
-        antidotePoolManager.addHost(20, 5, new Host("localhost", 8087));
+//        antidotePoolManager.addHost(20, 5, new Host("localhost", 8087));
         antidoteClient = new AntidoteClient(antidotePoolManager);
         bucket = nextSessionId();
     }
@@ -40,9 +40,18 @@ public class AntidoteTest {
         AntidoteTest a = new AntidoteTest();
     }
 
-    @Test(timeout = 1000)
-    public void tp() {
-        AntidoteTest a = new AntidoteTest();
+
+    @Test(timeout = 90000000)
+    public void seqTransaction() {
+//        antidoteTransaction = antidoteClient.createTransaction();
+//        CounterRef lowCounter = new CounterRef("testCounter5", bucket, antidoteClient);
+//        AntidoteOuterCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
+//        int oldValue = counter.getValue();
+//        counter.increment(antidoteTransaction);
+//        counter.increment(antidoteTransaction);
+//        antidoteTransaction.commitTransaction();
+//        int newValue = counter.getValue();
+//        Assert.assertEquals(newValue, oldValue + 2);
     }
 
     @Test(timeout = 10000)
