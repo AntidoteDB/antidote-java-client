@@ -36,10 +36,6 @@ public class AntidoteTest {
         return new BigInteger(130, random).toString(32);
     }
 
-    public static void main(String[] args) {
-        AntidoteTest a = new AntidoteTest();
-    }
-
 
     @Test(timeout = 90000000)
     public void seqTransaction() {

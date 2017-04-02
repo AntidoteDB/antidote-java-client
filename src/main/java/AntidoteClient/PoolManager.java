@@ -36,7 +36,6 @@ public class PoolManager {
         for (Host h : hosts) {
             pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
         }
-        System.out.println("pool size : " + pools.size());
 //        for (ConnectionPool p : pools) {
 //            if (!p.isHealthy()) {
         unhealthyHostRecovery();
@@ -100,14 +99,10 @@ public class PoolManager {
                 // Invoke method(s) to do the work
                 for (ConnectionPool p : pools) {
                     if (!p.isHealthy()) {
-                        try {
-                            if (p.checkHealth(p)) {
-                                pools.add(p);
-                            }
-                            ;
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
+                        if (p.checkHealth(p)) {
+                            pools.add(p);
                         }
+                        ;
                     }
                 }
             }
@@ -127,6 +122,8 @@ public class PoolManager {
         if (healthyPools.size() > 0) {
             do {
                 for (int i = 0; i < healthyPools.size(); i++) {
+                    //maybe I can work on this . This is random that's why any connection send to client
+                    //todo What can be the implementation ?  Should I have to give index in seq if that pool is full used then index will increase
                     selectedIndex = (int) (Math.random() * healthyPools.size());
 
                     ConnectionPool p = healthyPools.get(selectedIndex);
@@ -171,7 +168,10 @@ public class PoolManager {
             return new AntidoteMessage(responseLength, responseCode, messageData);
 
         } catch (Exception e) {
+            //if msg fails make it to unhealthy
+            c.setunHealthyConnection();
             throw new RuntimeException(e.getMessage(), e.getCause());
+
         } finally {
             c.returnConnection();
         }

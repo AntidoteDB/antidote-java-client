@@ -6,11 +6,15 @@ import java.net.Socket;
  * The Class Connection.
  */
 public class Connection {
-    
-    /** The pool. */
+
+    /**
+     * The pool.
+     */
     private ConnectionPool pool;
-    
-    /** The socket. */
+
+    /**
+     * The socket.
+     */
     private Socket socket;
 
     /**
@@ -21,7 +25,7 @@ public class Connection {
      */
     public Connection(ConnectionPool p, Socket s) {
         socket = s;
-        pool =  p;
+        pool = p;
     }
 
     /**
@@ -29,6 +33,10 @@ public class Connection {
      */
     public void returnConnection() {
         pool.surrenderConnection(socket);
+    }
+
+    public void setunHealthyConnection() {
+        pool.setHealthy(false);
     }
 
     /**

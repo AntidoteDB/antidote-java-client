@@ -1,5 +1,6 @@
 package main.java.AntidoteClient;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
@@ -90,15 +91,20 @@ public class ConnectionPool {
     }
 
     public boolean checkHealth(ConnectionPool p) {
+        Socket s = new Socket();
         try {
-            Socket s = new Socket();
             s.setSoTimeout(DEFAULT_TIMEOUT);
             s.connect(new InetSocketAddress(p.getHost(), p.getPort()), DEFAULT_TIMEOUT);
-            s.close();
             return true;
         } catch (Exception e) {
-            return false;
+            throw new RuntimeException(e);
 
+        } finally {
+            try {
+                s.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -141,8 +147,8 @@ public class ConnectionPool {
             }
         }
 
-        logger.log(Level.INFO, "Requested Connection {0}, currentPoolSize={1}, maxPoolSize={2}, activeConnection={3}",
-                new Object[]{pool.take(), getCurrentPoolSize(), getMaxPoolSize(), activeConnections});
+        //  logger.log(Level.INFO, "Requested Connection {0}, currentPoolSize={1}, maxPoolSize={2}, activeConnection={3}",
+        //        new Object[]{pool.take(), getCurrentPoolSize(), getMaxPoolSize(), activeConnections});
         activeConnections++; //I have to add because it not incrmenting the active connection
         return pool.take();
     }
