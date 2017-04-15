@@ -25,24 +25,6 @@ public class PoolManager {
      */
     private int retries = 0;
 
-    /**
-     * Generates pool.
-     *
-     * @param maxPoolSize     the max pool size
-     * @param initialPoolSize the initial pool size
-     * @param hosts           the hosts
-     */
-    private void createPool(int maxPoolSize, int initialPoolSize, List<Host> hosts) {
-        for (Host h : hosts) {
-            pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
-        }
-//        for (ConnectionPool p : pools) {
-//            if (!p.isHealthy()) {
-        unhealthyHostRecovery();
-
-//            }
-//        }
-    }
 
     /**
      * Instantiates a new pool manager.
@@ -77,6 +59,21 @@ public class PoolManager {
     }
 
     /**
+     * Generates pool.
+     *
+     * @param maxPoolSize     the max pool size
+     * @param initialPoolSize the initial pool size
+     * @param hosts           the hosts
+     */
+    private void createPool(int maxPoolSize, int initialPoolSize, List<Host> hosts) {
+        for (Host h : hosts) {
+            pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
+        }
+        //starting concurrent thread for heartbeat
+        unhealthyHostRecovery();
+    }
+
+    /**
      * Instantiates a new pool manager.
      *
      * @param maxPoolSize     the max pool size
@@ -87,7 +84,6 @@ public class PoolManager {
         pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
     }
 
-
     /**
      * Recover unhealthy pools.
      */
@@ -96,13 +92,19 @@ public class PoolManager {
                 Executors.newSingleThreadScheduledExecutor();
         Runnable periodicTask = new Runnable() {
             public void run() {
+                System.out.println("Execute unhealthy host recovry");
                 // Invoke method(s) to do the work
                 for (ConnectionPool p : pools) {
                     if (!p.isHealthy()) {
                         if (p.checkHealth(p)) {
-                            pools.add(p);
+                            //remove old connectionPool object that have no socket
+                            pools.remove(p);
+                            //make it helthy and add new Pool
+                            p.setHealthy(true);
+                            pools.add(new ConnectionPool(p.getMaxPoolSize(), p.getInitialPoolSize(), p.getHost(), p.getPort()));
+                            System.out.println(pools.toString());
                         }
-                        ;
+
                     }
                 }
             }
@@ -190,5 +192,14 @@ public class PoolManager {
             }
         }
         return healthyPools;
+    }
+
+    //for testing purpose
+    public String toString() {
+        String s = "\ntoString : PoolManager\n" +
+                "pools :" + pools.toString() + "\n" +
+                "retries :" + retries + "\n";
+        return s;
+
     }
 }

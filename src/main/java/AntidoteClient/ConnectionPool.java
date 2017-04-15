@@ -91,20 +91,18 @@ public class ConnectionPool {
     }
 
     public boolean checkHealth(ConnectionPool p) {
-        Socket s = new Socket();
+        System.out.println("checking health");
         try {
+            //todo yet to add send msg method - it will check reponse of server
+            Socket s = new Socket();
             s.setSoTimeout(DEFAULT_TIMEOUT);
             s.connect(new InetSocketAddress(p.getHost(), p.getPort()), DEFAULT_TIMEOUT);
+            s.close();
+            System.out.println("Healthy");
             return true;
         } catch (Exception e) {
-            throw new RuntimeException(e);
-
-        } finally {
-            try {
-                s.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            System.out.println("UnHealthy");
+            return false;
         }
     }
 
@@ -233,5 +231,21 @@ public class ConnectionPool {
 
     public void setCurrentPoolSize(int currentPoolSize) {
         this.currentPoolSize = currentPoolSize;
+    }
+
+    //for testing purpose
+    public String toString() {
+        String s = "\ntoString : ConnectionPool\n" +
+                "pool :" + pool.toString() + "\n" +
+                "maxPoolSize :" + maxPoolSize + "\n" +
+                "initialPoolSize :" + initialPoolSize + "\n" +
+                "currentPoolSize :" + currentPoolSize + "\n" +
+                "activeConnections :" + activeConnections + "\n" +
+                "host :" + host + "\n" +
+                "port :" + port + "\n" +
+                "failures :" + failures + "\n" +
+                "healthy :" + healthy + "\n";
+        return s;
+
     }
 }
