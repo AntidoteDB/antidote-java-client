@@ -1,1 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><config><host><hostname>localhost</hostname><port>8087</port></host></config>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<config>
+    <host>
+        <hostname>localhost</hostname>
+        <port>8087</port>
+    </host>
+</config>

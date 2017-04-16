@@ -98,10 +98,12 @@ public class ConnectionPool {
             s.setSoTimeout(DEFAULT_TIMEOUT);
             s.connect(new InetSocketAddress(p.getHost(), p.getPort()), DEFAULT_TIMEOUT);
             s.close();
-            System.out.println("Healthy");
+            p.setHealthy(true);
+            System.out.print(" : Healthy");
             return true;
         } catch (Exception e) {
-            System.out.println("UnHealthy");
+            p.setHealthy(false);
+            System.out.print(" : UnHealthy");
             return false;
         }
     }
@@ -137,6 +139,7 @@ public class ConnectionPool {
      * @throws InterruptedException the interrupted exception
      */
     public Socket getConnection() throws InterruptedException {
+        System.out.println("Get Inner Connection Called");
         if (pool.peek() == null && getCurrentPoolSize() < getMaxPoolSize()) {
             if (!openAndPoolConnection()) {
                 failures++;
@@ -144,7 +147,7 @@ public class ConnectionPool {
                 activeConnections++;
             }
         }
-
+        System.out.println("Taking connection");
         //  logger.log(Level.INFO, "Requested Connection {0}, currentPoolSize={1}, maxPoolSize={2}, activeConnection={3}",
         //        new Object[]{pool.take(), getCurrentPoolSize(), getMaxPoolSize(), activeConnections});
         activeConnections++; //I have to add because it not incrmenting the active connection
@@ -157,7 +160,6 @@ public class ConnectionPool {
      * @param s the s
      */
     public void surrenderConnection(Socket s) {
-//        System.out.println("Surrender :" + s + " pool size : " + pool.size() + "removeing" + pool.offer(s));
         activeConnections--;
         pool.offer(s); // offer() as we do not want to go beyond capacity
     }

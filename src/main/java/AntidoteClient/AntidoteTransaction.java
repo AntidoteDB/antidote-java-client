@@ -2,6 +2,7 @@ package main.java.AntidoteClient;
 
 import com.basho.riak.protobuf.AntidotePB.*;
 import com.google.protobuf.*;
+
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,18 +10,26 @@ import java.util.List;
 /**
  * The Class AntidoteTransaction.
  */
-public class AntidoteTransaction implements Closeable{
+public class AntidoteTransaction implements Closeable {
 
-    /** The antidote client. */
+    /**
+     * The antidote client.
+     */
     private final AntidoteClient antidoteClient;
 
-    /** The transaction status. */
+    /**
+     * The transaction status.
+     */
     private TransactionStatus transactionStatus;
 
-    /** The descriptor. */
+    /**
+     * The descriptor.
+     */
     private ByteString descriptor;
 
-    /** The list of the update operations. */
+    /**
+     * The list of the update operations.
+     */
     private List<ApbUpdateOp.Builder> transactionUpdateList;
 
     /**
@@ -28,11 +37,11 @@ public class AntidoteTransaction implements Closeable{
      *
      * @param antidoteClient the antidote client
      */
-    public AntidoteTransaction(AntidoteClient antidoteClient){
-      this.antidoteClient=antidoteClient;
-      this.descriptor = null;
-      transactionUpdateList = new ArrayList<>();
-      this.transactionStatus = TransactionStatus.INACTIVE;
+    public AntidoteTransaction(AntidoteClient antidoteClient) {
+        this.antidoteClient = antidoteClient;
+        this.descriptor = null;
+        transactionUpdateList = new ArrayList<>();
+        this.transactionStatus = TransactionStatus.INACTIVE;
     }
 
     /**
@@ -40,27 +49,34 @@ public class AntidoteTransaction implements Closeable{
      *
      * @return the antidote client
      */
-    protected AntidoteClient getClient(){
+    protected AntidoteClient getClient() {
         return antidoteClient;
     }
 
-    /** The enum types of the transaction status. */
-    protected enum TransactionStatus { CREATED, STARTED, CLOSING, CLOSED, INACTIVE };
+    /**
+     * The enum types of the transaction status.
+     */
+    protected enum TransactionStatus {
+        CREATED, STARTED, CLOSING, CLOSED, INACTIVE
+    }
+
+    ;
 
     /**
      * Get the transaction status.
      *
      * @return the transaction status
      */
-    protected TransactionStatus getTransactionStatus(){
+    protected TransactionStatus getTransactionStatus() {
         return transactionStatus;
     }
 
-    /** Set the transaction status.
+    /**
+     * Set the transaction status.
      *
      * @param transactionStatus the transaction status
      */
-    protected void setTransactionStatus(TransactionStatus transactionStatus){
+    protected void setTransactionStatus(TransactionStatus transactionStatus) {
         this.transactionStatus = transactionStatus;
     }
 
@@ -69,8 +85,8 @@ public class AntidoteTransaction implements Closeable{
      *
      * @return the byte string
      */
-    protected void startTransaction(){
-        if(getTransactionStatus() != TransactionStatus.CREATED){
+    protected void startTransaction() {
+        if (getTransactionStatus() != TransactionStatus.CREATED) {
             throw new AntidoteException("You need to create the transaction before starting it");
         }
         ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
@@ -85,7 +101,7 @@ public class AntidoteTransaction implements Closeable{
             ApbStartTransactionResp transactionResponse = ApbStartTransactionResp.parseFrom(startMessage.getMessage());
             System.out.println(transactionResponse);
             descriptor = transactionResponse.getTransactionDescriptor();
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
         setTransactionStatus(TransactionStatus.STARTED);
@@ -95,10 +111,10 @@ public class AntidoteTransaction implements Closeable{
      * Commit transaction.
      */
     public void commitTransaction() {
-        if (descriptor == null){
-    		throw new AntidoteException("You need to start the transaction before committing it");
-    	}
-        if(getTransactionStatus() != TransactionStatus.STARTED){
+        if (descriptor == null) {
+            throw new AntidoteException("You need to start the transaction before committing it");
+        }
+        if (getTransactionStatus() != TransactionStatus.STARTED) {
             throw new AntidoteException("You need to start the transaction before committing it");
         }
         ApbCommitTransaction.Builder commitTransaction = ApbCommitTransaction.newBuilder();
@@ -113,7 +129,7 @@ public class AntidoteTransaction implements Closeable{
             System.out.println(commitResponse);
 
 
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
         setTransactionStatus(TransactionStatus.CLOSING);
@@ -122,11 +138,11 @@ public class AntidoteTransaction implements Closeable{
     /**
      * Abort transaction.
      */
-    public void abortTransaction(){
-        if (descriptor == null){
+    public void abortTransaction() {
+        if (descriptor == null) {
             throw new AntidoteException("You need to start the transaction before aborting it");
         }
-        if(getTransactionStatus() != TransactionStatus.STARTED){
+        if (getTransactionStatus() != TransactionStatus.STARTED) {
             throw new AntidoteException("You need to start the transaction before aborting it");
         }
         ApbAbortTransaction.Builder abortTransaction = ApbAbortTransaction.newBuilder();
@@ -143,12 +159,12 @@ public class AntidoteTransaction implements Closeable{
      * Update helper that has the generic part of the code.
      *
      * @param operation the operation
-     * @param name the name
-     * @param bucket the bucket
-     * @param type the type
+     * @param name      the name
+     * @param bucket    the bucket
+     * @param type      the type
      */
-    protected void updateHelper(ApbUpdateOperation.Builder operation, String name, String bucket, CRDT_type type){
-        if(getTransactionStatus() != TransactionStatus.STARTED){
+    protected void updateHelper(ApbUpdateOperation.Builder operation, String name, String bucket, CRDT_type type) {
+        if (getTransactionStatus() != TransactionStatus.STARTED) {
             throw new AntidoteException("You need to start the transaction first");
         }
         ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message to update
@@ -160,11 +176,10 @@ public class AntidoteTransaction implements Closeable{
         updateInstruction.setBoundobject(object);
         updateInstruction.setOperation(operation);
 
-        if(this instanceof AntidoteStaticTransaction){
+        if (this instanceof AntidoteStaticTransaction) {
             transactionUpdateListAdd(updateInstruction);
-        }
-        else{
-            if (getDescriptor() == null){
+        } else {
+            if (getDescriptor() == null) {
                 throw new AntidoteException("You need to start the transaction first");
             }
             ApbUpdateObjects.Builder updateMessage = ApbUpdateObjects.newBuilder();
@@ -179,16 +194,16 @@ public class AntidoteTransaction implements Closeable{
     /**
      * Read helper that has the generic part of the code.
      *
-     * @param name the name
+     * @param name   the name
      * @param bucket the bucket
-     * @param type the type
+     * @param type   the type
      * @return the apb read objects resp
      */
-    protected ApbReadObjectsResp readHelper(String name, String bucket, CRDT_type type){
-        if (getDescriptor() == null){
+    protected ApbReadObjectsResp readHelper(String name, String bucket, CRDT_type type) {
+        if (getDescriptor() == null) {
             throw new AntidoteException("You need to start the transaction first");
         }
-        if(getTransactionStatus() != TransactionStatus.STARTED){
+        if (getTransactionStatus() != TransactionStatus.STARTED) {
             throw new AntidoteException("You need to start the transaction first");
         }
         ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message to update
@@ -203,15 +218,15 @@ public class AntidoteTransaction implements Closeable{
         ApbReadObjects readObjectsMessage = readObject.build();
         AntidoteMessage readMessage = antidoteClient.sendMessage(new AntidoteRequest(RiakPbMsgs.ApbReadObjects, readObjectsMessage));
         ApbReadObjectsResp readResponse = null;
-            try {
-                readResponse = ApbReadObjectsResp.parseFrom(readMessage.getMessage());
-            }catch (Exception e){
-                System.out.println(e);
-            }
+        try {
+            readResponse = ApbReadObjectsResp.parseFrom(readMessage.getMessage());
+        } catch (Exception e) {
+            System.out.println(e);
+        }
         return readResponse;
     }
 
-    protected ByteString getDescriptor(){
+    protected ByteString getDescriptor() {
         return descriptor;
     }
 
@@ -220,7 +235,7 @@ public class AntidoteTransaction implements Closeable{
      *
      * @return the transaction list
      */
-    protected List<ApbUpdateOp.Builder> getTransactionUpdateList(){
+    protected List<ApbUpdateOp.Builder> getTransactionUpdateList() {
         return transactionUpdateList;
     }
 
@@ -229,16 +244,20 @@ public class AntidoteTransaction implements Closeable{
      *
      * @param update the update operation
      */
-    protected void transactionUpdateListAdd(ApbUpdateOp.Builder update){
+    protected void transactionUpdateListAdd(ApbUpdateOp.Builder update) {
         transactionUpdateList.add(update);
     }
 
-    /** Clear the transaction list. */
-    protected void clearTransactionUpdateList(){
+    /**
+     * Clear the transaction list.
+     */
+    protected void clearTransactionUpdateList() {
         transactionUpdateList.clear();
     }
 
-    /** Close the transaction. */
+    /**
+     * Close the transaction.
+     */
     public void close() {
         setTransactionStatus(TransactionStatus.CLOSED);
     }

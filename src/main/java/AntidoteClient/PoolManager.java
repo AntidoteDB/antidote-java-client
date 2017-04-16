@@ -95,17 +95,17 @@ public class PoolManager {
                 System.out.println("Execute unhealthy host recovry");
                 // Invoke method(s) to do the work
                 for (ConnectionPool p : pools) {
-                    if (!p.isHealthy()) {
-                        if (p.checkHealth(p)) {
-                            //remove old connectionPool object that have no socket
-                            pools.remove(p);
-                            //make it helthy and add new Pool
-                            p.setHealthy(true);
-                            pools.add(new ConnectionPool(p.getMaxPoolSize(), p.getInitialPoolSize(), p.getHost(), p.getPort()));
-                            System.out.println(pools.toString());
-                        }
-
+//                    if (!p.isHealthy()) {
+                    if (p.checkHealth(p)) {
+                        //remove old connectionPool object that have no socket
+                        pools.remove(p);
+                        //make it helthy and add new Pool
+                        p.setHealthy(true);
+                        pools.add(new ConnectionPool(p.getMaxPoolSize(), p.getInitialPoolSize(), p.getHost(), p.getPort()));
+//                        System.out.println("Pool :" + pools.toString());
                     }
+
+//                    }
                 }
             }
 
@@ -118,29 +118,27 @@ public class PoolManager {
      *
      * @return the connection
      */
+    //todo retruning connection sending redundent pools
     public Connection getConnection() {
-        int selectedIndex = 0;
-        List<ConnectionPool> healthyPools = getHealthyPools();
-        if (healthyPools.size() > 0) {
-            do {
-                for (int i = 0; i < healthyPools.size(); i++) {
-                    //maybe I can work on this . This is random that's why any connection send to client
-                    //todo What can be the implementation ?  Should I have to give index in seq if that pool is full used then index will increase
-                    selectedIndex = (int) (Math.random() * healthyPools.size());
-
-                    ConnectionPool p = healthyPools.get(selectedIndex);
-                    if (p.isHealthy()) {
-                        try {
-                            Socket s = p.getConnection();
-                            if (s != null) {
-                                return new Connection(p, s);
-                            }
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
+        System.out.println("Get Outer Connection Called");
+        System.out.println(pools.toString());
+        if (pools.size() > 0) {
+            for (int i = 0; i < pools.size(); i++) {
+                ConnectionPool p = pools.get(i);
+                System.out.println("Selected Index : " + i);
+                if (p.checkHealth(p)) {
+                    try {
+                        System.out.println("Retrun connection");
+                        Socket s = p.getConnection();
+                        if (s != null) {
+                            return new Connection(p, s);
                         }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
                     }
                 }
-            } while (++retries < 3);
+            }
+
         }
         throw new RuntimeException("Cannot open connection");
     }
@@ -177,21 +175,6 @@ public class PoolManager {
         } finally {
             c.returnConnection();
         }
-    }
-
-    /**
-     * Gets the healthy pools.
-     *
-     * @return the healthy pools
-     */
-    private List<ConnectionPool> getHealthyPools() {
-        List<ConnectionPool> healthyPools = new LinkedList<ConnectionPool>();
-        for (ConnectionPool p : pools) {
-            if (p.isHealthy()) {
-                healthyPools.add(p);
-            }
-        }
-        return healthyPools;
     }
 
     //for testing purpose
