@@ -1,5 +1,7 @@
 package main.java.AntidoteClient;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -18,6 +20,8 @@ public class ConnectionPool {
      */
     private static final Logger logger = Logger.getLogger(ConnectionPool.class.getCanonicalName());
     private static final int DEFAULT_TIMEOUT = 200;
+    private static final int MAX_POOLSIZE = 10;
+    private static final int MAX_FAILURE = 3;
 
     /**
      * The pool.
@@ -61,7 +65,7 @@ public class ConnectionPool {
         }
 
         // default max pool size to 10
-        this.setMaxPoolSize(maxPoolSize > 0 ? maxPoolSize : 10);
+        this.setMaxPoolSize(maxPoolSize > 0 ? maxPoolSize : MAX_POOLSIZE);
         this.setInitialPoolSize(initialPoolSize);
         this.setHost(host);
         this.setPort(port);
@@ -72,9 +76,8 @@ public class ConnectionPool {
         for (int i = 0; i < initialPoolSize; i++) {
             if (this.isHealthy() && getCurrentPoolSize() < maxPoolSize) {
                 if (!openAndPoolConnection()) {
-                    if (++failures >= 3) {
+                    if (++failures >= MAX_FAILURE) {
                         this.setHealthy(false);
-
                     }
                 }
             } else {
@@ -91,19 +94,18 @@ public class ConnectionPool {
     }
 
     public boolean checkHealth(ConnectionPool p) {
-        System.out.println("checking health");
         try {
-            //todo yet to add send msg method - it will check reponse of server
-            Socket s = new Socket();
+            Socket s = p.getConnection();
             s.setSoTimeout(DEFAULT_TIMEOUT);
-            s.connect(new InetSocketAddress(p.getHost(), p.getPort()), DEFAULT_TIMEOUT);
-            s.close();
+            // Create a DataInputStream for reading from socket
+            DataInputStream din = new DataInputStream(s.getInputStream());
+
+            //what message I should send for heartbeat.
+            p.surrenderConnection(s);
             p.setHealthy(true);
-            System.out.print(" : Healthy");
             return true;
         } catch (Exception e) {
             p.setHealthy(false);
-            System.out.print(" : UnHealthy");
             return false;
         }
     }
@@ -139,7 +141,7 @@ public class ConnectionPool {
      * @throws InterruptedException the interrupted exception
      */
     public Socket getConnection() throws InterruptedException {
-        System.out.println("Get Inner Connection Called");
+//        System.out.println("Get Inner Connection Called");
         if (pool.peek() == null && getCurrentPoolSize() < getMaxPoolSize()) {
             if (!openAndPoolConnection()) {
                 failures++;
@@ -147,7 +149,7 @@ public class ConnectionPool {
                 activeConnections++;
             }
         }
-        System.out.println("Taking connection");
+//        System.out.println("Taking connection");
         //  logger.log(Level.INFO, "Requested Connection {0}, currentPoolSize={1}, maxPoolSize={2}, activeConnection={3}",
         //        new Object[]{pool.take(), getCurrentPoolSize(), getMaxPoolSize(), activeConnections});
         activeConnections++; //I have to add because it not incrmenting the active connection
@@ -237,16 +239,16 @@ public class ConnectionPool {
 
     //for testing purpose
     public String toString() {
-        String s = "\ntoString : ConnectionPool\n" +
-                "pool :" + pool.toString() + "\n" +
-                "maxPoolSize :" + maxPoolSize + "\n" +
-                "initialPoolSize :" + initialPoolSize + "\n" +
-                "currentPoolSize :" + currentPoolSize + "\n" +
-                "activeConnections :" + activeConnections + "\n" +
-                "host :" + host + "\n" +
-                "port :" + port + "\n" +
-                "failures :" + failures + "\n" +
-                "healthy :" + healthy + "\n";
+        String s = "ConnectionPool-->" +
+                "\npool :" + pool.toString() + ",\n" +
+                "maxPoolSize :" + maxPoolSize + "," +
+                "initialPoolSize :" + initialPoolSize + "," +
+                "currentPoolSize :" + currentPoolSize + "," +
+                "activeConnections :" + activeConnections + "," +
+                "host :" + host + "," +
+                "port :" + port + "," +
+                "failures :" + failures + "," +
+                "healthy :" + healthy + ",";
         return s;
 
     }

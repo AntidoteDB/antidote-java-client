@@ -26,7 +26,6 @@ public class AntidoteTest {
 
     public AntidoteTest() {
         antidotePoolManager = new PoolManager(20, 5);
-//        antidotePoolManager.addHost(20, 5, new Host("localhost", 8087));
         antidoteClient = new AntidoteClient(antidotePoolManager);
         bucket = nextSessionId();
     }
@@ -34,6 +33,11 @@ public class AntidoteTest {
     public String nextSessionId() {
         SecureRandom random = new SecureRandom();
         return new BigInteger(130, random).toString(32);
+    }
+
+    @Test(timeout = 10000)
+    public void explicitHost() {
+        assert antidotePoolManager.addHost(20, 5, new Host("localhoseeet", 8087));
     }
 
 

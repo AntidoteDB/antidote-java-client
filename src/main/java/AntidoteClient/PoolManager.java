@@ -3,7 +3,6 @@ package main.java.AntidoteClient;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
-import java.security.PublicKey;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -15,6 +14,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class PoolManager {
 
+    private static final int CHECK_INTERVAL = 3;
     /**
      * The pools.
      */
@@ -66,11 +66,20 @@ public class PoolManager {
      * @param hosts           the hosts
      */
     private void createPool(int maxPoolSize, int initialPoolSize, List<Host> hosts) {
+        ConnectionPool obj;
         for (Host h : hosts) {
-            pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
+            obj = new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort());
+            //add only if healthy
+            if (obj.isHealthy()) {
+                pools.add(obj);
+            }
+        }
+        //if pool is empty
+        if (pools.size() == 0) {
+            throw new IllegalArgumentException("Unable to make Database connection ! Please try again.");
         }
         //starting concurrent thread for heartbeat
-        unhealthyHostRecovery();
+//        unhealthyHostRecovery();
     }
 
     /**
@@ -80,8 +89,15 @@ public class PoolManager {
      * @param initialPoolSize the initial pool size
      * @param h               Host to add into pool
      */
-    public void addHost(int maxPoolSize, int initialPoolSize, Host h) {
-        pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
+    public boolean addHost(int maxPoolSize, int initialPoolSize, Host h) {
+        int initSize = pools.size();
+        System.out.println("initial Size " + initSize);
+        ConnectionPool obj = new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort());
+        //add only if healthy
+        if (obj.isHealthy()) {
+            pools.add(obj);
+        }
+        return pools.size() > initSize;
     }
 
     /**
@@ -95,22 +111,18 @@ public class PoolManager {
                 System.out.println("Execute unhealthy host recovry");
                 // Invoke method(s) to do the work
                 for (ConnectionPool p : pools) {
-//                    if (!p.isHealthy()) {
+                    //if (!p.isHealthy()) {
                     if (p.checkHealth(p)) {
-                        //remove old connectionPool object that have no socket
-                        pools.remove(p);
                         //make it helthy and add new Pool
                         p.setHealthy(true);
-                        pools.add(new ConnectionPool(p.getMaxPoolSize(), p.getInitialPoolSize(), p.getHost(), p.getPort()));
-//                        System.out.println("Pool :" + pools.toString());
+                        System.out.println(pools.toString());
                     }
-
-//                    }
+                    //}
                 }
             }
 
         };
-        executor.scheduleAtFixedRate(periodicTask, 0, 5, TimeUnit.MINUTES);
+        executor.scheduleAtFixedRate(periodicTask, 0, CHECK_INTERVAL, TimeUnit.SECONDS);
     }
 
     /**
@@ -120,15 +132,15 @@ public class PoolManager {
      */
     //todo retruning connection sending redundent pools
     public Connection getConnection() {
-        System.out.println("Get Outer Connection Called");
-        System.out.println(pools.toString());
+//        System.out.println("Get Outer Connection Called");
+//        System.out.println(pools.toString());
         if (pools.size() > 0) {
             for (int i = 0; i < pools.size(); i++) {
                 ConnectionPool p = pools.get(i);
-                System.out.println("Selected Index : " + i);
+//                System.out.println("Selected Index : " + i);
                 if (p.checkHealth(p)) {
                     try {
-                        System.out.println("Retrun connection");
+//                        System.out.println("Retrun connection");
                         Socket s = p.getConnection();
                         if (s != null) {
                             return new Connection(p, s);
@@ -151,20 +163,25 @@ public class PoolManager {
      */
     public AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
         Connection c = this.getConnection();
+        System.out.println("Connected to server");
         try {
             DataOutputStream dataOutputStream = new DataOutputStream(c.getSocket().getOutputStream());
             dataOutputStream.writeInt(requestMessage.getLength());
             dataOutputStream.writeByte(requestMessage.getCode());
             requestMessage.getMessage().writeTo(dataOutputStream);
+            System.out.println("Sending Msg : " + requestMessage.getMessage());
             dataOutputStream.flush();
 
+
             DataInputStream dataInputStream = new DataInputStream(c.getSocket().getInputStream());
+
             int responseLength = dataInputStream.readInt();
             int responseCode = dataInputStream.readByte();
 
             byte[] messageData = new byte[responseLength - 1];
             dataInputStream.readFully(messageData, 0, responseLength - 1);
 
+            System.out.println("Response Msg Length:" + responseLength + ",Code:" + responseCode + ",Data" + messageData);
             return new AntidoteMessage(responseLength, responseCode, messageData);
 
         } catch (Exception e) {
@@ -179,9 +196,9 @@ public class PoolManager {
 
     //for testing purpose
     public String toString() {
-        String s = "\ntoString : PoolManager\n" +
-                "pools :" + pools.toString() + "\n" +
-                "retries :" + retries + "\n";
+        String s = "PoolManager[" +
+                "pools :" + pools.toString() +
+                "retries :" + retries + "]";
         return s;
 
     }

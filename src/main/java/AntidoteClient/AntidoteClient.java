@@ -12,8 +12,10 @@ import static java.lang.Math.toIntExact;
  * The Class AntidoteClient.
  */
 public final class AntidoteClient {
-    
-    /**  Pool Manager. */
+
+    /**
+     * Pool Manager.
+     */
     private PoolManager poolManager;
 
     /**
@@ -24,7 +26,7 @@ public final class AntidoteClient {
     public AntidoteClient(PoolManager poolManager) {
         this.poolManager = poolManager;
     }
-    
+
     /**
      * Send message to database.
      *
@@ -40,7 +42,7 @@ public final class AntidoteClient {
      *
      * @return the antidote transaction
      */
-    public AntidoteTransaction createTransaction(){
+    public AntidoteTransaction createTransaction() {
         AntidoteTransaction antidoteTransaction = new AntidoteTransaction(this);
         antidoteTransaction.setTransactionStatus(AntidoteTransaction.TransactionStatus.CREATED);
         antidoteTransaction.startTransaction();
@@ -52,48 +54,48 @@ public final class AntidoteClient {
      *
      * @return the antidote static transaction
      */
-    public AntidoteTransaction createStaticTransaction(){
-    	AntidoteStaticTransaction antidoteStaticTransaction = new AntidoteStaticTransaction(this);
+    public AntidoteTransaction createStaticTransaction() {
+        AntidoteStaticTransaction antidoteStaticTransaction = new AntidoteStaticTransaction(this);
         antidoteStaticTransaction.setTransactionStatus(AntidoteStaticTransaction.TransactionStatus.CREATED);
         antidoteStaticTransaction.startTransaction();
         return antidoteStaticTransaction;
     }
-    
-    public CounterRef counterRef(String name, String bucket){
-    	return new CounterRef(name, bucket, this);
-    }
-    
-    public AWMapRef awMapRef(String name, String bucket){
-    	return new AWMapRef(name, bucket, this);
-    }
-    
-    public GMapRef gMapRef(String name, String bucket){
-    	return new GMapRef(name, bucket, this);
-    }
-    
-    public ORSetRef orSetRef(String name, String bucket){
-    	return new ORSetRef(name, bucket, this);
-    }
-    
-    public RWSetRef rwSetRef(String name, String bucket){
-    	return new RWSetRef(name, bucket, this);
-    }
-    
-    public LWWRegisterRef lwwRegisterRef(String name, String bucket){
-    	return new LWWRegisterRef(name, bucket, this);
-    }
-    
-    public MVRegisterRef mvRegisterRef(String name, String bucket){
-    	return new MVRegisterRef(name, bucket, this);
-    }
-    
-    public IntegerRef integerRef(String name, String bucket){
-    	return new IntegerRef(name, bucket, this);
+
+    public CounterRef counterRef(String name, String bucket) {
+        return new CounterRef(name, bucket, this);
     }
 
-    public List<Object> readObjects(List<ObjectRef> objectRefs){
+    public AWMapRef awMapRef(String name, String bucket) {
+        return new AWMapRef(name, bucket, this);
+    }
+
+    public GMapRef gMapRef(String name, String bucket) {
+        return new GMapRef(name, bucket, this);
+    }
+
+    public ORSetRef orSetRef(String name, String bucket) {
+        return new ORSetRef(name, bucket, this);
+    }
+
+    public RWSetRef rwSetRef(String name, String bucket) {
+        return new RWSetRef(name, bucket, this);
+    }
+
+    public LWWRegisterRef lwwRegisterRef(String name, String bucket) {
+        return new LWWRegisterRef(name, bucket, this);
+    }
+
+    public MVRegisterRef mvRegisterRef(String name, String bucket) {
+        return new MVRegisterRef(name, bucket, this);
+    }
+
+    public IntegerRef integerRef(String name, String bucket) {
+        return new IntegerRef(name, bucket, this);
+    }
+
+    public List<Object> readObjects(List<ObjectRef> objectRefs) {
         List<Object> objects = new ArrayList<Object>();
-        for(ObjectRef objectRef : objectRefs) {
+        for (ObjectRef objectRef : objectRefs) {
             ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message
             object.setKey(ByteString.copyFromUtf8(objectRef.getName()));
             object.setType(objectRef.getType());
@@ -113,7 +115,7 @@ public final class AntidoteClient {
                 e.printStackTrace();
             }
             CRDT_type crdt_type = object.getType();
-            switch (crdt_type){
+            switch (crdt_type) {
                 case COUNTER:
                     int counterValue = readResponse.getObjects().getObjects(0).getCounter().getValue();
                     objects.add(counterValue);
@@ -153,8 +155,8 @@ public final class AntidoteClient {
         return objects;
     }
 
-    public void readOuterObjects(List<AntidoteCRDT> objectRefs){
-        for(AntidoteCRDT objectRef : objectRefs) {
+    public void readOuterObjects(List<AntidoteCRDT> objectRefs) {
+        for (AntidoteCRDT objectRef : objectRefs) {
 
             ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message
             object.setKey(ByteString.copyFromUtf8(objectRef.getName()));
@@ -181,40 +183,40 @@ public final class AntidoteClient {
                 e.printStackTrace();
             }
             CRDT_type crdt_type = objectRef.getType();
-            switch (crdt_type){
+            switch (crdt_type) {
                 case COUNTER:
                     int counterValue = readResponse.getObjects().getObjects(0).getCounter().getValue();
-                    ((AntidoteOuterCounter)objectRef).readSetValue(counterValue);
+                    ((AntidoteOuterCounter) objectRef).readSetValue(counterValue);
                     break;
                 case INTEGER:
                     long integerValue = readResponse.getObjects().getObjects(0).getInt().getValue();
-                    ((AntidoteOuterInteger)objectRef).readSetValue(toIntExact(integerValue));
+                    ((AntidoteOuterInteger) objectRef).readSetValue(toIntExact(integerValue));
                     break;
                 case MVREG:
                     List<ByteString> mvRegisterValueList = readResponse.getObjects().getObjects(0).getMvreg().getValuesList();
-                    ((AntidoteOuterMVRegister)objectRef).readValueList(mvRegisterValueList);
+                    ((AntidoteOuterMVRegister) objectRef).readValueList(mvRegisterValueList);
                     break;
                 case LWWREG:
                     ByteString lwwRegisterValue = readResponse.getObjects().getObjects(0).getReg().getValue();
-                    ((AntidoteOuterLWWRegister)objectRef).readValueList(lwwRegisterValue);
+                    ((AntidoteOuterLWWRegister) objectRef).readValueList(lwwRegisterValue);
                     break;
                 case ORSET:
                     List<ByteString> orSetValueList = readResponse.getObjects().getObjects(0).getSet().getValueList();
-                    ((AntidoteOuterORSet)objectRef).readValueList(orSetValueList);
+                    ((AntidoteOuterORSet) objectRef).readValueList(orSetValueList);
                     break;
                 case RWSET:
                     List<ByteString> rwSetValueList = readResponse.getObjects().getObjects(0).getSet().getValueList();
-                    ((AntidoteOuterRWSet)objectRef).readValueList(rwSetValueList);
+                    ((AntidoteOuterRWSet) objectRef).readValueList(rwSetValueList);
                     break;
                 case AWMAP:
                     List<ApbMapEntry> awMapEntryList = new ArrayList<ApbMapEntry>();
                     awMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
-                    ((AntidoteOuterAWMap)objectRef).readSetValue(awMapEntryList);
+                    ((AntidoteOuterAWMap) objectRef).readSetValue(awMapEntryList);
                     break;
                 case GMAP:
                     List<ApbMapEntry> gMapEntryList = new ArrayList<ApbMapEntry>();
                     gMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
-                    ((AntidoteOuterGMap)objectRef).readSetValue(gMapEntryList);
+                    ((AntidoteOuterGMap) objectRef).readSetValue(gMapEntryList);
                     break;
             }
 

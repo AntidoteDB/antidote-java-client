@@ -18,7 +18,7 @@ public class AntidoteAddTest {
         String bucket;
         AntidoteTransaction antidoteTransaction;
         antidotePoolManager = new PoolManager(20, 5);
-//        antidotePoolManager.addHost(20, 5, new Host("localhost", 8087));
+        antidotePoolManager.addHost(20, 5, new Host("localhost", 80899));
         antidoteClient = new AntidoteClient(antidotePoolManager);
         bucket = new BigInteger(130, new SecureRandom()).toString(32);
 
@@ -26,11 +26,11 @@ public class AntidoteAddTest {
         CounterRef lowCounter = new CounterRef("testCounter5", bucket, antidoteClient);
         AntidoteOuterCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
         int oldValue = counter.getValue();
-//        counter.increment(antidoteTransaction);
-//        counter.increment(antidoteTransaction);
-//        antidoteTransaction.commitTransaction();
-//        int newValue = counter.getValue();
-//        System.out.println(antidotePoolManager);
+        counter.increment(antidoteTransaction);
+        counter.increment(antidoteTransaction);
+        antidoteTransaction.commitTransaction();
+        int newValue = counter.getValue();
+        System.out.println(antidotePoolManager);
 
     }
 }

@@ -1,15 +1,20 @@
 package main.java.AntidoteClient;
+
 import com.google.protobuf.AbstractMessage;
 
 /**
  * The Class AntidoteRequest.
  */
 public class AntidoteRequest {
-    
-    /** The code. */
+
+    /**
+     * The code.
+     */
     private final int code;
-    
-    /** The message. */
+
+    /**
+     * The message.
+     */
     private final AbstractMessage message;
 
     /**
@@ -21,6 +26,8 @@ public class AntidoteRequest {
     public AntidoteRequest(int c, AbstractMessage m) {
         code = c;
         message = m;
+
+        System.out.println("msg : " + message.toString());
     }
 
     /**
