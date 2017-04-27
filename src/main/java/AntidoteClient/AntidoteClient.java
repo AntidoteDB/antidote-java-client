@@ -13,9 +13,6 @@ import static java.lang.Math.toIntExact;
  */
 public final class AntidoteClient {
 
-    /**
-     * Pool Manager.
-     */
     private PoolManager poolManager;
 
     /**
@@ -24,7 +21,7 @@ public final class AntidoteClient {
      * @param poolManager the pool manager object
      */
     public AntidoteClient(PoolManager poolManager) {
-        this.poolManager = poolManager;
+        this.setPoolManager(poolManager);
     }
 
     /**
@@ -34,7 +31,12 @@ public final class AntidoteClient {
      * @return the response
      */
     protected AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
-        return poolManager.sendMessage(requestMessage);
+        return getPoolManager().sendMessage(requestMessage);
+    }
+
+
+    protected AntidoteMessage sendMessage(AntidoteRequest requestMessage, Connection connection) {
+        return getPoolManager().sendMessage(requestMessage, connection);
     }
 
     /**
@@ -43,6 +45,7 @@ public final class AntidoteClient {
      * @return the antidote transaction
      */
     public AntidoteTransaction createTransaction() {
+        System.out.println("Transaction called");
         AntidoteTransaction antidoteTransaction = new AntidoteTransaction(this);
         antidoteTransaction.setTransactionStatus(AntidoteTransaction.TransactionStatus.CREATED);
         antidoteTransaction.startTransaction();
@@ -55,6 +58,7 @@ public final class AntidoteClient {
      * @return the antidote static transaction
      */
     public AntidoteTransaction createStaticTransaction() {
+        System.out.println("Static Transaction Called");
         AntidoteStaticTransaction antidoteStaticTransaction = new AntidoteStaticTransaction(this);
         antidoteStaticTransaction.setTransactionStatus(AntidoteStaticTransaction.TransactionStatus.CREATED);
         antidoteStaticTransaction.startTransaction();
@@ -221,6 +225,17 @@ public final class AntidoteClient {
             }
 
         }
+    }
+
+    /**
+     * Pool Manager.
+     */
+    public PoolManager getPoolManager() {
+        return poolManager;
+    }
+
+    public void setPoolManager(PoolManager poolManager) {
+        this.poolManager = poolManager;
     }
 }
 

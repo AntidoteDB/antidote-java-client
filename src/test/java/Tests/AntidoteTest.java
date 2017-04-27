@@ -41,17 +41,34 @@ public class AntidoteTest {
     }
 
 
-    @Test(timeout = 90000000)
-    public void seqTransaction() {
-//        antidoteTransaction = antidoteClient.createTransaction();
-//        CounterRef lowCounter = new CounterRef("testCounter5", bucket, antidoteClient);
-//        AntidoteOuterCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
-//        int oldValue = counter.getValue();
-//        counter.increment(antidoteTransaction);
-//        counter.increment(antidoteTransaction);
-//        antidoteTransaction.commitTransaction();
-//        int newValue = counter.getValue();
-//        Assert.assertEquals(newValue, oldValue + 2);
+    @Test(timeout = 10000)
+    public void seqStaticTransaction() {
+        CounterRef lowCounter = antidoteClient.counterRef("testCounter", bucket);
+        IntegerRef lowInt = antidoteClient.integerRef("testInteger", bucket);
+        ORSetRef orSetRef = antidoteClient.orSetRef("testorSetRef", bucket);
+        AntidoteOuterORSet orSet2 = orSetRef.createAntidoteORSet();
+
+        AntidoteTransaction tx = antidoteClient.createStaticTransaction();
+        lowInt.increment(3, tx);
+        lowCounter.increment(4, tx);
+        orSetRef.add("Hi", tx);
+        orSetRef.add("Bye", tx);
+        orSetRef.add("yo", tx);
+        tx.commitTransaction();
+        tx.close();
+    }
+
+    @Test(timeout = 10000)
+    public void seqIntractiveTransaction() {
+        antidoteTransaction = antidoteClient.createTransaction();
+        CounterRef lowCounter = new CounterRef("testCounter5", bucket, antidoteClient);
+        AntidoteOuterCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
+        int oldValue = counter.getValue();
+        counter.increment(antidoteTransaction);
+        counter.increment(antidoteTransaction);
+        antidoteTransaction.commitTransaction();
+        int newValue = counter.getValue();
+        Assert.assertEquals(newValue, oldValue + 2);
     }
 
     @Test(timeout = 10000)
@@ -848,7 +865,6 @@ public class AntidoteTest {
         int oldValue1 = counter1old.getValue();
         AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter(antidoteTransaction);
         int oldValue2 = counter2old.getValue();
-
         antidoteTransaction.commitTransaction();
 
         AntidoteTransaction tx = antidoteClient.createStaticTransaction();

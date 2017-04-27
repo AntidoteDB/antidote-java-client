@@ -99,7 +99,6 @@ public class ConnectionPool {
             s.setSoTimeout(DEFAULT_TIMEOUT);
             // Create a DataInputStream for reading from socket
             DataInputStream din = new DataInputStream(s.getInputStream());
-
             //what message I should send for heartbeat.
             p.surrenderConnection(s);
             p.setHealthy(true);
@@ -125,9 +124,6 @@ public class ConnectionPool {
             setCurrentPoolSize(getCurrentPoolSize() + 1);
             this.setHealthy(true);
             this.failures = 0;
-
-//            logger.log(Level.INFO, "Created connection {0}, currentPoolSize={1}, maxPoolSize={2}, activeConnection={3}",
-//                    new Object[]{s, getCurrentPoolSize(), getMaxPoolSize(), activeConnections});
             return true;
         } catch (Exception e) {
             return false;
@@ -141,7 +137,6 @@ public class ConnectionPool {
      * @throws InterruptedException the interrupted exception
      */
     public Socket getConnection() throws InterruptedException {
-//        System.out.println("Get Inner Connection Called");
         if (pool.peek() == null && getCurrentPoolSize() < getMaxPoolSize()) {
             if (!openAndPoolConnection()) {
                 failures++;
@@ -149,10 +144,7 @@ public class ConnectionPool {
                 activeConnections++;
             }
         }
-//        System.out.println("Taking connection");
-        //  logger.log(Level.INFO, "Requested Connection {0}, currentPoolSize={1}, maxPoolSize={2}, activeConnection={3}",
-        //        new Object[]{pool.take(), getCurrentPoolSize(), getMaxPoolSize(), activeConnections});
-        activeConnections++; //I have to add because it not incrmenting the active connection
+        activeConnections++;
         return pool.take();
     }
 
@@ -166,9 +158,6 @@ public class ConnectionPool {
         pool.offer(s); // offer() as we do not want to go beyond capacity
     }
 
-    /**
-     * The healthy.
-     */
     /**
      * Checks if is healthy.
      *

@@ -26,8 +26,6 @@ public class AntidoteRequest {
     public AntidoteRequest(int c, AbstractMessage m) {
         code = c;
         message = m;
-
-        System.out.println("msg : " + message.toString());
     }
 
     /**

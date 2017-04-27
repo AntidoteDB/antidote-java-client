@@ -12,6 +12,12 @@ import java.util.List;
  */
 public class AntidoteTransaction implements Closeable {
 
+
+    /**
+     * The explicit connection object.
+     */
+    private Connection connection;
+
     /**
      * The antidote client.
      */
@@ -86,6 +92,9 @@ public class AntidoteTransaction implements Closeable {
      * @return the byte string
      */
     protected void startTransaction() {
+        //getting connection
+        connection = getClient().getPoolManager().getConnection();
+
         if (getTransactionStatus() != TransactionStatus.CREATED) {
             throw new AntidoteException("You need to create the transaction before starting it");
         }
@@ -95,7 +104,7 @@ public class AntidoteTransaction implements Closeable {
         readwriteTransaction.setProperties(transactionProperties);
 
         ApbStartTransaction startTransactionMessage = readwriteTransaction.build();
-        AntidoteMessage startMessage = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStartTransaction, startTransactionMessage));
+        AntidoteMessage startMessage = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStartTransaction, startTransactionMessage), connection);
 
         try {
             ApbStartTransactionResp transactionResponse = ApbStartTransactionResp.parseFrom(startMessage.getMessage());
@@ -122,7 +131,7 @@ public class AntidoteTransaction implements Closeable {
 
         ApbCommitTransaction commitTransactionMessage = commitTransaction.build();
         descriptor = null;
-        AntidoteMessage message = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbCommitTransaction, commitTransactionMessage));
+        AntidoteMessage message = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbCommitTransaction, commitTransactionMessage), connection);
 
         try {
             ApbCommitResp commitResponse = ApbCommitResp.parseFrom(message.getMessage());
@@ -150,7 +159,7 @@ public class AntidoteTransaction implements Closeable {
 
         ApbAbortTransaction abortTransactionMessage = abortTransaction.build();
         descriptor = null;
-        getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbAbortTransaction, abortTransactionMessage));
+        getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbAbortTransaction, abortTransactionMessage), connection);
         clearTransactionUpdateList();
         setTransactionStatus(TransactionStatus.CLOSING);
     }
@@ -187,7 +196,7 @@ public class AntidoteTransaction implements Closeable {
             updateMessage.addUpdates(updateInstruction);
 
             ApbUpdateObjects updateMessageObject = updateMessage.build();
-            getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbUpdateObjects, updateMessageObject));
+            getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbUpdateObjects, updateMessageObject), connection);
         }
     }
 
@@ -216,7 +225,7 @@ public class AntidoteTransaction implements Closeable {
         readObject.setTransactionDescriptor(getDescriptor());
 
         ApbReadObjects readObjectsMessage = readObject.build();
-        AntidoteMessage readMessage = antidoteClient.sendMessage(new AntidoteRequest(RiakPbMsgs.ApbReadObjects, readObjectsMessage));
+        AntidoteMessage readMessage = antidoteClient.sendMessage(new AntidoteRequest(RiakPbMsgs.ApbReadObjects, readObjectsMessage), connection);
         ApbReadObjectsResp readResponse = null;
         try {
             readResponse = ApbReadObjectsResp.parseFrom(readMessage.getMessage());

@@ -79,7 +79,7 @@ public class PoolManager {
             throw new IllegalArgumentException("Unable to make Database connection ! Please try again.");
         }
         //starting concurrent thread for heartbeat
-//        unhealthyHostRecovery();
+        unhealthyHostRecovery();
     }
 
     /**
@@ -91,7 +91,6 @@ public class PoolManager {
      */
     public boolean addHost(int maxPoolSize, int initialPoolSize, Host h) {
         int initSize = pools.size();
-        System.out.println("initial Size " + initSize);
         ConnectionPool obj = new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort());
         //add only if healthy
         if (obj.isHealthy()) {
@@ -108,21 +107,17 @@ public class PoolManager {
                 Executors.newSingleThreadScheduledExecutor();
         Runnable periodicTask = new Runnable() {
             public void run() {
-                System.out.println("Execute unhealthy host recovry");
-                // Invoke method(s) to do the work
+                // Scheduled Task
                 for (ConnectionPool p : pools) {
-                    //if (!p.isHealthy()) {
                     if (p.checkHealth(p)) {
-                        //make it helthy and add new Pool
+                        //make it healthy
                         p.setHealthy(true);
-                        System.out.println(pools.toString());
                     }
-                    //}
                 }
             }
 
         };
-        executor.scheduleAtFixedRate(periodicTask, 0, CHECK_INTERVAL, TimeUnit.SECONDS);
+        executor.scheduleAtFixedRate(periodicTask, 0, CHECK_INTERVAL, TimeUnit.MINUTES);
     }
 
     /**
@@ -132,17 +127,16 @@ public class PoolManager {
      */
     //todo retruning connection sending redundent pools
     public Connection getConnection() {
-//        System.out.println("Get Outer Connection Called");
-//        System.out.println(pools.toString());
+        int selectedIndex = 0;
         if (pools.size() > 0) {
             for (int i = 0; i < pools.size(); i++) {
-                ConnectionPool p = pools.get(i);
-//                System.out.println("Selected Index : " + i);
-                if (p.checkHealth(p)) {
+                selectedIndex = (int) (Math.random() * pools.size());
+                ConnectionPool p = pools.get(selectedIndex);
+                if (p.isHealthy()) {
                     try {
-//                        System.out.println("Retrun connection");
                         Socket s = p.getConnection();
                         if (s != null) {
+                            System.out.println("returning new connection");
                             return new Connection(p, s);
                         }
                     } catch (Exception e) {
@@ -161,15 +155,12 @@ public class PoolManager {
      * @param requestMessage the request message
      * @return the antidote message
      */
-    public AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
-        Connection c = this.getConnection();
-        System.out.println("Connected to server");
+    public AntidoteMessage sendMessage(AntidoteRequest requestMessage, Connection c) {
         try {
             DataOutputStream dataOutputStream = new DataOutputStream(c.getSocket().getOutputStream());
             dataOutputStream.writeInt(requestMessage.getLength());
             dataOutputStream.writeByte(requestMessage.getCode());
             requestMessage.getMessage().writeTo(dataOutputStream);
-            System.out.println("Sending Msg : " + requestMessage.getMessage());
             dataOutputStream.flush();
 
 
@@ -181,7 +172,6 @@ public class PoolManager {
             byte[] messageData = new byte[responseLength - 1];
             dataInputStream.readFully(messageData, 0, responseLength - 1);
 
-            System.out.println("Response Msg Length:" + responseLength + ",Code:" + responseCode + ",Data" + messageData);
             return new AntidoteMessage(responseLength, responseCode, messageData);
 
         } catch (Exception e) {
@@ -192,6 +182,18 @@ public class PoolManager {
         } finally {
             c.returnConnection();
         }
+    }
+
+
+    /**
+     * Send message.
+     *
+     * @param requestMessage the request message
+     * @return the antidote message
+     */
+    public AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
+        Connection c = this.getConnection();
+        return sendMessage(requestMessage, c);
     }
 
     //for testing purpose
