@@ -97,7 +97,6 @@ public class ConnectionPool {
         try {
             Socket s = p.getConnection();
             s.setSoTimeout(DEFAULT_TIMEOUT);
-            // Create a DataInputStream for reading from socket
             DataInputStream din = new DataInputStream(s.getInputStream());
             //what message I should send for heartbeat.
             p.surrenderConnection(s);
@@ -226,19 +225,5 @@ public class ConnectionPool {
         this.currentPoolSize = currentPoolSize;
     }
 
-    //for testing purpose
-    public String toString() {
-        String s = "ConnectionPool-->" +
-                "\npool :" + pool.toString() + ",\n" +
-                "maxPoolSize :" + maxPoolSize + "," +
-                "initialPoolSize :" + initialPoolSize + "," +
-                "currentPoolSize :" + currentPoolSize + "," +
-                "activeConnections :" + activeConnections + "," +
-                "host :" + host + "," +
-                "port :" + port + "," +
-                "failures :" + failures + "," +
-                "healthy :" + healthy + ",";
-        return s;
 
-    }
 }

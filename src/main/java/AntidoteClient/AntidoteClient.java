@@ -45,7 +45,6 @@ public final class AntidoteClient {
      * @return the antidote transaction
      */
     public AntidoteTransaction createTransaction() {
-        System.out.println("Transaction called");
         AntidoteTransaction antidoteTransaction = new AntidoteTransaction(this);
         antidoteTransaction.setTransactionStatus(AntidoteTransaction.TransactionStatus.CREATED);
         antidoteTransaction.startTransaction();
@@ -58,7 +57,6 @@ public final class AntidoteClient {
      * @return the antidote static transaction
      */
     public AntidoteTransaction createStaticTransaction() {
-        System.out.println("Static Transaction Called");
         AntidoteStaticTransaction antidoteStaticTransaction = new AntidoteStaticTransaction(this);
         antidoteStaticTransaction.setTransactionStatus(AntidoteStaticTransaction.TransactionStatus.CREATED);
         antidoteStaticTransaction.startTransaction();

@@ -68,11 +68,7 @@ public class PoolManager {
     private void createPool(int maxPoolSize, int initialPoolSize, List<Host> hosts) {
         ConnectionPool obj;
         for (Host h : hosts) {
-            obj = new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort());
-            //add only if healthy
-            if (obj.isHealthy()) {
-                pools.add(obj);
-            }
+            pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
         }
         //if pool is empty
         if (pools.size() == 0) {
@@ -91,11 +87,7 @@ public class PoolManager {
      */
     public boolean addHost(int maxPoolSize, int initialPoolSize, Host h) {
         int initSize = pools.size();
-        ConnectionPool obj = new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort());
-        //add only if healthy
-        if (obj.isHealthy()) {
-            pools.add(obj);
-        }
+        pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
         return pools.size() > initSize;
     }
 
@@ -136,7 +128,6 @@ public class PoolManager {
                     try {
                         Socket s = p.getConnection();
                         if (s != null) {
-                            System.out.println("returning new connection");
                             return new Connection(p, s);
                         }
                     } catch (Exception e) {
@@ -153,6 +144,7 @@ public class PoolManager {
      * Send message.
      *
      * @param requestMessage the request message
+     * @param c              the connection object
      * @return the antidote message
      */
     public AntidoteMessage sendMessage(AntidoteRequest requestMessage, Connection c) {
@@ -162,22 +154,16 @@ public class PoolManager {
             dataOutputStream.writeByte(requestMessage.getCode());
             requestMessage.getMessage().writeTo(dataOutputStream);
             dataOutputStream.flush();
-
-
             DataInputStream dataInputStream = new DataInputStream(c.getSocket().getInputStream());
-
             int responseLength = dataInputStream.readInt();
             int responseCode = dataInputStream.readByte();
-
             byte[] messageData = new byte[responseLength - 1];
             dataInputStream.readFully(messageData, 0, responseLength - 1);
-
             return new AntidoteMessage(responseLength, responseCode, messageData);
-
         } catch (Exception e) {
             //if msg fails make it to unhealthy
             c.setunHealthyConnection();
-            throw new RuntimeException(e.getMessage(), e.getCause());
+            throw new RuntimeException(e);
 
         } finally {
             c.returnConnection();
@@ -196,12 +182,4 @@ public class PoolManager {
         return sendMessage(requestMessage, c);
     }
 
-    //for testing purpose
-    public String toString() {
-        String s = "PoolManager[" +
-                "pools :" + pools.toString() +
-                "retries :" + retries + "]";
-        return s;
-
-    }
 }
