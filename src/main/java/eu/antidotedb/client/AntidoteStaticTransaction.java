@@ -49,9 +49,7 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction impleme
         AntidoteMessage responseMessage = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, createUpdateStaticObject()));
         try {
             ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-            System.out.println(commitResponse);
         } catch (Exception e) {
-            System.out.println(e);
         }
 
         setTransactionStatus(TransactionStatus.CLOSING);

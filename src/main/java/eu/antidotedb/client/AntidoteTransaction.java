@@ -108,10 +108,8 @@ public class AntidoteTransaction implements Closeable {
 
         try {
             ApbStartTransactionResp transactionResponse = ApbStartTransactionResp.parseFrom(startMessage.getMessage());
-            System.out.println(transactionResponse);
             descriptor = transactionResponse.getTransactionDescriptor();
         } catch (Exception e) {
-            System.out.println(e);
         }
         setTransactionStatus(TransactionStatus.STARTED);
     }
@@ -135,11 +133,9 @@ public class AntidoteTransaction implements Closeable {
 
         try {
             ApbCommitResp commitResponse = ApbCommitResp.parseFrom(message.getMessage());
-            System.out.println(commitResponse);
 
 
         } catch (Exception e) {
-            System.out.println(e);
         }
         setTransactionStatus(TransactionStatus.CLOSING);
     }
@@ -230,7 +226,6 @@ public class AntidoteTransaction implements Closeable {
         try {
             readResponse = ApbReadObjectsResp.parseFrom(readMessage.getMessage());
         } catch (Exception e) {
-            System.out.println(e);
         }
         return readResponse;
     }

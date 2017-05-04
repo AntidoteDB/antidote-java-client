@@ -66,7 +66,6 @@ public class AntidoteConfigManager {
             DOMSource source = new DOMSource(doc);
             StreamResult result = new StreamResult(new File(cfgPath));
             transformer.transform(source, result);
-            System.out.println("File saved!");
         } catch (Exception ex) {
             return;
         }

@@ -244,7 +244,6 @@ public class AntidoteInnerMap extends AntidoteInnerCRDT {
                     if (u.getOperation().getIntegerop().getInc() != 0) {
                         updatedIntegerEntry.incrementLocal(toIntExact(u.getOperation().getIntegerop().getInc()));
                     } else {
-                        System.out.println(u.getOperation().getIntegerop().getSet());
                         updatedIntegerEntry.setLocal(toIntExact(u.getOperation().getIntegerop().getSet()));
                     }
                 }

@@ -59,7 +59,6 @@ public class AntidoteTest {
         CounterRef lowCounter = new CounterRef("testCounter5", bucket, antidoteClient);
         AntidoteOuterCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
         int oldValue = counter.getValue();
-        System.out.println(oldValue);
 
 //        counter.increment(antidoteTransaction);
 //        counter.increment(antidoteTransaction);
