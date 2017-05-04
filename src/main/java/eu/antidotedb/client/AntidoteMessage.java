@@ -4,14 +4,20 @@ package eu.antidotedb.client;
  * The Class AntidoteMessage.
  */
 public final class AntidoteMessage {
-    
-    /** The length. */
+
+    /**
+     * The length.
+     */
     private final int length;
-    
-    /** The code. */
+
+    /**
+     * The code.
+     */
     private final int code;
-    
-    /** The message. */
+
+    /**
+     * The message.
+     */
     private final byte[] message;
 
     /**

@@ -4,10 +4,14 @@ package eu.antidotedb.client;
  * The Class AntidoteSetOpType.
  */
 public final class AntidoteSetOpType {
-    
-    /** The Constant SetRemove. */
+
+    /**
+     * The Constant SetRemove.
+     */
     public static final int SetRemove = 2;
-    
-    /** The Constant SetAdd. */
+
+    /**
+     * The Constant SetAdd.
+     */
     public static final int SetAdd = 1;
 }

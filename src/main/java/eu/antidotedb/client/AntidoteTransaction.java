@@ -1,7 +1,7 @@
 package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB.*;
-import com.google.protobuf.*;
+import com.google.protobuf.ByteString;
 
 import java.io.Closeable;
 import java.util.ArrayList;

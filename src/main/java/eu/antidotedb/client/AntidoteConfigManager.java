@@ -1,22 +1,19 @@
 package eu.antidotedb.client;
 
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Properties;
-import java.io.File;
-import java.util.StringJoiner;
-import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
+import java.io.File;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by Salman on 3/5/2017.
@@ -32,13 +29,16 @@ public class AntidoteConfigManager {
         File tmpFile = new File(path);
         return (tmpFile.exists() && tmpFile.isFile());
     }
+
     public boolean configExist() {
         String cfgPath = System.getProperty("user.dir") + "/" + this.DEFAULT_FILE;
         return this.configFileExist(cfgPath);
     }
+
     public boolean configExist(String cfgPath) {
         return this.configFileExist(cfgPath);
     }
+
     // Generate config file from default values
     public void generateDefaultConfig() {
         try {
@@ -71,6 +71,7 @@ public class AntidoteConfigManager {
             return;
         }
     }
+
     // Checks if the passed document is valid for config file parsing
     private boolean isValidDocument(Document dc) {
         String rootNode = dc.getDocumentElement().getNodeName();
@@ -88,12 +89,13 @@ public class AntidoteConfigManager {
             }
             Element ele = (Element) n;
             retVal = (
-                !ele.getElementsByTagName("hostname").item(0).getTextContent().isEmpty() ||
-                !ele.getElementsByTagName("port").item(0).getTextContent().isEmpty()
+                    !ele.getElementsByTagName("hostname").item(0).getTextContent().isEmpty() ||
+                            !ele.getElementsByTagName("port").item(0).getTextContent().isEmpty()
             );
         }
         return retVal;
     }
+
     public List<Host> getConfigHosts() {
         try {
             List<Host> list = new LinkedList<Host>();

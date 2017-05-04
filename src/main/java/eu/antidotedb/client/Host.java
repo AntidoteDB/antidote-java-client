@@ -4,11 +4,15 @@ package eu.antidotedb.client;
  * The Class Host.
  */
 public class Host {
-    
-    /** The hostname. */
+
+    /**
+     * The hostname.
+     */
     private String hostname;
-    
-    /** The port. */
+
+    /**
+     * The port.
+     */
     private int port;
 
     /**

@@ -1,12 +1,13 @@
 package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB.*;
+
 import java.io.Closeable;
 
 /**
  * The Class AntidoteStaticTransaction.
  */
-public final class AntidoteStaticTransaction extends AntidoteTransaction implements Closeable{
+public final class AntidoteStaticTransaction extends AntidoteTransaction implements Closeable {
 
     private ApbStartTransaction.Builder startTransaction;
 
@@ -15,7 +16,7 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction impleme
      *
      * @param antidoteClient the antidote client
      */
-    public AntidoteStaticTransaction(AntidoteClient antidoteClient){
+    public AntidoteStaticTransaction(AntidoteClient antidoteClient) {
         super(antidoteClient);
         startTransaction = null;
     }
@@ -25,8 +26,8 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction impleme
      *
      * @return the start transaction
      */
-    protected void startTransaction(){
-        if(getTransactionStatus() != TransactionStatus.CREATED){
+    protected void startTransaction() {
+        if (getTransactionStatus() != TransactionStatus.CREATED) {
             throw new AntidoteException("You need to create the transaction before starting it");
         }
         ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
@@ -41,17 +42,17 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction impleme
     /**
      * Commit static transaction.
      */
-    public void commitTransaction(){
-        if(getTransactionStatus() != TransactionStatus.STARTED){
+    public void commitTransaction() {
+        if (getTransactionStatus() != TransactionStatus.STARTED) {
             throw new AntidoteException("You need to start the transaction before committing it");
         }
         AntidoteMessage responseMessage = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, createUpdateStaticObject()));
-            try {
-                ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-                System.out.println(commitResponse);
-            } catch (Exception e ) {
-                System.out.println(e);
-            }
+        try {
+            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
+            System.out.println(commitResponse);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
 
         setTransactionStatus(TransactionStatus.CLOSING);
     }
@@ -59,8 +60,8 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction impleme
     /**
      * Abort static transaction.
      */
-    public void abortTransaction(){
-        if(getTransactionStatus() != TransactionStatus.STARTED){
+    public void abortTransaction() {
+        if (getTransactionStatus() != TransactionStatus.STARTED) {
             throw new AntidoteException("You need to start the transaction before aborting it");
         }
         clearTransactionUpdateList();
@@ -75,7 +76,7 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction impleme
     protected ApbStaticUpdateObjects createUpdateStaticObject() {
         ApbStaticUpdateObjects.Builder updateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
         updateMessage.setTransaction(startTransaction);
-        for(ApbUpdateOp.Builder updateInstruction : getTransactionUpdateList()) {
+        for (ApbUpdateOp.Builder updateInstruction : getTransactionUpdateList()) {
             updateMessage.addUpdates(updateInstruction);
         }
         clearTransactionUpdateList();

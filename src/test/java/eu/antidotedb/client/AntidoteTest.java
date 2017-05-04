@@ -55,7 +55,7 @@ public class AntidoteTest {
 
     @Test(timeout = 10000)
     public void seqIntractiveTransaction() {
-         antidoteTransaction = antidoteClient.createTransaction();
+        antidoteTransaction = antidoteClient.createTransaction();
         CounterRef lowCounter = new CounterRef("testCounter5", bucket, antidoteClient);
         AntidoteOuterCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
         int oldValue = counter.getValue();
