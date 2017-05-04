@@ -22,7 +22,7 @@ public final class AntidoteClient {
      * @param poolManager the pool manager object
      */
     public AntidoteClient(PoolManager poolManager) {
-        this.setPoolManager(poolManager);
+        this.poolManager = poolManager;
     }
 
     /**
@@ -31,12 +31,12 @@ public final class AntidoteClient {
      * @param requestMessage the update message
      * @return the response
      */
-    protected AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
+    AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
         return getPoolManager().sendMessage(requestMessage);
     }
 
 
-    protected AntidoteMessage sendMessage(AntidoteRequest requestMessage, Connection connection) {
+    AntidoteMessage sendMessage(AntidoteRequest requestMessage, Connection connection) {
         return getPoolManager().sendMessage(requestMessage, connection);
     }
 
@@ -97,7 +97,7 @@ public final class AntidoteClient {
     }
 
     public List<Object> readObjects(List<ObjectRef> objectRefs) {
-        List<Object> objects = new ArrayList<Object>();
+        List<Object> objects = new ArrayList<>();
         for (ObjectRef objectRef : objectRefs) {
             ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message
             object.setKey(ByteString.copyFromUtf8(objectRef.getName()));
@@ -111,7 +111,7 @@ public final class AntidoteClient {
             readMessage.addObjects(object);
             ApbStaticReadObjects readMessageObject = readMessage.build();
             AntidoteMessage responseMessage = this.sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
-            ApbStaticReadObjectsResp readResponse = null;
+            ApbStaticReadObjectsResp readResponse;
             try {
                 readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
             } catch (InvalidProtocolBufferException e) {
@@ -144,13 +144,11 @@ public final class AntidoteClient {
                     objects.add(rwSetValueList);
                     break;
                 case AWMAP:
-                    List<ApbMapEntry> awMapEntryList = new ArrayList<ApbMapEntry>();
-                    awMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
+                    List<ApbMapEntry> awMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
                     objects.add(awMapEntryList);
                     break;
                 case GMAP:
-                    List<ApbMapEntry> gMapEntryList = new ArrayList<ApbMapEntry>();
-                    gMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
+                    List<ApbMapEntry> gMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
                     objects.add(gMapEntryList);
                     break;
             }
@@ -178,7 +176,7 @@ public final class AntidoteClient {
             ApbStaticReadObjects readMessageObject = readMessage.build();
             AntidoteMessage responseMessage = this.sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readMessageObject));
 
-            ApbStaticReadObjectsResp readResponse = null;
+            ApbStaticReadObjectsResp readResponse;
             try {
                 readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
             } catch (InvalidProtocolBufferException e) {
@@ -211,13 +209,11 @@ public final class AntidoteClient {
                     ((AntidoteOuterRWSet) objectRef).readValueList(rwSetValueList);
                     break;
                 case AWMAP:
-                    List<ApbMapEntry> awMapEntryList = new ArrayList<ApbMapEntry>();
-                    awMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
+                    List<ApbMapEntry> awMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
                     ((AntidoteOuterAWMap) objectRef).readSetValue(awMapEntryList);
                     break;
                 case GMAP:
-                    List<ApbMapEntry> gMapEntryList = new ArrayList<ApbMapEntry>();
-                    gMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
+                    List<ApbMapEntry> gMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
                     ((AntidoteOuterGMap) objectRef).readSetValue(gMapEntryList);
                     break;
             }
@@ -232,8 +228,5 @@ public final class AntidoteClient {
         return poolManager;
     }
 
-    public void setPoolManager(PoolManager poolManager) {
-        this.poolManager = poolManager;
-    }
 }
 

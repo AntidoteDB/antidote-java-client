@@ -1,7 +1,8 @@
-package eu.antidotedb.client;
+package eu.antidotedb.client.test;
 
 
 import com.google.protobuf.ByteString;
+import eu.antidotedb.client.*;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Test;
