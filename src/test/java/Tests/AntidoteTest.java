@@ -1,22 +1,19 @@
-package test.java.Tests;
+package Tests;
 
-import main.java.AntidoteClient.*;
 
-import java.io.File;
-import java.security.SecureRandom;
-import java.math.BigInteger;
-import java.util.*;
-import java.util.ArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
+import com.google.protobuf.ByteString;
+import eu.antidotedb.client.*;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Test;
-import com.google.protobuf.ByteString;
 
-import static org.hamcrest.CoreMatchers.containsString;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+
 
 public class AntidoteTest {
     PoolManager antidotePoolManager;
