@@ -2,6 +2,7 @@ package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB.*;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -109,7 +110,8 @@ public class AntidoteTransaction implements Closeable {
         try {
             ApbStartTransactionResp transactionResponse = ApbStartTransactionResp.parseFrom(startMessage.getMessage());
             descriptor = transactionResponse.getTransactionDescriptor();
-        } catch (Exception e) {
+        } catch (InvalidProtocolBufferException e) {
+            throw new AntidoteException("Could not read startTransaction response", e);
         }
         setTransactionStatus(TransactionStatus.STARTED);
     }
@@ -133,9 +135,8 @@ public class AntidoteTransaction implements Closeable {
 
         try {
             ApbCommitResp commitResponse = ApbCommitResp.parseFrom(message.getMessage());
-
-
-        } catch (Exception e) {
+        } catch (InvalidProtocolBufferException e) {
+            throw new AntidoteException("Could not parse commit response", e);
         }
         setTransactionStatus(TransactionStatus.CLOSING);
     }
@@ -199,12 +200,10 @@ public class AntidoteTransaction implements Closeable {
     /**
      * Read helper that has the generic part of the code.
      *
-     * @param name   the name
-     * @param bucket the bucket
-     * @param type   the type
      * @return the apb read objects resp
      */
-    protected ApbReadObjectsResp readHelper(String name, String bucket, CRDT_type type) {
+    protected ApbReadObjectsResp readHelper(ObjectRef objectRef) {
+        // String name, String bucket, CRDT_type type
         if (getDescriptor() == null) {
             throw new AntidoteException("You need to start the transaction first");
         }
@@ -212,9 +211,9 @@ public class AntidoteTransaction implements Closeable {
             throw new AntidoteException("You need to start the transaction first");
         }
         ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message to update
-        object.setKey(ByteString.copyFromUtf8(name));
-        object.setType(type);
-        object.setBucket(ByteString.copyFromUtf8(bucket));
+        object.setKey(ByteString.copyFromUtf8(objectRef.getName()));
+        object.setType(objectRef.getType());
+        object.setBucket(ByteString.copyFromUtf8(objectRef.getBucket()));
 
         ApbReadObjects.Builder readObject = ApbReadObjects.newBuilder();
         readObject.addBoundobjects(object);
@@ -225,7 +224,8 @@ public class AntidoteTransaction implements Closeable {
         ApbReadObjectsResp readResponse = null;
         try {
             readResponse = ApbReadObjectsResp.parseFrom(readMessage.getMessage());
-        } catch (Exception e) {
+        } catch (InvalidProtocolBufferException e) {
+            throw new AntidoteException("Could not parse read response for object " + objectRef, e);
         }
         return readResponse;
     }

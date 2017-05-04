@@ -13,9 +13,17 @@ public final class AntidoteException extends RuntimeException {
     /**
      * Instantiates a new antidote exception.
      *
-     * @param string the string
+     * @param message the message
      */
-    public AntidoteException(String string) {
-        super(string);
+    public AntidoteException(String message) {
+        super(message);
+    }
+
+    public AntidoteException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public AntidoteException(Throwable cause) {
+        super(cause);
     }
 }

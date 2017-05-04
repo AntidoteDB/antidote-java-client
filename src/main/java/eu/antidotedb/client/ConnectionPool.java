@@ -1,8 +1,10 @@
 package eu.antidotedb.client;
 
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -100,9 +102,12 @@ public class ConnectionPool {
             p.surrenderConnection(s);
             p.setHealthy(true);
             return true;
-        } catch (Exception e) {
+        } catch (IOException e) {
             p.setHealthy(false);
             return false;
+        } catch (InterruptedException e) {
+            // when interrupted, assume we are healthy (check interrupted)
+            return true;
         }
     }
 
@@ -122,7 +127,8 @@ public class ConnectionPool {
             this.setHealthy(true);
             this.failures = 0;
             return true;
-        } catch (Exception e) {
+        } catch (IOException e) {
+            // TODO probably we want to know the reason of the failure, when this keeps happening
             return false;
         }
     }

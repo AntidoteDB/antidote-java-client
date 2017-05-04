@@ -4,14 +4,19 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -66,8 +71,8 @@ public class AntidoteConfigManager {
             DOMSource source = new DOMSource(doc);
             StreamResult result = new StreamResult(new File(cfgPath));
             transformer.transform(source, result);
-        } catch (Exception ex) {
-            return;
+        } catch (TransformerException | ParserConfigurationException ex) {
+            throw new AntidoteException("Could not create default config file", ex);
         }
     }
 
@@ -96,74 +101,43 @@ public class AntidoteConfigManager {
     }
 
     public List<Host> getConfigHosts() {
-        try {
-            List<Host> list = new LinkedList<Host>();
-            String cfgPath = System.getProperty("user.dir") + "/" + this.DEFAULT_FILE;
-            if (!this.configFileExist(cfgPath)) {
-                throw new Exception("Invalid config file");
-            }
-            File config = new File(cfgPath);
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder db = dbFactory.newDocumentBuilder();
-            Document doc = db.parse(config);
-            doc.getDocumentElement().normalize();
-            if (!isValidDocument(doc)) {
-                throw new Exception("Invalid document type.");
-            }
-            NodeList hostNodes = doc.getElementsByTagName("host");
-            for (int i = 0; i < hostNodes.getLength(); i++) {
-                Node n = hostNodes.item(i);
-                if (n.getNodeType() == Node.ELEMENT_NODE) {
-                    Element ele = (Element) n;
-                    String hostname = ele.getElementsByTagName("hostname").item(0).getTextContent();
-                    String portSt = ele.getElementsByTagName("port").item(0).getTextContent();
-                    int port = Integer.parseInt(portSt);
-                    Host h = new Host(hostname, port);
-                    list.add(h);
-                }
-            }
-            return list;
-        } catch (Exception ex) {
-            // No File Found, returning default values
-            List<Host> list = new LinkedList<Host>();
-            list.add(new Host(this.DEFAULT_HOST, this.DEFAULT_PORT));
-            return list;
-        }
+        String cfgPath = System.getProperty("user.dir") + "/" + DEFAULT_FILE;
+        return getConfigHosts(cfgPath);
     }
 
     public List<Host> getConfigHosts(String filepath) {
-        try {
-            List<Host> list = new LinkedList<Host>();
-            String cfgPath = filepath;
-            if (!this.configFileExist(cfgPath)) {
-                throw new Exception("Invalid config file");
-            }
-            File config = new File(cfgPath);
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder db = dbFactory.newDocumentBuilder();
-            Document doc = db.parse(config);
-            doc.getDocumentElement().normalize();
-            if (!isValidDocument(doc)) {
-                throw new Exception("Invalid document type.");
-            }
-            NodeList hostNodes = doc.getElementsByTagName("host");
-            for (int i = 0; i < hostNodes.getLength(); i++) {
-                Node n = hostNodes.item(i);
-                if (n.getNodeType() == Node.ELEMENT_NODE) {
-                    Element ele = (Element) n;
-                    String hostname = ele.getElementsByTagName("hostname").item(0).getTextContent();
-                    String portSt = ele.getElementsByTagName("port").item(0).getTextContent();
-                    int port = Integer.parseInt(portSt);
-                    Host h = new Host(hostname, port);
-                    list.add(h);
-                }
-            }
-            return list;
-        } catch (Exception ex) {
+        List<Host> list = new LinkedList<Host>();
+        String cfgPath = filepath;
+        if (!this.configFileExist(cfgPath)) {
             // No File Found, returning default values
-            List<Host> list = new LinkedList<Host>();
-            list.add(new Host(this.DEFAULT_HOST, this.DEFAULT_PORT));
+            list.add(new Host(DEFAULT_HOST, DEFAULT_PORT));
             return list;
         }
+        File config = new File(cfgPath);
+        Document doc;
+        try {
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder db = dbFactory.newDocumentBuilder();
+            doc = db.parse(config);
+            doc.getDocumentElement().normalize();
+            if (!isValidDocument(doc)) {
+                throw new AntidoteException("Invalid document type.");
+            }
+        } catch (ParserConfigurationException | IOException | SAXException e) {
+            throw new AntidoteException("Error when reading config file " + config, e);
+        }
+        NodeList hostNodes = doc.getElementsByTagName("host");
+        for (int i = 0; i < hostNodes.getLength(); i++) {
+            Node n = hostNodes.item(i);
+            if (n.getNodeType() == Node.ELEMENT_NODE) {
+                Element ele = (Element) n;
+                String hostname = ele.getElementsByTagName("hostname").item(0).getTextContent();
+                String portSt = ele.getElementsByTagName("port").item(0).getTextContent();
+                int port = Integer.parseInt(portSt);
+                Host h = new Host(hostname, port);
+                list.add(h);
+            }
+        }
+        return list;
     }
 }

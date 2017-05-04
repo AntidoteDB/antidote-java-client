@@ -111,7 +111,7 @@ public final class ORSetRef extends SetRef {
      * @return the antidote OR set
      */
     public AntidoteOuterORSet createAntidoteORSet(AntidoteTransaction antidoteTransaction) {
-        ApbGetSetResp set = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getSet();
+        ApbGetSetResp set = antidoteTransaction.readHelper(this).getObjects(0).getSet();
         return new AntidoteOuterORSet(getName(), getBucket(), set.getValueList(), getClient());
 
     }
@@ -134,7 +134,7 @@ public final class ORSetRef extends SetRef {
      * @return the value list as Strings
      */
     public List<String> readValueList(AntidoteTransaction antidoteTransaction) {
-        ApbGetSetResp set = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getSet();
+        ApbGetSetResp set = antidoteTransaction.readHelper(this).getObjects(0).getSet();
         List<String> valueList = new ArrayList<String>();
         for (ByteString e : set.getValueList()) {
             valueList.add(e.toStringUtf8());
@@ -163,7 +163,7 @@ public final class ORSetRef extends SetRef {
      * @return the value list as ByteStrings
      */
     public List<ByteString> readValueListBS(AntidoteTransaction antidoteTransaction) {
-        ApbGetSetResp set = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getSet();
+        ApbGetSetResp set = antidoteTransaction.readHelper(this).getObjects(0).getSet();
         return set.getValueList();
     }
 

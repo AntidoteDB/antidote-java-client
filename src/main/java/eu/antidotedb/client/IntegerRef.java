@@ -78,7 +78,7 @@ public final class IntegerRef extends ObjectRef {
      * @return the antidote integer
      */
     public AntidoteOuterInteger createAntidoteInteger(AntidoteTransaction antidoteTransaction) {
-        ApbGetIntegerResp number = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getInt();
+        ApbGetIntegerResp number = antidoteTransaction.readHelper(this).getObjects(0).getInt();
         return new AntidoteOuterInteger(getName(), getBucket(), toIntExact(number.getValue()), getClient());
     }
 
@@ -99,7 +99,7 @@ public final class IntegerRef extends ObjectRef {
      * @return the integer value
      */
     public int readValue(AntidoteTransaction antidoteTransaction) {
-        ApbGetIntegerResp number = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getInt();
+        ApbGetIntegerResp number = antidoteTransaction.readHelper(this).getObjects(0).getInt();
         return toIntExact(number.getValue());
     }
 

@@ -115,7 +115,7 @@ public final class AntidoteClient {
             try {
                 readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
             } catch (InvalidProtocolBufferException e) {
-                e.printStackTrace();
+                throw new AntidoteException("Could not parse read response for object " + objectRef, e);
             }
             CRDT_type crdt_type = object.getType();
             switch (crdt_type) {
@@ -182,8 +182,7 @@ public final class AntidoteClient {
             try {
                 readResponse = ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
             } catch (InvalidProtocolBufferException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                throw new AntidoteException("Could not parse read response for object " + objectRef, e);
             }
             CRDT_type crdt_type = objectRef.getType();
             switch (crdt_type) {

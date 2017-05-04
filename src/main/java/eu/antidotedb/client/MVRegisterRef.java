@@ -49,7 +49,7 @@ public final class MVRegisterRef extends RegisterRef {
      * @return the antidote register
      */
     public AntidoteOuterMVRegister createAntidoteMVRegister(AntidoteTransaction antidoteTransaction) {
-        ApbGetMVRegResp reg = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getMvreg();
+        ApbGetMVRegResp reg = antidoteTransaction.readHelper(this).getObjects(0).getMvreg();
         return new AntidoteOuterMVRegister(getName(), getBucket(), new ArrayList<>(reg.getValuesList()), getClient());
     }
 
@@ -70,7 +70,7 @@ public final class MVRegisterRef extends RegisterRef {
      * @return the register value as ByteString
      */
     public List<ByteString> readRegisterValuesBS(AntidoteTransaction antidoteTransaction) {
-        ApbGetMVRegResp reg = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getMvreg();
+        ApbGetMVRegResp reg = antidoteTransaction.readHelper(this).getObjects(0).getMvreg();
         return reg.getValuesList();
     }
 
@@ -91,7 +91,7 @@ public final class MVRegisterRef extends RegisterRef {
      * @return the register value as String
      */
     public List<String> readRegisterValues(AntidoteTransaction antidoteTransaction) {
-        ApbGetMVRegResp reg = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getMvreg();
+        ApbGetMVRegResp reg = antidoteTransaction.readHelper(this).getObjects(0).getMvreg();
         List<String> entriesList = new ArrayList<String>();
         for (ByteString e : reg.getValuesList()) {
             entriesList.add(e.toStringUtf8());

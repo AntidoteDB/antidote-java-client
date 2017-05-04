@@ -2,6 +2,7 @@ package eu.antidotedb.client;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.Socket;
 import java.util.LinkedList;
 import java.util.List;
@@ -130,8 +131,8 @@ public class PoolManager {
                         if (s != null) {
                             return new Connection(p, s);
                         }
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
+                    } catch (InterruptedException e) {
+                        throw new AntidoteException(e);
                     }
                 }
             }
@@ -160,11 +161,10 @@ public class PoolManager {
             byte[] messageData = new byte[responseLength - 1];
             dataInputStream.readFully(messageData, 0, responseLength - 1);
             return new AntidoteMessage(responseLength, responseCode, messageData);
-        } catch (Exception e) {
+        } catch (IOException e) {
             //if msg fails make it to unhealthy
             c.setunHealthyConnection();
-            throw new RuntimeException(e);
-
+            throw new AntidoteException("Could not send message", e);
         } finally {
             c.returnConnection();
         }

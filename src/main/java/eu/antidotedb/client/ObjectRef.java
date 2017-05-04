@@ -86,4 +86,9 @@ public class ObjectRef {
         objectRefs.clear();
         return object;
     }
+
+    @Override
+    public String toString() {
+        return "[" + type + " " + bucket + "/" + name + "]";
+    }
 }

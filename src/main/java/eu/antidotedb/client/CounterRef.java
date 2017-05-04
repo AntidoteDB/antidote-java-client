@@ -60,7 +60,7 @@ public final class CounterRef extends ObjectRef {
      * @return the antidote counter
      */
     public AntidoteOuterCounter createAntidoteCounter(AntidoteTransaction antidoteTransaction) {
-        ApbGetCounterResp counter = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getCounter();
+        ApbGetCounterResp counter = antidoteTransaction.readHelper(this).getObjects(0).getCounter();
         return new AntidoteOuterCounter(getName(), getBucket(), counter.getValue(), getClient());
     }
 
@@ -82,7 +82,7 @@ public final class CounterRef extends ObjectRef {
      * @return the counter value
      */
     public int readValue(AntidoteTransaction antidoteTransaction) {
-        int counterValue = antidoteTransaction.readHelper(getName(), getBucket(), getType()).getObjects(0).getCounter().getValue();
+        int counterValue = antidoteTransaction.readHelper(this).getObjects(0).getCounter().getValue();
         return counterValue;
     }
 

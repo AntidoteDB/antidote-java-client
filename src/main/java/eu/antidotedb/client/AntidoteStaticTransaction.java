@@ -1,6 +1,7 @@
 package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB.*;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.Closeable;
 
@@ -49,7 +50,8 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction impleme
         AntidoteMessage responseMessage = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, createUpdateStaticObject()));
         try {
             ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-        } catch (Exception e) {
+        } catch (InvalidProtocolBufferException e) {
+            throw new AntidoteException("Could not parse commit response", e);
         }
 
         setTransactionStatus(TransactionStatus.CLOSING);
