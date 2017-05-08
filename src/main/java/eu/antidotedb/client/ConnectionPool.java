@@ -19,7 +19,7 @@ public class ConnectionPool {
      * The Constant logger.
      */
     private static final Logger logger = Logger.getLogger(ConnectionPool.class.getCanonicalName());
-    private static final int DEFAULT_TIMEOUT = 200;
+    private static final int DEFAULT_TIMEOUT = 0; // wait forever
     private static final int MAX_POOLSIZE = 10;
     private static final int MAX_FAILURE = 3;
 

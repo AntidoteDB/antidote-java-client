@@ -14,6 +14,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import static org.junit.Assert.assertTrue;
+
 
 public class AntidoteTest {
     PoolManager antidotePoolManager;
@@ -34,7 +36,7 @@ public class AntidoteTest {
 
     @Test(timeout = 10000)
     public void explicitHost() {
-        assert antidotePoolManager.addHost(20, 5, new Host("localhost", 8087));
+        assertTrue(antidotePoolManager.addHost(20, 5, new Host("localhost", 8087)));
     }
 
 
@@ -150,9 +152,9 @@ public class AntidoteTest {
         Assert.assertThat(orSet2.getValues(), CoreMatchers.hasItems("Bye", "Hi", "yo"));
         Assert.assertThat(rwSet2.getValues(), CoreMatchers.hasItems("Bye2", "Hi2"));
         Assert.assertThat(rwSet.getValues(), CoreMatchers.hasItem("bye2"));
-        Assert.assertTrue(mvRegister.getValueList().contains("mvValue"));
-        Assert.assertTrue(lwwRegister.getValue().contains("lwwValue"));
-        Assert.assertTrue(lwwRegister2.getValue().contains("lwwValue1"));
+        assertTrue(mvRegister.getValueList().contains("mvValue"));
+        assertTrue(lwwRegister.getValue().contains("lwwValue"));
+        assertTrue(lwwRegister2.getValue().contains("lwwValue1"));
 
         AntidoteMapKey integerKey = new AntidoteMapKey(AntidoteType.IntegerType, "testInteger");
         AntidoteMapKey counterKey = new AntidoteMapKey(AntidoteType.CounterType, "testCounter");
@@ -366,24 +368,24 @@ public class AntidoteTest {
 
         antidoteClient.readOuterObjects(Arrays.asList(integer, counter, orSet, rwSet, mvRegister, lwwRegister, orSet2, rwSet2, mvRegister2, lwwRegister2));
 
-        assert ((Integer) objects.get(0) == 3);
-        assert ((Integer) objects.get(1) == 4);
+        assertTrue((Integer) objects.get(0) == 3);
+        assertTrue((Integer) objects.get(1) == 4);
 
-        assert (integer.getValue() == 1);
-        assert (counter.getValue() == 2);
-        assert (orSet.getValues().contains("hi"));
-        assert (orSet.getValues().contains("bye"));
-        assert (orSet.getValues().contains("ciao"));
-        assert (rwSet.getValues().contains("hi2"));
-        assert (orSet2.getValues().contains("Bye"));
-        assert (orSet2.getValues().contains("Hi"));
-        assert (orSet2.getValues().contains("yo"));
-        assert (rwSet2.getValues().contains("Hi2"));
-        assert (rwSet2.getValues().contains("Bye2"));
-        assert (rwSet.getValues().contains("bye2"));
-        assert (mvRegister.getValueList().contains("mvValue"));
-        assert (lwwRegister.getValue().contains("lwwValue"));
-        assert (lwwRegister2.getValue().contains("lwwValue1"));
+        assertTrue(integer.getValue() == 1);
+        assertTrue(counter.getValue() == 2);
+        assertTrue(orSet.getValues().contains("hi"));
+        assertTrue(orSet.getValues().contains("bye"));
+        assertTrue(orSet.getValues().contains("ciao"));
+        assertTrue(rwSet.getValues().contains("hi2"));
+        assertTrue(orSet2.getValues().contains("Bye"));
+        assertTrue(orSet2.getValues().contains("Hi"));
+        assertTrue(orSet2.getValues().contains("yo"));
+        assertTrue(rwSet2.getValues().contains("Hi2"));
+        assertTrue(rwSet2.getValues().contains("Bye2"));
+        assertTrue(rwSet.getValues().contains("bye2"));
+        assertTrue(mvRegister.getValueList().contains("mvValue"));
+        assertTrue(lwwRegister.getValue().contains("lwwValue"));
+        assertTrue(lwwRegister2.getValue().contains("lwwValue1"));
 
         AntidoteMapKey integerKey = new AntidoteMapKey(AntidoteType.IntegerType, "testInteger");
         AntidoteMapKey counterKey = new AntidoteMapKey(AntidoteType.CounterType, "testCounter");
@@ -442,22 +444,22 @@ public class AntidoteTest {
 
         antidoteClient.readOuterObjects(Arrays.asList(awMap, gMap));
 
-        assert (awMap.getCounterEntry("testCounter").getValue() == 5);
-        assert (awMap.getIntegerEntry("testInteger").getValue() == 8);
-        assert (awMap.getORSetEntry("testORSet").getValues().contains("Hi3"));
-        assert (awMap.getRWSetEntry("testRWSet").getValues().contains("Hi3"));
-        assert (awMap.getLWWRegisterEntry("testRegister").getValue().equals("Hi"));
-        assert (awMap.getMVRegisterEntry("testMVRegister").getValueList().contains("Hi"));
-        assert (awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue() == 5);
-        assert (awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue() == 5);
-        assert (gMap.getCounterEntry("testCounter").getValue() == 5);
-        assert (gMap.getIntegerEntry("testInteger").getValue() == 8);
-        assert (gMap.getORSetEntry("testORSet").getValues().contains("Hi3"));
-        assert (gMap.getRWSetEntry("testRWSet").getValues().contains("Hi3"));
-        assert (gMap.getLWWRegisterEntry("testRegister").getValue().equals("Hi"));
-        assert (gMap.getMVRegisterEntry("testMVRegister").getValueList().contains("Hi"));
-        assert (gMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue() == 5);
-        assert (gMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue() == 5);
+        assertTrue(awMap.getCounterEntry("testCounter").getValue() == 5);
+        assertTrue(awMap.getIntegerEntry("testInteger").getValue() == 8);
+        assertTrue(awMap.getORSetEntry("testORSet").getValues().contains("Hi3"));
+        assertTrue(awMap.getRWSetEntry("testRWSet").getValues().contains("Hi3"));
+        assertTrue(awMap.getLWWRegisterEntry("testRegister").getValue().equals("Hi"));
+        assertTrue(awMap.getMVRegisterEntry("testMVRegister").getValueList().contains("Hi"));
+        assertTrue(awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue() == 5);
+        assertTrue(awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue() == 5);
+        assertTrue(gMap.getCounterEntry("testCounter").getValue() == 5);
+        assertTrue(gMap.getIntegerEntry("testInteger").getValue() == 8);
+        assertTrue(gMap.getORSetEntry("testORSet").getValues().contains("Hi3"));
+        assertTrue(gMap.getRWSetEntry("testRWSet").getValues().contains("Hi3"));
+        assertTrue(gMap.getLWWRegisterEntry("testRegister").getValue().equals("Hi"));
+        assertTrue(gMap.getMVRegisterEntry("testMVRegister").getValueList().contains("Hi"));
+        assertTrue(gMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue() == 5);
+        assertTrue(gMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue() == 5);
 
         AntidoteMapUpdate counterUpdate1 = AntidoteMapUpdate.createCounterIncrement(5);
         AntidoteMapUpdate intInc2 = AntidoteMapUpdate.createIntegerIncrement(2);
@@ -488,16 +490,16 @@ public class AntidoteTest {
 
         antidoteClient.readOuterObjects(Arrays.asList(awMap));
 
-        assert (awMap.getCounterEntry("testCounter").getValue() == 5);
-        assert (awMap.getIntegerEntry("testInteger").getValue() == 8);
-        assert (awMap.getORSetEntry("testORSet").getValues().contains("Hi"));
-        assert (awMap.getORSetEntry("testORSet").getValues().contains("Hi2"));
-        assert (awMap.getRWSetEntry("testRWSet").getValues().contains("Hi"));
-        assert (awMap.getRWSetEntry("testRWSet").getValues().contains("Hi2"));
-        assert (!awMap.getLWWRegisterEntry("testRegister").getValue().equals("Hi2"));
-        assert (!awMap.getMVRegisterEntry("testMVRegister").getValueList().contains("Hi2"));
-        assert (awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue() == 5);
-        assert (awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue() == 5);
+        assertTrue(awMap.getCounterEntry("testCounter").getValue() == 5);
+        assertTrue(awMap.getIntegerEntry("testInteger").getValue() == 8);
+        assertTrue(awMap.getORSetEntry("testORSet").getValues().contains("Hi"));
+        assertTrue(awMap.getORSetEntry("testORSet").getValues().contains("Hi2"));
+        assertTrue(awMap.getRWSetEntry("testRWSet").getValues().contains("Hi"));
+        assertTrue(awMap.getRWSetEntry("testRWSet").getValues().contains("Hi2"));
+        assertTrue(!awMap.getLWWRegisterEntry("testRegister").getValue().equals("Hi2"));
+        assertTrue(!awMap.getMVRegisterEntry("testMVRegister").getValueList().contains("Hi2"));
+        assertTrue(awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue() == 5);
+        assertTrue(awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue() == 5);
 
         AntidoteTransaction tx4 = antidoteClient.createStaticTransaction();
 
@@ -517,16 +519,16 @@ public class AntidoteTest {
 
         antidoteClient.readOuterObjects(Arrays.asList(awMap));
 
-        assert (awMap.getCounterEntry("testCounter").getValue() == 10);
-        assert (awMap.getIntegerEntry("testInteger").getValue() == 10);
-        assert (!awMap.getORSetEntry("testORSet").getValues().contains("Hi"));
-        assert (!awMap.getORSetEntry("testORSet").getValues().contains("Hi2"));
-        assert (!awMap.getRWSetEntry("testRWSet").getValues().contains("Hi"));
-        assert (!awMap.getRWSetEntry("testRWSet").getValues().contains("Hi2"));
-        assert (awMap.getLWWRegisterEntry("testRegister").getValue().equals("Hi2"));
-        assert (awMap.getMVRegisterEntry("testMVRegister").getValueList().contains("Hi2"));
-        assert (awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue() == 10);
-        assert (awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue() == 10);
+        assertTrue(awMap.getCounterEntry("testCounter").getValue() == 10);
+        assertTrue(awMap.getIntegerEntry("testInteger").getValue() == 10);
+        assertTrue(!awMap.getORSetEntry("testORSet").getValues().contains("Hi"));
+        assertTrue(!awMap.getORSetEntry("testORSet").getValues().contains("Hi2"));
+        assertTrue(!awMap.getRWSetEntry("testRWSet").getValues().contains("Hi"));
+        assertTrue(!awMap.getRWSetEntry("testRWSet").getValues().contains("Hi2"));
+        assertTrue(awMap.getLWWRegisterEntry("testRegister").getValue().equals("Hi2"));
+        assertTrue(awMap.getMVRegisterEntry("testMVRegister").getValueList().contains("Hi2"));
+        assertTrue(awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue() == 10);
+        assertTrue(awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue() == 10);
     }
 
     @Test(timeout = 10000)
@@ -603,19 +605,19 @@ public class AntidoteTest {
         Assert.assertEquals(objects.get(1), 4);
         Assert.assertEquals(integer.getValue(), 1);
         Assert.assertEquals(counter.getValue(), 2);
-        Assert.assertTrue(orSet.getValues().contains("hi"));
-        Assert.assertTrue(orSet.getValues().contains("bye"));
-        Assert.assertTrue(orSet.getValues().contains("ciao"));
-        Assert.assertTrue(rwSet.getValues().contains("hi2"));
-        Assert.assertTrue(orSet2.getValues().contains("Bye"));
-        Assert.assertTrue(orSet2.getValues().contains("Hi"));
-        Assert.assertTrue(orSet2.getValues().contains("yo"));
-        Assert.assertTrue(rwSet2.getValues().contains("Hi2"));
-        Assert.assertTrue(rwSet2.getValues().contains("Bye2"));
-        Assert.assertTrue(rwSet.getValues().contains("bye2"));
-        Assert.assertTrue(mvRegister.getValueList().contains("mvValue"));
-        Assert.assertTrue(lwwRegister.getValue().contains("lwwValue"));
-        Assert.assertTrue(lwwRegister2.getValue().contains("lwwValue1"));
+        assertTrue(orSet.getValues().contains("hi"));
+        assertTrue(orSet.getValues().contains("bye"));
+        assertTrue(orSet.getValues().contains("ciao"));
+        assertTrue(rwSet.getValues().contains("hi2"));
+        assertTrue(orSet2.getValues().contains("Bye"));
+        assertTrue(orSet2.getValues().contains("Hi"));
+        assertTrue(orSet2.getValues().contains("yo"));
+        assertTrue(rwSet2.getValues().contains("Hi2"));
+        assertTrue(rwSet2.getValues().contains("Bye2"));
+        assertTrue(rwSet.getValues().contains("bye2"));
+        assertTrue(mvRegister.getValueList().contains("mvValue"));
+        assertTrue(lwwRegister.getValue().contains("lwwValue"));
+        assertTrue(lwwRegister2.getValue().contains("lwwValue1"));
 
         AntidoteMapKey integerKey = new AntidoteMapKey(AntidoteType.IntegerType, "testInteger");
         AntidoteMapKey counterKey = new AntidoteMapKey(AntidoteType.CounterType, "testCounter");
@@ -662,10 +664,10 @@ public class AntidoteTest {
 
         Assert.assertEquals(awMap.getCounterEntry("testCounter").getValue(), 5);
         Assert.assertEquals(awMap.getIntegerEntry("testInteger").getValue(), 8);
-        Assert.assertTrue(awMap.getORSetEntry("testORSet").getValues().contains("Hi3"));
-        Assert.assertTrue(awMap.getRWSetEntry("testRWSet").getValues().contains("Hi3"));
+        assertTrue(awMap.getORSetEntry("testORSet").getValues().contains("Hi3"));
+        assertTrue(awMap.getRWSetEntry("testRWSet").getValues().contains("Hi3"));
         Assert.assertEquals(awMap.getLWWRegisterEntry("testRegister").getValue(), "Hi");
-        Assert.assertTrue(awMap.getMVRegisterEntry("testMVRegister").getValueList().contains("Hi"));
+        assertTrue(awMap.getMVRegisterEntry("testMVRegister").getValueList().contains("Hi"));
         Assert.assertEquals(awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue(), 5);
         Assert.assertEquals(awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue(), 5);
 
@@ -700,10 +702,10 @@ public class AntidoteTest {
 
         Assert.assertEquals(awMap.getCounterEntry("testCounter").getValue(), 5);
         Assert.assertEquals(awMap.getIntegerEntry("testInteger").getValue(), 8);
-        Assert.assertTrue(awMap.getORSetEntry("testORSet").getValues().contains("Hi"));
-        Assert.assertTrue(awMap.getORSetEntry("testORSet").getValues().contains("Hi2"));
-        Assert.assertTrue(awMap.getRWSetEntry("testRWSet").getValues().contains("Hi"));
-        Assert.assertTrue(awMap.getRWSetEntry("testRWSet").getValues().contains("Hi2"));
+        assertTrue(awMap.getORSetEntry("testORSet").getValues().contains("Hi"));
+        assertTrue(awMap.getORSetEntry("testORSet").getValues().contains("Hi2"));
+        assertTrue(awMap.getRWSetEntry("testRWSet").getValues().contains("Hi"));
+        assertTrue(awMap.getRWSetEntry("testRWSet").getValues().contains("Hi2"));
         Assert.assertNotEquals(awMap.getLWWRegisterEntry("testRegister").getValue(), "Hi2");
         Assert.assertNotEquals(awMap.getMVRegisterEntry("testMVRegister").getValueList(), "Hi2");
         Assert.assertEquals(awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue(), 5);
@@ -842,8 +844,8 @@ public class AntidoteTest {
 
         int newValue1 = counter1old.getValue();
         int newValue2 = counter2old.getValue();
-        assert (newValue1 == oldValue1 + 10);
-        assert (newValue2 == oldValue2 + 6);
+        assertTrue(newValue1 == oldValue1 + 10);
+        assertTrue(newValue2 == oldValue2 + 6);
         counter1old.readDatabase(antidoteTransaction);
         counter2old.readDatabase(antidoteTransaction);
         newValue1 = counter1old.getValue();
@@ -1158,9 +1160,9 @@ public class AntidoteTest {
 
 	/*	register.setValue("no");
         register.setValueBS(ByteString.copyFromUtf8("maybe"));
-		assert(register.getValueList().contains("maybe")); // two local updates in a row
+		assertTrue(register.getValueList().contains("maybe")); // two local updates in a row
 		register.synchronize();
-		assert(register.getValueList().contains("maybe")); // two updates sent to database at the same time, order is preserved
+		assertTrue(register.getValueList().contains("maybe")); // two updates sent to database at the same time, order is preserved
 		register.setValue("");
 		register.push();
 		testMap.remove(registerKey, AntidoteType.MVRegisterType);
