@@ -7,6 +7,8 @@ import com.google.protobuf.ByteString;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static java.lang.Math.toIntExact;
 
@@ -18,20 +20,14 @@ public class AntidoteOuterMap extends AntidoteCRDT {
     /**
      * The map's entries.
      */
-    private List<AntidoteInnerCRDT> entryList;
+    private Map<AntidoteMapKey, AntidoteCRDT> entries;
 
     /**
      * Instantiates a new antidote map.
-     *
-     * @param name           the name
-     * @param bucket         the bucket
-     * @param entryList      the map's entries
-     * @param antidoteClient the antidote client
-     * @param type           the type
      */
-    public AntidoteOuterMap(String name, String bucket, List<AntidoteInnerCRDT> entryList, AntidoteClient antidoteClient, CRDT_type type) {
-        super(name, bucket, antidoteClient, type);
-        this.entryList = entryList;
+    AntidoteOuterMap(MapRef mapRef) {
+        super(mapRef);
+        this.entries = new TreeMap<>();
     }
 
     /**
@@ -40,7 +36,7 @@ public class AntidoteOuterMap extends AntidoteCRDT {
      * @param keys                the keys
      * @param antidoteTransaction the antidote transaction
      */
-    protected void addRemoveToList(List<AntidoteMapKey> keys, AntidoteTransaction antidoteTransaction) {
+    void addRemoveToList(List<AntidoteMapKey> keys, AntidoteTransaction antidoteTransaction) {
         antidoteTransaction.updateHelper(new AWMapRef(getName(), getBucket(), getClient()).removeOpBuilder(keys), getName(), getBucket(), getType());
     }
 
@@ -50,7 +46,7 @@ public class AntidoteOuterMap extends AntidoteCRDT {
      * @param mapKey              the keys
      * @param antidoteTransaction the antidote transaction
      */
-    protected void addUpdateToList(AntidoteMapKey mapKey, List<AntidoteMapUpdate> update, AntidoteTransaction antidoteTransaction) {
+    private void addUpdateToList(AntidoteMapKey mapKey, List<AntidoteMapUpdate> update, AntidoteTransaction antidoteTransaction) {
         antidoteTransaction.updateHelper(new MapRef(getName(), getBucket(), getClient(), getType()).updateOpBuilder(mapKey, update), getName(), getBucket(), getType());
     }
 
@@ -59,7 +55,7 @@ public class AntidoteOuterMap extends AntidoteCRDT {
      *
      * @return the entry list
      */
-    public List<AntidoteInnerCRDT> getEntryList() {
+    public List<AntidoteMapEntry> getEntryList() {
         return new ArrayList<>(entryList);
     }
 
@@ -68,7 +64,7 @@ public class AntidoteOuterMap extends AntidoteCRDT {
      *
      * @param entryList the new entry list
      */
-    protected void setEntryList(List<AntidoteInnerCRDT> entryList) {
+    void setEntryList(List<AntidoteMapEntry> entryList) {
         this.entryList = entryList;
     }
 

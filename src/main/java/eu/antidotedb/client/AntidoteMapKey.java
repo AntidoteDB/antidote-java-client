@@ -4,10 +4,12 @@ import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
+import java.util.Objects;
+
 /**
  * The Class AntidoteMapKey.
  */
-public final class AntidoteMapKey {
+public final class AntidoteMapKey implements Comparable<AntidoteMapKey> {
 
     /**
      * The key.
@@ -99,5 +101,38 @@ public final class AntidoteMapKey {
      */
     public CRDT_type getType() {
         return type;
+    }
+
+    @Override
+    public int compareTo(AntidoteMapKey other) {
+        int r = type.compareTo(other.type);
+        if (r != 0) {
+            return r;
+        }
+        int minSize = Math.min(key.size(), other.key.size());
+        for (int i = 0; i < minSize; i++) {
+            if (key.byteAt(i) < other.key.byteAt(i)) {
+                return -1;
+            } else if (key.byteAt(i) > other.key.byteAt(i)) {
+                return 1;
+            }
+        }
+        return Integer.compare(key.size(), other.key.size());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof AntidoteMapKey) {
+            AntidoteMapKey other = (AntidoteMapKey) o;
+
+            return Objects.equals(type, other.type)
+                    && Objects.equals(key, other.key);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, key);
     }
 }

@@ -52,12 +52,6 @@ public final class GMapRef extends MapRef {
      * @return the antidote G map
      */
     public AntidoteOuterGMap createAntidoteGMap(AntidoteTransaction antidoteTransaction) {
-        ApbGetMapResp map = antidoteTransaction.readHelper(this).getObjects(0).getMap();
-        List<ApbMapEntry> apbEntryList = new ArrayList<ApbMapEntry>();
-        apbEntryList = map.getEntriesList();
-        List<AntidoteInnerCRDT> antidoteEntryList = new ArrayList<AntidoteInnerCRDT>();
-        List<ApbMapKey> path = new ArrayList<ApbMapKey>();
-        antidoteEntryList = readMapHelper(path, apbEntryList, getType());
         return new AntidoteOuterGMap(getName(), getBucket(), antidoteEntryList, getClient());
     }
 

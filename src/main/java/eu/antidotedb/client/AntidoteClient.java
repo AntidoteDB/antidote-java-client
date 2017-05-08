@@ -157,7 +157,8 @@ public final class AntidoteClient {
     }
 
     public void readOuterObjects(List<AntidoteCRDT> objectRefs) {
-        for (AntidoteCRDT objectRef : objectRefs) {
+        for (AntidoteCRDT antidoteObj : objectRefs) {
+            ObjectRef objectRef = antidoteObj.getObjectRef();
 
             ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message
             object.setKey(ByteString.copyFromUtf8(objectRef.getName()));
@@ -182,41 +183,44 @@ public final class AntidoteClient {
             } catch (InvalidProtocolBufferException e) {
                 throw new AntidoteException("Could not parse read response for object " + objectRef, e);
             }
-            CRDT_type crdt_type = objectRef.getType();
-            switch (crdt_type) {
-                case COUNTER:
-                    int counterValue = readResponse.getObjects().getObjects(0).getCounter().getValue();
-                    ((AntidoteOuterCounter) objectRef).readSetValue(counterValue);
-                    break;
-                case INTEGER:
-                    long integerValue = readResponse.getObjects().getObjects(0).getInt().getValue();
-                    ((AntidoteOuterInteger) objectRef).readSetValue(toIntExact(integerValue));
-                    break;
-                case MVREG:
-                    List<ByteString> mvRegisterValueList = readResponse.getObjects().getObjects(0).getMvreg().getValuesList();
-                    ((AntidoteOuterMVRegister) objectRef).readValueList(mvRegisterValueList);
-                    break;
-                case LWWREG:
-                    ByteString lwwRegisterValue = readResponse.getObjects().getObjects(0).getReg().getValue();
-                    ((AntidoteOuterLWWRegister) objectRef).readValueList(lwwRegisterValue);
-                    break;
-                case ORSET:
-                    List<ByteString> orSetValueList = readResponse.getObjects().getObjects(0).getSet().getValueList();
-                    ((AntidoteOuterORSet) objectRef).readValueList(orSetValueList);
-                    break;
-                case RWSET:
-                    List<ByteString> rwSetValueList = readResponse.getObjects().getObjects(0).getSet().getValueList();
-                    ((AntidoteOuterRWSet) objectRef).readValueList(rwSetValueList);
-                    break;
-                case AWMAP:
-                    List<ApbMapEntry> awMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
-                    ((AntidoteOuterAWMap) objectRef).readSetValue(awMapEntryList);
-                    break;
-                case GMAP:
-                    List<ApbMapEntry> gMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
-                    ((AntidoteOuterGMap) objectRef).readSetValue(gMapEntryList);
-                    break;
-            }
+            antidoteObj.updateFromReadResponse(readResponse.getObjects().getObjects(0));
+
+            // TODO remove
+//            CRDT_type crdt_type = objectRef.getType();
+//            switch (crdt_type) {
+//                case COUNTER:
+//                    int counterValue = readResponse.getObjects().getObjects(0).getCounter().getValue();
+//                    ((AntidoteOuterCounter) objectRef).readSetValue(counterValue);
+//                    break;
+//                case INTEGER:
+//                    long integerValue = readResponse.getObjects().getObjects(0).getInt().getValue();
+//                    ((AntidoteOuterInteger) objectRef).readSetValue(toIntExact(integerValue));
+//                    break;
+//                case MVREG:
+//                    List<ByteString> mvRegisterValueList = readResponse.getObjects().getObjects(0).getMvreg().getValuesList();
+//                    ((AntidoteOuterMVRegister) objectRef).readValueList(mvRegisterValueList);
+//                    break;
+//                case LWWREG:
+//                    ByteString lwwRegisterValue = readResponse.getObjects().getObjects(0).getReg().getValue();
+//                    ((AntidoteOuterLWWRegister) objectRef).readValueList(lwwRegisterValue);
+//                    break;
+//                case ORSET:
+//                    List<ByteString> orSetValueList = readResponse.getObjects().getObjects(0).getSet().getValueList();
+//                    ((AntidoteOuterORSet) objectRef).readValueList(orSetValueList);
+//                    break;
+//                case RWSET:
+//                    List<ByteString> rwSetValueList = readResponse.getObjects().getObjects(0).getSet().getValueList();
+//                    ((AntidoteOuterRWSet) objectRef).readValueList(rwSetValueList);
+//                    break;
+//                case AWMAP:
+//                    List<ApbMapEntry> awMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
+//                    ((AntidoteOuterAWMap) objectRef).readSetValue(awMapEntryList);
+//                    break;
+//                case GMAP:
+//                    List<ApbMapEntry> gMapEntryList = readResponse.getObjects().getObjects(0).getMap().getEntriesList();
+//                    ((AntidoteOuterGMap) objectRef).readSetValue(gMapEntryList);
+//                    break;
+//            }
 
         }
     }

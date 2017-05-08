@@ -1,5 +1,6 @@
 package eu.antidotedb.client;
 
+import com.basho.riak.protobuf.AntidotePB;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 
 /**
@@ -8,75 +9,27 @@ import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 public abstract class AntidoteCRDT {
 
     /**
-     * The type.
+     * A reference to the underlying database object
      */
-    private final CRDT_type type;
-
-    /**
-     * The name.
-     */
-    private final String name;
-
-    /**
-     * The bucket.
-     */
-    private final String bucket;
-
-    /**
-     * The antidote client.
-     */
-    private final AntidoteClient antidoteClient;
+    private final ObjectRef objectRef;
 
     /**
      * Instantiates a new antidote object.
      *
-     * @param name           the name
-     * @param bucket         the bucket
-     * @param antidoteClient the antidote client
-     * @param type           the type
      */
-    public AntidoteCRDT(String name, String bucket, AntidoteClient antidoteClient, CRDT_type type) {
-        this.name = name;
-        this.bucket = bucket;
-        this.antidoteClient = antidoteClient;
-        this.type = type;
+    AntidoteCRDT(ObjectRef objectRef) {
+        this.objectRef = objectRef;
     }
 
     /**
-     * Gets the type.
-     *
-     * @return the type
+     * The immutable reference to the unerlying database object
      */
-    public CRDT_type getType() {
-        return type;
+    public ObjectRef getObjectRef() {
+        return objectRef;
     }
 
     /**
-     * Gets the name.
-     *
-     * @return the name
+     * update the internal state of this CRDT from a read response
      */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Gets the bucket.
-     *
-     * @return the bucket
-     */
-    public String getBucket() {
-        return bucket;
-    }
-
-    ;
-
-    /**
-     * Gets the client.
-     *
-     * @return the client
-     */
-    public AntidoteClient getClient() {
-        return antidoteClient;
-    }
+    public abstract void updateFromReadResponse(AntidotePB.ApbReadObjectResp object);
 }
