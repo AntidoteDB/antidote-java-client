@@ -1,3 +1,10 @@
+## WARNING: Work in progress
+
+The API will change and not be backwards compatible!
+
+We will provide documentation and Maven artifacts once the library is ready to be used.
+
+
 # Antidote Java Client
 
 The repository contains classes for using Antidote Database service in Java. It provides the client implementation to
