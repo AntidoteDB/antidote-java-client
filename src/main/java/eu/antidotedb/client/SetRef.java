@@ -1,28 +1,48 @@
 package eu.antidotedb.client;
 
+import com.basho.riak.protobuf.AntidotePB;
 import com.basho.riak.protobuf.AntidotePB.ApbSetUpdate;
 import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * The Class LowLevelSet.
  */
-public class SetRef extends ObjectRef {
+public class SetRef<T> extends ObjectRef {
 
-    /**
-     * Instantiates a new low level set.
-     *
-     * @param name           the name
-     * @param bucket         the bucket
-     * @param antidoteClient the antidote client
-     */
-    public SetRef(String name, String bucket, AntidoteClient antidoteClient, CRDT_type type) {
-        super(name, bucket, antidoteClient, type);
+    private final ValueCoder<T> format;
+
+    SetRef(CrdtContainer container, ByteString key, CRDT_type type, ValueCoder<T> format) {
+        super(container, key, type);
+        this.format = format;
     }
+
+    @Override
+    public List<T> read(InteractiveTransaction tx) {
+        AntidotePB.ApbGetSetResp set = getContainer().read(tx, getType(), getKey()).getSet();
+        return format.decodeList(set.getValueList());
+    }
+
+    public final void add(AntidoteTransaction tx, T element) {
+        addAll(tx, Collections.singletonList(element));
+    }
+
+    public void addAll(AntidoteTransaction tx, List<T> ts) {
+        getContainer().update(tx, getType(), getKey(), addOpBuilder(ts));
+    }
+
+    public final void remove(AntidoteTransaction tx, T element) {
+        removeAll(tx, Collections.singletonList(element));
+    }
+
+    public void removeAll(AntidoteTransaction tx, List<T> ts) {
+        getContainer().update(tx, getType(), getKey(), removeOpBuilder(ts));
+    }
+
 
     /**
      * Prepare the remove operation builder.
@@ -30,11 +50,13 @@ public class SetRef extends ObjectRef {
      * @param elements the elements
      * @return the apb update operation. builder
      */
-    protected ApbUpdateOperation.Builder removeOpBuilder(List<ByteString> elements) {
+    private ApbUpdateOperation.Builder removeOpBuilder(List<T> elements) {
         ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
         ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
         setUpdateInstruction.setOptype(opType);
-        setUpdateInstruction.addAllRems(elements);
+        for (T element : elements) {
+            setUpdateInstruction.addRems(format.encode(element));
+        }
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setSetop(setUpdateInstruction);
         return updateOperation;
@@ -46,118 +68,17 @@ public class SetRef extends ObjectRef {
      * @param elements the elements
      * @return the apb update operation. builder
      */
-    protected ApbUpdateOperation.Builder addOpBuilder(List<ByteString> elements) {
+    private ApbUpdateOperation.Builder addOpBuilder(List<T> elements) {
         ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
         ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(1);
         setUpdateInstruction.setOptype(opType);
-        setUpdateInstruction.addAllAdds(elements);
+        for (T element : elements) {
+            setUpdateInstruction.addAdds(format.encode(element));
+        }
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setSetop(setUpdateInstruction);
         return updateOperation;
     }
 
-    /**
-     * Removes the element.
-     *
-     * @param element             the element
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void removeBS(ByteString element, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-        List<ByteString> elements = new ArrayList<>();
-        elements.add(element);
-        removeBS(elements, type, antidoteTransaction);
-    }
 
-    /**
-     * Adds the element.
-     *
-     * @param element             the element
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void addBS(ByteString element, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-        List<ByteString> elements = new ArrayList<>();
-        elements.add(element);
-        addBS(elements, type, antidoteTransaction);
-    }
-
-    /**
-     * Removes the element.
-     *
-     * @param element             the element
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void remove(String element, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-        List<String> elements = new ArrayList<>();
-        elements.add(element);
-        remove(elements, type, antidoteTransaction);
-    }
-
-    /**
-     * Adds the element.
-     *
-     * @param element             the element
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void add(String element, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-        List<String> elements = new ArrayList<>();
-        elements.add(element);
-        add(elements, type, antidoteTransaction);
-    }
-
-    /**
-     * Removes the elements.
-     *
-     * @param elements            the elements
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void removeBS(List<ByteString> elements, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-        antidoteTransaction.updateHelper(removeOpBuilder(elements), getName(), getBucket(), type);
-    }
-
-    /**
-     * Adds the elements.
-     *
-     * @param elements            the elements
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void addBS(List<ByteString> elements, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-        antidoteTransaction.updateHelper(addOpBuilder(elements), getName(), getBucket(), type);
-    }
-
-    /**
-     * Removes the elements.
-     *
-     * @param elements            the elements
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void remove(List<String> elements, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-        List<ByteString> elementsByteString = new ArrayList<ByteString>();
-        for (String e : elements) {
-            elementsByteString.add(ByteString.copyFromUtf8(e));
-        }
-        antidoteTransaction.updateHelper(removeOpBuilder(elementsByteString), getName(), getBucket(), type);
-
-    }
-
-    /**
-     * Adds the elements.
-     *
-     * @param elements            the elements
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void add(List<String> elements, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-        List<ByteString> elementsByteString = new ArrayList<ByteString>();
-        for (String e : elements) {
-            elementsByteString.add(ByteString.copyFromUtf8(e));
-        }
-        antidoteTransaction.updateHelper(addOpBuilder(elementsByteString), getName(), getBucket(), type);
-    }
 }

@@ -100,7 +100,7 @@ public final class AntidoteClient {
         List<Object> objects = new ArrayList<>();
         for (ObjectRef objectRef : objectRefs) {
             ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message
-            object.setKey(ByteString.copyFromUtf8(objectRef.getName()));
+            object.setKey(ByteString.copyFromUtf8(objectRef.getKey()));
             object.setType(objectRef.getType());
             object.setBucket(ByteString.copyFromUtf8(objectRef.getBucket()));
             ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
@@ -161,7 +161,7 @@ public final class AntidoteClient {
             ObjectRef objectRef = antidoteObj.getObjectRef();
 
             ApbBoundObject.Builder object = ApbBoundObject.newBuilder(); // The object in the message
-            object.setKey(ByteString.copyFromUtf8(objectRef.getName()));
+            object.setKey(ByteString.copyFromUtf8(objectRef.getKey()));
             object.setType(objectRef.getType());
             object.setBucket(ByteString.copyFromUtf8(objectRef.getBucket()));
 
@@ -232,5 +232,14 @@ public final class AntidoteClient {
         return poolManager;
     }
 
+    public CommitInfo completeTransaction(ApbCommitResp commitResponse) {
+        if (commitResponse.getSuccess()) {
+            return new CommitInfo(commitResponse.getCommitTime());
+        } else {
+            throw new AntidoteException("Failed to commit transaction (Error code: " + commitResponse.getErrorcode() + ")");
+        }
+
+
+    }
 }
 

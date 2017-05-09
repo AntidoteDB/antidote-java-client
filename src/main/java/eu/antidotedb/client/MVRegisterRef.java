@@ -1,115 +1,47 @@
 package eu.antidotedb.client;
 
+import com.basho.riak.protobuf.AntidotePB;
 import com.basho.riak.protobuf.AntidotePB.ApbGetMVRegResp;
 import com.google.protobuf.ByteString;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * The Class LowLevelMVRegister.
  */
-public final class MVRegisterRef extends RegisterRef {
+public final class MVRegisterRef<T> extends ObjectRef {
 
-    /**
-     * Instantiates a new low level MV register.
-     *
-     * @param name           the name
-     * @param bucket         the bucket
-     * @param antidoteClient the antidote client
-     */
-    public MVRegisterRef(String name, String bucket, AntidoteClient antidoteClient) {
-        super(name, bucket, antidoteClient, AntidoteType.MVRegisterType);
+
+    private ValueCoder<T> format;
+
+    MVRegisterRef(CrdtContainer container, ByteString key, AntidotePB.CRDT_type type, ValueCoder<T> format) {
+        super(container, key, type);
+        this.format = format;
     }
 
-    /**
-     * Sets the value.
-     *
-     * @param value               the value
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void setBS(ByteString value, AntidoteTransaction antidoteTransaction) {
-        super.setBS(value, getType(), antidoteTransaction);
+    @Override
+    public List<T> read(InteractiveTransaction tx) {
+        ApbGetMVRegResp response = getContainer().read(tx, getType(), getKey()).getMvreg();
+        return format.decodeList(response.getValuesList());
     }
 
-    /**
-     * Sets the value.
-     *
-     * @param value               the value
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void set(String value, AntidoteTransaction antidoteTransaction) {
-        super.set(value, getType(), antidoteTransaction);
+
+    public void set(AntidoteTransaction tx, T value) {
+        getContainer().update(tx, getType(), getKey(), setOpBuilder(format.encode(value)));
     }
 
-    /**
-     * Read register from database.
-     *
-     * @param antidoteTransaction the antidote transaction
-     * @return the antidote register
-     */
-    public AntidoteOuterMVRegister createAntidoteMVRegister(AntidoteTransaction antidoteTransaction) {
-        ApbGetMVRegResp reg = antidoteTransaction.readHelper(this).getObjects(0).getMvreg();
-        return new AntidoteOuterMVRegister(getName(), getBucket(), new ArrayList<>(reg.getValuesList()), getClient());
-    }
 
     /**
-     * Read register from database.
+     * Prepare a set operation builder.
      *
-     * @return the antidote register
+     * @param value the value
+     * @return the apb update operation. builder
      */
-    public AntidoteOuterMVRegister createAntidoteMVRegister() {
-        List<ByteString> reg = (List<ByteString>) getObjectRefValue(this);
-        return new AntidoteOuterMVRegister(getName(), getBucket(), new ArrayList<>(reg), getClient());
-    }
-
-    /**
-     * Read register from database.
-     *
-     * @param antidoteTransaction the antidote transaction
-     * @return the register value as ByteString
-     */
-    public List<ByteString> readRegisterValuesBS(AntidoteTransaction antidoteTransaction) {
-        ApbGetMVRegResp reg = antidoteTransaction.readHelper(this).getObjects(0).getMvreg();
-        return reg.getValuesList();
-    }
-
-    /**
-     * Read register from database.
-     *
-     * @return the register value as ByteString
-     */
-    public List<ByteString> readRegisterValuesBS() {
-        List<ByteString> reg = (List<ByteString>) getObjectRefValue(this);
-        return reg;
-    }
-
-    /**
-     * Read register from database.
-     *
-     * @param antidoteTransaction the antidote transaction
-     * @return the register value as String
-     */
-    public List<String> readRegisterValues(AntidoteTransaction antidoteTransaction) {
-        ApbGetMVRegResp reg = antidoteTransaction.readHelper(this).getObjects(0).getMvreg();
-        List<String> entriesList = new ArrayList<String>();
-        for (ByteString e : reg.getValuesList()) {
-            entriesList.add(e.toStringUtf8());
-        }
-        return entriesList;
-    }
-
-    /**
-     * Read register from database.
-     *
-     * @return the register value as String
-     */
-    public List<String> readRegisterValues() {
-        List<ByteString> reg = (List<ByteString>) getObjectRefValue(this);
-        List<String> entriesList = new ArrayList<String>();
-        for (ByteString e : reg) {
-            entriesList.add(e.toStringUtf8());
-        }
-        return entriesList;
+    protected AntidotePB.ApbUpdateOperation.Builder setOpBuilder(ByteString value) {
+        AntidotePB.ApbRegUpdate.Builder regUpdateInstruction = AntidotePB.ApbRegUpdate.newBuilder(); // The specific instruction in update instructions
+        regUpdateInstruction.setValue(value);
+        AntidotePB.ApbUpdateOperation.Builder updateOperation = AntidotePB.ApbUpdateOperation.newBuilder();
+        updateOperation.setRegop(regUpdateInstruction);
+        return updateOperation;
     }
 }

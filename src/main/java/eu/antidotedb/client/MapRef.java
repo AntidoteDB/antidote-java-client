@@ -1,77 +1,122 @@
 package eu.antidotedb.client;
 
+import com.basho.riak.protobuf.AntidotePB;
 import com.basho.riak.protobuf.AntidotePB.*;
+import com.google.protobuf.ByteString;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.lang.Math.toIntExact;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * The Class LowLevelMap.
+ *
+ * TODO add alternatives for homogeneous maps and maps that are used like structs
  */
-public class MapRef extends ObjectRef implements CrdtFactory {
+public class MapRef extends ObjectRef implements CrdtContainer {
 
     /**
      * Instantiates a new low level map.
-     *
-     * @param name           the name
-     * @param bucket         the bucket
-     * @param antidoteClient the antidote client
      */
-    public MapRef(String name, String bucket, AntidoteClient antidoteClient, CRDT_type type) {
-        super(name, bucket, antidoteClient, type);
+    MapRef(CrdtContainer container, ByteString key, CRDT_type type) {
+        super(container, key, type);
     }
 
-    /**
-     * Prepare the update operation builder.
-     *
-     * @param mapKey  the map key
-     * @param updates the updates
-     * @return the apb update operation. builder
-     */
-    protected ApbUpdateOperation.Builder updateOpBuilder(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates) {
-        ApbMapNestedUpdate.Builder mapNestedUpdateBuilder = ApbMapNestedUpdate.newBuilder(); // The specific instruction in update instruction
-        List<ApbMapNestedUpdate> mapNestedUpdateList = new ArrayList<ApbMapNestedUpdate>();
-        ApbMapNestedUpdate mapNestedUpdate;
-        for (AntidoteMapUpdate update : updates) {
-            mapNestedUpdateBuilder.setUpdate(update.getOperation());
-            mapNestedUpdateBuilder.setKey(mapKey.getApbKey());
-            mapNestedUpdate = mapNestedUpdateBuilder.build();
-            mapNestedUpdateList.add(mapNestedUpdate);
-        }
-        ApbMapUpdate.Builder mapUpdateInstruction = ApbMapUpdate.newBuilder(); // The specific instruction in update instruction
-        mapUpdateInstruction.addAllUpdates(mapNestedUpdateList);
+    @Override
+    public MapReadResult read(InteractiveTransaction tx) {
+        ApbGetMapResp map = getContainer().read(tx, getType(), getKey()).getMap();
+        return new MapReadResult(map.getEntriesList());
+    }
 
+    @Override
+    public ApbReadObjectResp read(InteractiveTransaction tx, CRDT_type type, ByteString key) {
+        MapReadResult res = read(tx);
+        return res.getRaw(type, key);
+    }
+
+    @Override
+    public void update(AntidoteTransaction tx, CRDT_type type, ByteString key, ApbUpdateOperation.Builder operation) {
+        ApbMapUpdate.Builder mapUpdate = ApbMapUpdate.newBuilder();
+        ApbMapNestedUpdate.Builder nestedUpdate = ApbMapNestedUpdate.newBuilder();
+        nestedUpdate.setKey(ApbMapKey.newBuilder().setType(type).setKey(key));
+        nestedUpdate.setUpdate(operation);
+        mapUpdate.addUpdates(nestedUpdate);
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
-        updateOperation.setMapop(mapUpdateInstruction);
-        return updateOperation;
+        updateOperation.setMapop(mapUpdate);
+        getContainer().update(tx, getType(), getKey(), updateOperation);
     }
 
-    /**
-     * Update.
-     *
-     * @param mapKey              the map key
-     * @param update              the update
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void update(AntidoteMapKey mapKey, AntidoteMapUpdate update, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-        List<AntidoteMapUpdate> updates = new ArrayList<>();
-        updates.add(update);
-        update(mapKey, updates, type, antidoteTransaction);
-    }
+//    /**
+//     * Prepare the update operation builder.
+//     *
+//     * @param mapKey  the map key
+//     * @param updates the updates
+//     * @return the apb update operation. builder
+//     */
+//    protected ApbUpdateOperation.Builder updateOpBuilder(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates) {
+//        ApbMapNestedUpdate.Builder mapNestedUpdateBuilder = ApbMapNestedUpdate.newBuilder(); // The specific instruction in update instruction
+//        List<ApbMapNestedUpdate> mapNestedUpdateList = new ArrayList<ApbMapNestedUpdate>();
+//        ApbMapNestedUpdate mapNestedUpdate;
+//        for (AntidoteMapUpdate update : updates) {
+//            mapNestedUpdateBuilder.setUpdate(update.getOperation());
+//            mapNestedUpdateBuilder.setKey(mapKey.getApbKey());
+//            mapNestedUpdate = mapNestedUpdateBuilder.build();
+//            mapNestedUpdateList.add(mapNestedUpdate);
+//        }
+//        ApbMapUpdate.Builder mapUpdateInstruction = ApbMapUpdate.newBuilder(); // The specific instruction in update instruction
+//        mapUpdateInstruction.addAllUpdates(mapNestedUpdateList);
+//
+//        ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
+//        updateOperation.setMapop(mapUpdateInstruction);
+//        return updateOperation;
+//    }
+//
+//    /**
+//     * Update.
+//     *
+//     * @param mapKey              the map key
+//     * @param update              the update
+//     * @param type                the type
+//     * @param antidoteTransaction the antidote transaction
+//     */
+//    public void update(AntidoteMapKey mapKey, AntidoteMapUpdate update, CRDT_type type, AntidoteTransaction antidoteTransaction) {
+//        List<AntidoteMapUpdate> updates = new ArrayList<>();
+//        updates.add(update);
+//        update(mapKey, updates, type, antidoteTransaction);
+//    }
+//
+//    /**
+//     * Update.
+//     *
+//     * @param mapKey              the map key
+//     * @param updates             the updates
+//     * @param type                the type
+//     * @param antidoteTransaction the antidote transaction
+//     */
+//    public void update(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates, CRDT_type type, AntidoteTransaction antidoteTransaction) {
+//        antidoteTransaction.updateHelper(updateOpBuilder(mapKey, updates), getKey(), getBucket(), type);
+//    }
 
-    /**
-     * Update.
-     *
-     * @param mapKey              the map key
-     * @param updates             the updates
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void update(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-        antidoteTransaction.updateHelper(updateOpBuilder(mapKey, updates), getName(), getBucket(), type);
+    private static class MapReadResult {
+        private List<ApbMapEntry> entries;
+
+        public MapReadResult(List<ApbMapEntry> entriesList) {
+            entries = entriesList;
+        }
+
+        public ApbReadObjectResp getRaw(CRDT_type type, ByteString key) {
+            for (ApbMapEntry entry : entries) {
+                if (entry.getKey().getType().equals(type)
+                        && entry.getKey().getKey().equals(key)) {
+                    return entry.getValue();
+                }
+            }
+            return null;
+        }
+
+        // TODO add methods to get embedded values of counters, maps, etc.
     }
 
 //    /**
@@ -94,48 +139,48 @@ public class MapRef extends ObjectRef implements CrdtFactory {
 //                    path2 = new ArrayList<ApbMapKey>();
 //                    path2.addAll(path);
 //                    antidoteEntryList.add(new AntidoteInnerCounter(
-//                            e.getValue().getCounter().getValue(), getClient(), getName(), getBucket(), path2, outerMapType));
+//                            e.getValue().getCounter().getValue(), getClient(), getKey(), getBucket(), path2, outerMapType));
 //                    break;
 //                case ORSET:
 //                    path2 = new ArrayList<ApbMapKey>();
 //                    path2.addAll(path);
 //                    antidoteEntryList.add(new AntidoteInnerORSet(
-//                            e.getValue().getSet().getValueList(), getClient(), getName(), getBucket(), path2, outerMapType));
+//                            e.getValue().getSet().getValueList(), getClient(), getKey(), getBucket(), path2, outerMapType));
 //                    break;
 //                case RWSET:
 //                    path2 = new ArrayList<ApbMapKey>();
 //                    path2.addAll(path);
 //                    antidoteEntryList.add(new AntidoteInnerRWSet(
-//                            e.getValue().getSet().getValueList(), getClient(), getName(), getBucket(), path2, outerMapType));
+//                            e.getValue().getSet().getValueList(), getClient(), getKey(), getBucket(), path2, outerMapType));
 //                    break;
 //                case AWMAP:
 //                    path2 = new ArrayList<ApbMapKey>();
 //                    path2.addAll(path);
 //                    antidoteEntryList.add(new AntidoteInnerAWMap(
-//                            readMapHelper(path, e.getValue().getMap().getEntriesList(), outerMapType), getClient(), getName(), getBucket(), path2, outerMapType));
+//                            readMapHelper(path, e.getValue().getMap().getEntriesList(), outerMapType), getClient(), getKey(), getBucket(), path2, outerMapType));
 //                    break;
 //                case INTEGER:
 //                    path2 = new ArrayList<ApbMapKey>();
 //                    path2.addAll(path);
 //                    antidoteEntryList.add(new AntidoteInnerInteger(
-//                            toIntExact(e.getValue().getInt().getValue()), getClient(), getName(), getBucket(), path2, outerMapType));
+//                            toIntExact(e.getValue().getInt().getValue()), getClient(), getKey(), getBucket(), path2, outerMapType));
 //                    break;
 //                case LWWREG:
 //                    path2 = new ArrayList<ApbMapKey>();
 //                    path2.addAll(path);
 //                    antidoteEntryList.add(new AntidoteInnerLWWRegister(
-//                            e.getValue().getReg().getValue(), getClient(), getName(), getBucket(), path2, outerMapType));
+//                            e.getValue().getReg().getValue(), getClient(), getKey(), getBucket(), path2, outerMapType));
 //                    break;
 //                case MVREG:
 //                    path2 = new ArrayList<ApbMapKey>();
 //                    path2.addAll(path);
-//                    antidoteEntryList.add(new AntidoteInnerMVRegister(e.getValue().getMvreg().getValuesList(), getClient(), getName(), getBucket(), path2, outerMapType));
+//                    antidoteEntryList.add(new AntidoteInnerMVRegister(e.getValue().getMvreg().getValuesList(), getClient(), getKey(), getBucket(), path2, outerMapType));
 //                    break;
 //                case GMAP:
 //                    path2 = new ArrayList<ApbMapKey>();
 //                    path2.addAll(path);
 //                    antidoteEntryList.add(new AntidoteInnerGMap(
-//                            readMapHelper(path, e.getValue().getMap().getEntriesList(), outerMapType), getClient(), getName(), getBucket(), path2, outerMapType));
+//                            readMapHelper(path, e.getValue().getMap().getEntriesList(), outerMapType), getClient(), getKey(), getBucket(), path2, outerMapType));
 //                    break;
 //            }
 //        }

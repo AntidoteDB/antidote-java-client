@@ -2,71 +2,58 @@ package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB.*;
 import com.google.protobuf.InvalidProtocolBufferException;
+import eu.antidotedb.client.InteractiveTransaction.TransactionStatus;
 
-import java.io.Closeable;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The Class AntidoteStaticTransaction.
  */
-public final class AntidoteStaticTransaction extends AntidoteTransaction implements Closeable {
+public final class AntidoteStaticTransaction extends AntidoteTransaction {
 
     private ApbStartTransaction.Builder startTransaction;
+    private AntidoteClient client;
+
+    private TransactionStatus transactionStatus = TransactionStatus.STARTED;
+
+    private List<ApbUpdateOp.Builder> transactionUpdateList = new ArrayList<>();
+
 
     /**
      * Instantiates a new antidote static transaction.
      *
      * @param antidoteClient the antidote client
      */
-    public AntidoteStaticTransaction(AntidoteClient antidoteClient) {
-        super(antidoteClient);
+    AntidoteStaticTransaction(AntidoteClient antidoteClient) {
+        client = antidoteClient;
         startTransaction = null;
     }
 
-    /**
-     * Start static transaction.
-     *
-     * @return the start transaction
-     */
-    protected void startTransaction() {
-        if (getTransactionStatus() != TransactionStatus.CREATED) {
-            throw new AntidoteException("You need to create the transaction before starting it");
-        }
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
 
-        ApbStartTransaction.Builder writeTransaction = ApbStartTransaction.newBuilder();
-        writeTransaction.setProperties(transactionProperties);
-
-        setTransactionStatus(TransactionStatus.STARTED);
-        startTransaction = writeTransaction;
-    }
 
     /**
      * Commit static transaction.
      */
-    public void commitTransaction() {
-        if (getTransactionStatus() != TransactionStatus.STARTED) {
-            throw new AntidoteException("You need to start the transaction before committing it");
+    public CommitInfo commitTransaction() {
+        if (transactionStatus != TransactionStatus.STARTED) {
+            throw new AntidoteException("Transaction already closed");
         }
-        AntidoteMessage responseMessage = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, createUpdateStaticObject()));
+        AntidoteMessage responseMessage = client.sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, createUpdateStaticObject()));
         try {
             ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
+            CommitInfo res = client.completeTransaction(commitResponse);
+            transactionStatus = TransactionStatus.COMMITTED;
+            return res;
         } catch (InvalidProtocolBufferException e) {
             throw new AntidoteException("Could not parse commit response", e);
         }
 
-        setTransactionStatus(TransactionStatus.CLOSING);
+
     }
 
-    /**
-     * Abort static transaction.
-     */
-    public void abortTransaction() {
-        if (getTransactionStatus() != TransactionStatus.STARTED) {
-            throw new AntidoteException("You need to start the transaction before aborting it");
-        }
-        clearTransactionUpdateList();
-        setTransactionStatus(TransactionStatus.CLOSING);
-    }
+
 
     /**
      * Creates the static update object.
@@ -76,11 +63,19 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction impleme
     protected ApbStaticUpdateObjects createUpdateStaticObject() {
         ApbStaticUpdateObjects.Builder updateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
         updateMessage.setTransaction(startTransaction);
-        for (ApbUpdateOp.Builder updateInstruction : getTransactionUpdateList()) {
+        for (ApbUpdateOp.Builder updateInstruction : transactionUpdateList) {
             updateMessage.addUpdates(updateInstruction);
         }
-        clearTransactionUpdateList();
-        ApbStaticUpdateObjects UpdateMessageObject = updateMessage.build();
-        return UpdateMessageObject;
+        return updateMessage.build();
+    }
+
+    @Override
+    public void close() throws IOException {
+        transactionStatus = TransactionStatus.CLOSED;
+    }
+
+    @Override
+    void performUpdate(ApbUpdateOp.Builder updateInstruction) {
+        transactionUpdateList.add(updateInstruction);
     }
 }

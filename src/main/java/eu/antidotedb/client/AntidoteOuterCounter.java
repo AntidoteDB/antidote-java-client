@@ -1,5 +1,6 @@
 package eu.antidotedb.client;
 
+import com.basho.riak.protobuf.AntidotePB;
 import eu.antidotedb.client.crdt.CounterCRDT;
 
 /**
@@ -26,9 +27,8 @@ public final class AntidoteOuterCounter extends AntidoteCRDT implements CounterC
      * @param antidoteClient the antidote client
      */
     public AntidoteOuterCounter(String name, String bucket, int value, AntidoteClient antidoteClient) {
-        super(name, bucket, antidoteClient, AntidoteType.CounterType);
         this.value = value;
-        lowLevelCounter = new CounterRef(name, bucket, antidoteClient);
+        this.lowLevelCounter = new CounterRef(name, bucket, antidoteClient);
     }
 
     /**
@@ -76,6 +76,16 @@ public final class AntidoteOuterCounter extends AntidoteCRDT implements CounterC
      */
     public void increment(int inc, AntidoteTransaction antidoteTransaction) {
         value = value + inc;
-        antidoteTransaction.updateHelper(lowLevelCounter.incrementOpBuilder(inc), getName(), getBucket(), getType());
+        lowLevelCounter.increment(inc, antidoteTransaction);
+    }
+
+    @Override
+    public ObjectRef getRef() {
+        return lowLevelCounter;
+    }
+
+    @Override
+    public void updateFromReadResponse(AntidotePB.ApbReadObjectResp readResponse) {
+        this.value = readResponse.getCounter().getValue();
     }
 }

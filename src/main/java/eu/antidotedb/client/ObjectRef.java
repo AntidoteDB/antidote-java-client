@@ -1,42 +1,27 @@
 package eu.antidotedb.client;
 
+import com.basho.riak.protobuf.AntidotePB;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import com.google.protobuf.ByteString;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * The Class LowLevelObject.
  */
-public class ObjectRef {
-    /**
-     * The name.
-     */
-    private final String name;
+public abstract class ObjectRef {
+    private final CrdtContainer container;
 
-    /**
-     * The bucket.
-     */
-    private final String bucket;
+    private final ByteString key;
 
     private CRDT_type type;
 
     /**
-     * The antidote client.
+     * Instantiates a new reference to a crdt
      */
-    private final AntidoteClient antidoteClient;
-
-    /**
-     * Instantiates a new low level object.
-     *
-     * @param name           the name
-     * @param bucket         the bucket
-     * @param antidoteClient the antidote client
-     */
-    public ObjectRef(String name, String bucket, AntidoteClient antidoteClient, CRDT_type type) {
-        this.name = name;
-        this.bucket = bucket;
-        this.antidoteClient = antidoteClient;
+    ObjectRef(CrdtContainer container, ByteString key, CRDT_type type) {
+        this.key = key;
+        this.container = container;
         this.type = type;
     }
 
@@ -45,50 +30,39 @@ public class ObjectRef {
     }
 
     /**
-     * Gets the name.
+     * Gets the key.
      *
-     * @return the name
+     * @return the key
      */
-    public String getName() {
-        return name;
+    public ByteString getKey() {
+        return key;
     }
 
-    /**
-     * Gets the bucket.
-     *
-     * @return the bucket
-     */
-    public String getBucket() {
-        return bucket;
-    }
-
-    ;
 
     /**
      * Gets the client.
      *
      * @return the client
      */
-    public AntidoteClient getClient() {
-        return antidoteClient;
+    public CrdtContainer getContainer() {
+        return container;
     }
 
+
     /**
-     * Gets the object value.
-     *
-     * @return the value
+     * Reads the current value of this object from the database
      */
-    protected Object getObjectRefValue(ObjectRef objectRef) {
-        List<ObjectRef> objectRefs = new ArrayList<>();
-        objectRefs.add(objectRef);
-        List<Object> objectRefValue = getClient().readObjects(objectRefs);
-        Object object = objectRefValue.get(0);
-        objectRefs.clear();
-        return object;
+    public abstract Object read(InteractiveTransaction tx);
+
+
+    AntidotePB.ApbReadObjectResp readValue(InteractiveTransaction tx) {
+        return container.read(tx, type, key);
     }
+
+
 
     @Override
     public String toString() {
-        return "[" + type + " " + bucket + "/" + name + "]";
+        return container + "/" + type + "_" + key;
     }
 }

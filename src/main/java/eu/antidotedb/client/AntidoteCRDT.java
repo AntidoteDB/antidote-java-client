@@ -8,25 +8,11 @@ import com.basho.riak.protobuf.AntidotePB.CRDT_type;
  */
 public abstract class AntidoteCRDT {
 
-    /**
-     * A reference to the underlying database object
-     */
-    private final ObjectRef objectRef;
-
-    /**
-     * Instantiates a new antidote object.
-     *
-     */
-    AntidoteCRDT(ObjectRef objectRef) {
-        this.objectRef = objectRef;
-    }
 
     /**
      * The immutable reference to the unerlying database object
      */
-    public ObjectRef getObjectRef() {
-        return objectRef;
-    }
+    public abstract ObjectRef getRef();
 
     /**
      * update the internal state of this CRDT from a read response

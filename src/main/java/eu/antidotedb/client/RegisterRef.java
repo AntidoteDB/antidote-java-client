@@ -1,47 +1,36 @@
 package eu.antidotedb.client;
 
+import com.basho.riak.protobuf.AntidotePB;
 import com.basho.riak.protobuf.AntidotePB.ApbRegUpdate;
 import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
+import java.util.List;
+
 /**
  * The Class LowLevelRegister.
  */
-public class RegisterRef extends ObjectRef {
+public class RegisterRef<T> extends ObjectRef {
 
-    /**
-     * Instantiates a new low level register.
-     *
-     * @param name           the name
-     * @param bucket         the bucket
-     * @param antidoteClient the antidote client
-     */
-    public RegisterRef(String name, String bucket, AntidoteClient antidoteClient, CRDT_type type) {
-        super(name, bucket, antidoteClient, type);
+    private ValueCoder<T> format;
+
+    RegisterRef(CrdtContainer container, ByteString key, CRDT_type type, ValueCoder<T> format) {
+        super(container, key, type);
+        this.format = format;
     }
 
-    /**
-     * Sets the value.
-     *
-     * @param value               the value
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void setBS(ByteString value, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-        antidoteTransaction.updateHelper(setOpBuilder(value), getName(), getBucket(), type);
+    @Override
+    public T read(InteractiveTransaction tx) {
+        AntidotePB.ApbGetRegResp response = getContainer().read(tx, getType(), getKey()).getReg();
+        return format.decode(response.getValue());
     }
 
-    /**
-     * Sets the value.
-     *
-     * @param value               the value
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void set(String value, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-        antidoteTransaction.updateHelper(setOpBuilder(ByteString.copyFromUtf8(value)), getName(), getBucket(), type);
+
+    public void set(AntidoteTransaction tx, T value) {
+        getContainer().update(tx, getType(), getKey(), setOpBuilder(format.encode(value)));
     }
+
 
     /**
      * Prepare a set operation builder.
