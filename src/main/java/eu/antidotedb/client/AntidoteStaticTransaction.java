@@ -69,10 +69,6 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction {
         return updateMessage.build();
     }
 
-    @Override
-    public void close() throws IOException {
-        transactionStatus = TransactionStatus.CLOSED;
-    }
 
     @Override
     void performUpdate(ApbUpdateOp.Builder updateInstruction) {

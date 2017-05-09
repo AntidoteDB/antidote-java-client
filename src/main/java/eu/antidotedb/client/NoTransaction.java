@@ -22,8 +22,4 @@ public class NoTransaction extends TransactionWithReads {
         throw new RuntimeException("TODO implement");
     }
 
-    @Override
-    public void close() throws IOException {
-        // ignore
-    }
 }

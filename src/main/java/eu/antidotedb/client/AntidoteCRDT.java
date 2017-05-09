@@ -1,7 +1,6 @@
 package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB;
-import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 
 /**
  * The Class AntidoteObject.
@@ -18,4 +17,16 @@ public abstract class AntidoteCRDT {
      * update the internal state of this CRDT from a read response
      */
     public abstract void updateFromReadResponse(AntidotePB.ApbReadObjectResp object);
+
+    /**
+     * pull in changes from the database to update the state of this object.
+     * Uses a BatchRead to collect several pull-requests and executes them in one request.
+     * The effect is only visible after the BatchRead is committed.
+     */
+    public abstract void pull(BatchRead batchRead);
+
+    /**
+     * pull in changes from the database to update the state of this object.
+     */
+    public abstract void pull(TransactionWithReads tx);
 }

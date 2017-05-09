@@ -3,7 +3,7 @@ package eu.antidotedb.client;
 import com.basho.riak.protobuf.AntidotePB.ApbMapEntry;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
-import eu.antidotedb.client.crdt.AWMapCRDT;
+import eu.antidotedb.client.crdt.MapCRDT;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * The Class AntidoteOuterAWMap.
  */
-public final class AntidoteOuterAWMap extends AntidoteOuterMap implements AWMapCRDT {
+public final class AntidoteOuterAWMap extends AntidoteOuterMap implements MapCRDT {
 
     /**
      * The low level AW-map.

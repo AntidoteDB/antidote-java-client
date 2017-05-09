@@ -1,10 +1,12 @@
 package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB;
+import com.basho.riak.protobuf.AntidotePB.ApbStartTransaction;
+import com.basho.riak.protobuf.AntidotePB.ApbTxnProperties;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-public class InteractiveTransaction extends TransactionWithReads {
+public class InteractiveTransaction extends TransactionWithReads implements AutoCloseable {
 
     /**
      * The explicit connection object.
@@ -32,10 +34,27 @@ public class InteractiveTransaction extends TransactionWithReads {
      *
      * @param antidoteClient the antidote client
      */
-    public InteractiveTransaction(AntidoteClient antidoteClient, ByteString descriptor) {
+    public InteractiveTransaction(AntidoteClient antidoteClient) {
         this.antidoteClient = antidoteClient;
-        this.descriptor = descriptor;
         this.transactionStatus = TransactionStatus.STARTED;
+        startTransaction();
+    }
+
+    private void startTransaction() {
+        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
+
+        ApbStartTransaction.Builder readwriteTransaction = ApbStartTransaction.newBuilder();
+        readwriteTransaction.setProperties(transactionProperties);
+
+        ApbStartTransaction startTransactionMessage = readwriteTransaction.build();
+        AntidoteMessage startMessage = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStartTransaction, startTransactionMessage));
+
+        try {
+            AntidotePB.ApbStartTransactionResp transactionResponse = AntidotePB.ApbStartTransactionResp.parseFrom(startMessage.getMessage());
+            descriptor = transactionResponse.getTransactionDescriptor();
+        } catch (InvalidProtocolBufferException e) {
+           throw new AntidoteException("Could not parse start-transaction response", e);
+        }
     }
 
     /**
@@ -53,7 +72,6 @@ public class InteractiveTransaction extends TransactionWithReads {
     protected enum TransactionStatus {
         STARTED, COMMITTED, ABORTED, CLOSED
     }
-
 
 
     /**
