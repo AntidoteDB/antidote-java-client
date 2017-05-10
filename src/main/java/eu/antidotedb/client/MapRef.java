@@ -1,18 +1,14 @@
 package eu.antidotedb.client;
 
-import com.basho.riak.protobuf.AntidotePB;
 import com.basho.riak.protobuf.AntidotePB.*;
 import com.google.protobuf.ByteString;
 
-import java.awt.*;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * The Class LowLevelMap.
- *
+ * <p>
  * TODO add alternatives for homogeneous maps and maps that are used like structs
  */
 public class MapRef extends ObjectRef implements CrdtContainer {
@@ -25,13 +21,13 @@ public class MapRef extends ObjectRef implements CrdtContainer {
     }
 
     @Override
-    public MapReadResult read(InteractiveTransaction tx) {
+    public MapReadResult read(TransactionWithReads tx) {
         ApbGetMapResp map = getContainer().read(tx, getType(), getKey()).getMap();
         return new MapReadResult(map.getEntriesList());
     }
 
     @Override
-    public ApbReadObjectResp read(InteractiveTransaction tx, CRDT_type type, ByteString key) {
+    public ApbReadObjectResp read(TransactionWithReads tx, CRDT_type type, ByteString key) {
         MapReadResult res = read(tx);
         return res.getRaw(type, key);
     }
@@ -43,6 +39,22 @@ public class MapRef extends ObjectRef implements CrdtContainer {
         nestedUpdate.setKey(ApbMapKey.newBuilder().setType(type).setKey(key));
         nestedUpdate.setUpdate(operation);
         mapUpdate.addUpdates(nestedUpdate);
+        ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
+        updateOperation.setMapop(mapUpdate);
+        getContainer().update(tx, getType(), getKey(), updateOperation);
+    }
+
+    public void removeKey(AntidoteTransaction tx, CRDT_type type, ByteString key) {
+        removeKey(tx, ApbMapKey.newBuilder().setType(type).setKey(key).build());
+    }
+
+    public void removeKey(AntidoteTransaction tx, ApbMapKey key) {
+        removeKeys(tx, Arrays.asList(key));
+    }
+
+    public void removeKeys(AntidoteTransaction tx, List<ApbMapKey> keys) {
+        ApbMapUpdate.Builder mapUpdate = ApbMapUpdate.newBuilder();
+        mapUpdate.addAllRemovedKeys(keys);
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setMapop(mapUpdate);
         getContainer().update(tx, getType(), getKey(), updateOperation);

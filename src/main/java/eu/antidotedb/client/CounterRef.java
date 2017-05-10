@@ -32,7 +32,7 @@ public final class CounterRef extends ObjectRef {
     }
 
     @Override
-    public Integer read(InteractiveTransaction tx) {
+    public Integer read(TransactionWithReads tx) {
         return getContainer().read(tx, getType(), getKey()).getCounter().getValue();
     }
 
@@ -52,4 +52,7 @@ public final class CounterRef extends ObjectRef {
     }
 
 
+    public AntidoteOuterCounter createAntidoteCounter() {
+        return new AntidoteOuterCounter(this);
+    }
 }

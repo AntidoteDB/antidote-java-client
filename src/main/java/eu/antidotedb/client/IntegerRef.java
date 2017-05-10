@@ -40,7 +40,7 @@ public final class IntegerRef extends ObjectRef {
 
 
     @Override
-    public Long read(InteractiveTransaction tx) {
+    public Long read(TransactionWithReads tx) {
         return getContainer().read(tx, getType(), getKey()).getInt().getValue();
     }
 

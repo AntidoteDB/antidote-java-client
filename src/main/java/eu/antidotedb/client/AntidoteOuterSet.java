@@ -1,6 +1,6 @@
 package eu.antidotedb.client;
 
-import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import com.basho.riak.protobuf.AntidotePB;
 import com.google.protobuf.ByteString;
 
 import java.util.*;
@@ -8,185 +8,153 @@ import java.util.*;
 /**
  * The Class AntidoteOuterSet.
  */
-public class AntidoteOuterSet extends AntidoteCRDT {
+public class AntidoteOuterSet<T> extends AntidoteCRDT implements Set<T> {
 
-    /**
-     * The value list.
-     */
-    private Set<ByteString> valueList;
+
+    private SetRef<T> ref;
+
+    // current values
+    private Set<T> values = new LinkedHashSet<T>();
+
+    // uncommitted changes:
+    private Set<T> added = new HashSet<T>();
+    private Set<T> removed = new HashSet<T>();
 
     /**
      * Instantiates a new antidote set.
-     *
-     * @param name           the name
-     * @param bucket         the bucket
-     * @param valueList      the list of all values in the set
-     * @param antidoteClient the antidote client
-     * @param type           the type
      */
-    public AntidoteOuterSet(String name, String bucket, List<ByteString> valueList, AntidoteClient antidoteClient, CRDT_type type) {
-        super(name, bucket, antidoteClient, type);
-        this.valueList = new HashSet<>(valueList);
+    AntidoteOuterSet(SetRef<T> ref) {
+        this.ref = ref;
     }
 
-    /**
-     * Gets the value list.
-     *
-     * @return the value list
-     */
-    public Set<String> getValues() {
-        Set<String> valueListString = new HashSet<>();
-        for (ByteString s : valueList) {
-            valueListString.add(s.toStringUtf8());
+
+    @Override
+    public SetRef<T> getRef() {
+        return ref;
+    }
+
+    @Override
+    public void updateFromReadResponse(AntidotePB.ApbReadObjectResp resp) {
+        values.clear();
+        added.clear();
+        removed.clear();
+        for (ByteString bytes : resp.getSet().getValueList()) {
+            values.add(ref.getFormat().decode(bytes));
         }
-        return Collections.unmodifiableSet(valueListString);
     }
 
-    /**
-     * Gets the value list as ByteStrings.
-     *
-     * @return the value list as ByteStrings
-     */
-    public Set<ByteString> getValuesBS() {
-        return Collections.unmodifiableSet(valueList);
+    @Override
+    public void push(AntidoteTransaction tx) {
+        ref.removeAll(tx, removed);
+        ref.addAll(tx, added);
     }
 
-    /**
-     * Sets the value list.
-     *
-     * @param valueList the new value list
-     */
-    protected void setValues(List<ByteString> valueList) {
-        this.valueList = new HashSet<>(valueList);
+
+    @Override
+    public int size() {
+        return values.size();
     }
 
-    /**
-     * Removes the element from the set.
-     *
-     * @param element             the element
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void removeElement(String element, AntidoteTransaction antidoteTransaction) {
-        removeElementBS(ByteString.copyFromUtf8(element), antidoteTransaction);
+    @Override
+    public boolean isEmpty() {
+        return values.isEmpty();
     }
 
-    /**
-     * Removes the elements from the set.
-     *
-     * @param elementList         the elements
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void removeElement(List<String> elementList, AntidoteTransaction antidoteTransaction) {
-        List<ByteString> bsElementList = new ArrayList<>();
-        for (String elt : elementList) {
-            bsElementList.add(ByteString.copyFromUtf8(elt));
+    @Override
+    public boolean contains(Object o) {
+        return values.contains(o);
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        Iterator<T> iterator = values.iterator();
+        return new Iterator<T>() {
+            public T lastReturned;
+
+            @Override
+            public boolean hasNext() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public T next() {
+                lastReturned = iterator.next();
+                return lastReturned;
+            }
+
+            @Override
+            public void remove() {
+                iterator.remove();
+                added.remove(lastReturned);
+                removed.add(lastReturned);
+            }
+        };
+    }
+
+    @Override
+    public Object[] toArray() {
+        return values.toArray();
+    }
+
+    @Override
+    public <T1> T1[] toArray(T1[] a) {
+        //noinspection SuspiciousToArrayCall
+        return values.toArray(a);
+    }
+
+    @Override
+    public boolean add(T t) {
+        added.add(t);
+        removed.remove(t);
+        return values.add(t);
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        added.remove(o);
+        removed.add(getRef().getFormat().cast(o));
+        return values.remove(o);
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> c) {
+        return values.containsAll(c);
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends T> c) {
+        added.addAll(c);
+        removed.removeAll(c);
+        return values.addAll(c);
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        Objects.requireNonNull(c);
+        boolean modified = false;
+        Iterator<T> it = iterator();
+        while (it.hasNext()) {
+            if (!c.contains(it.next())) {
+                it.remove();
+                modified = true;
+            }
         }
-        removeLocal(bsElementList);
-        addUpdate(bsElementList, AntidoteSetOpType.SetRemove, antidoteTransaction);
+        return modified;
     }
 
-    /**
-     * Adds the element to the set.
-     *
-     * @param element             the element
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void addElement(String element, AntidoteTransaction antidoteTransaction) {
-        addElementBS(ByteString.copyFromUtf8(element), antidoteTransaction);
-
-    }
-
-    /**
-     * Adds the elements to the set.
-     *
-     * @param elementList         the elements
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void addElement(List<String> elementList, AntidoteTransaction antidoteTransaction) {
-        List<ByteString> bsElementList = new ArrayList<>();
-        for (String elt : elementList) {
-            bsElementList.add(ByteString.copyFromUtf8(elt));
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        added.removeAll(c);
+        for (Object o : c) {
+            removed.add(getRef().getFormat().cast(o));
         }
-        addLocal(bsElementList);
-        addUpdate(bsElementList, AntidoteSetOpType.SetAdd, antidoteTransaction);
+        return values.removeAll(c);
     }
 
-    /**
-     * Removes the element, given as ByteString, from the set.
-     *
-     * @param element             the element
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void removeElementBS(ByteString element, AntidoteTransaction antidoteTransaction) {
-        List<String> elementList = new ArrayList<String>();
-        elementList.add(element.toStringUtf8());
-        removeElement(elementList, antidoteTransaction);
-    }
-
-    /**
-     * Removes the elements, given as ByteStrings, from the set.
-     *
-     * @param elementList         the elements
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void removeElementBS(List<ByteString> elementList, AntidoteTransaction antidoteTransaction) {
-        removeLocal(elementList);
-        addUpdate(elementList, AntidoteSetOpType.SetRemove, antidoteTransaction);
-    }
-
-    /**
-     * Adds the element, given as ByteString, to the set.
-     *
-     * @param element             the element
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void addElementBS(ByteString element, AntidoteTransaction antidoteTransaction) {
-        List<String> elementList = new ArrayList<String>();
-        elementList.add(element.toStringUtf8());
-        addElement(elementList, antidoteTransaction);
-    }
-
-    /**
-     * Adds the elements, given as ByteStrings to the set.
-     *
-     * @param elementList         the elements
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void addElementBS(List<ByteString> elementList, AntidoteTransaction antidoteTransaction) {
-        addLocal(elementList);
-        addUpdate(elementList, AntidoteSetOpType.SetAdd, antidoteTransaction);
-    }
-
-    /**
-     * Executes the add operation locally.
-     *
-     * @param elements the elements
-     */
-    private void addLocal(List<ByteString> elements) {
-        valueList.addAll(elements);
-    }
-
-    /**
-     * Executed the remove operation locally.
-     *
-     * @param elements the elements
-     */
-    private void removeLocal(List<ByteString> elements) {
-        valueList.removeAll(elements);
-    }
-
-    /**
-     * Adds the update to the updateList.
-     *
-     * @param elements            the elements
-     * @param type                the type
-     * @param antidoteTransaction the antidote transaction
-     */
-    private void addUpdate(List<ByteString> elements, int type, AntidoteTransaction antidoteTransaction) {
-        if (type == AntidoteSetOpType.SetAdd) {
-            antidoteTransaction.updateHelper(new SetRef(getName(), getBucket(), getClient(), getType()).addOpBuilder(elements), getName(), getBucket(), getType());
-        } else if (type == AntidoteSetOpType.SetRemove) {
-            antidoteTransaction.updateHelper(new SetRef(getName(), getBucket(), getClient(), getType()).removeOpBuilder(elements), getName(), getBucket(), getType());
-        }
+    @Override
+    public void clear() {
+        added.clear();
+        removed.addAll(values);
+        values.clear();
     }
 }

@@ -2,6 +2,7 @@ package eu.antidotedb.client;
 
 import com.google.protobuf.ByteString;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,6 +20,12 @@ public interface ValueCoder<T> {
         return valueList.stream().map(this::encode).collect(Collectors.toList());
     }
 
+    default Collection<? extends T> castCollection(Collection<?> c) {
+        return c.stream().map(this::cast).collect(Collectors.toList());
+    }
+
+    T cast(Object value);
+
 
     /**
      * Stores Strings in utf8 encoding
@@ -32,6 +39,11 @@ public interface ValueCoder<T> {
         @Override
         public String decode(ByteString bytes) {
             return bytes.toStringUtf8();
+        }
+
+        @Override
+        public String cast(Object value) {
+            return (String) value;
         }
     };
 
@@ -58,10 +70,16 @@ public interface ValueCoder<T> {
         }
 
         @Override
+        public ByteString cast(Object value) {
+            return (ByteString) value;
+        }
+
+        @Override
         public List<ByteString> decodeList(List<ByteString> byteStringList) {
             return byteStringList;
         }
     };
+
 
 
 }

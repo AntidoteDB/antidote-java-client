@@ -21,7 +21,7 @@ public class RegisterRef<T> extends ObjectRef {
     }
 
     @Override
-    public T read(InteractiveTransaction tx) {
+    public T read(TransactionWithReads tx) {
         AntidotePB.ApbGetRegResp response = getContainer().read(tx, getType(), getKey()).getReg();
         return format.decode(response.getValue());
     }
@@ -44,5 +44,9 @@ public class RegisterRef<T> extends ObjectRef {
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setRegop(regUpdateInstruction);
         return updateOperation;
+    }
+
+    public ValueCoder<T> getFormat() {
+        return format;
     }
 }

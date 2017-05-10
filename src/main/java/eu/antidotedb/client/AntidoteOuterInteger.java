@@ -1,91 +1,92 @@
 package eu.antidotedb.client;
 
-import eu.antidotedb.client.crdt.IntegerCRDT;
+import com.basho.riak.protobuf.AntidotePB;
+
+import java.util.OptionalLong;
 
 /**
  * The Class AntidoteOuterInteger.
  */
-public final class AntidoteOuterInteger extends AntidoteCRDT implements IntegerCRDT {
+public final class AntidoteOuterInteger extends AntidoteCRDT {
 
     /**
      * The value of the integer.
      */
-    private int value;
+    private long value;
+
+    private long delta;
+
+    private OptionalLong assigned = OptionalLong.empty();
+
 
     /**
      * The low level integer.
      */
-    private final IntegerRef lowLevelInteger;
+    private final IntegerRef ref;
 
     /**
      * Instantiates a new antidote integer.
-     *
-     * @param name           the name
-     * @param bucket         the bucket
-     * @param value          the value of the integer
-     * @param antidoteClient the antidote client
      */
-    public AntidoteOuterInteger(String name, String bucket, int value, AntidoteClient antidoteClient) {
-        super(name, bucket, antidoteClient, AntidoteType.IntegerType);
-        this.value = value;
-        lowLevelInteger = new IntegerRef(name, bucket, antidoteClient);
+    AntidoteOuterInteger(IntegerRef ref) {
+        this.ref = ref;
     }
 
     /**
      * Gets the value.
-     *
-     * @return the value
      */
-    public int getValue() {
+    public long getValue() {
         return value;
-    }
-
-    protected void readSetValue(int newValue) {
-        value = newValue;
     }
 
     /**
      * Sets the value.
-     *
-     * @param newValue            the new value
-     * @param antidoteTransaction the antidote transaction
      */
-    public void setValue(int newValue, AntidoteTransaction antidoteTransaction) {
+    public void set(int newValue) {
         value = newValue;
-        antidoteTransaction.updateHelper(lowLevelInteger.setOpBuilder(newValue), getName(), getBucket(), getType());
+        assigned = OptionalLong.of(newValue);
+        delta = 0;
     }
 
-    /**
-     * Gets the most recent state from the database.
-     */
-    public void readDatabase(AntidoteTransaction antidoteTransaction) {
-        value = lowLevelInteger.readValue(antidoteTransaction);
-    }
-
-    /**
-     * Gets the most recent state from the database.
-     */
-    public void readDatabase() {
-        value = lowLevelInteger.readValue();
-    }
 
     /**
      * Increment by one.
-     *
-     * @param antidoteTransaction the antidote transaction
      */
-    public void increment(AntidoteTransaction antidoteTransaction) {
-        increment(1, antidoteTransaction);
+    public void increment() {
+        increment(1);
     }
 
     /**
      * Increment by inc.
      *
-     * @param inc                 the value by which the integer is incremented
-     * @param antidoteTransaction the antidote transaction
+     * @param inc the value by which the integer is incremented
      */
-    public void increment(int inc, AntidoteTransaction antidoteTransaction) {
-        value = value + inc;
-        antidoteTransaction.updateHelper(lowLevelInteger.incrementOpBuilder(inc), getName(), getBucket(), getType());
+    public void increment(int inc) {
+        value += inc;
+        delta += inc;
+    }
+
+    @Override
+    public IntegerRef getRef() {
+        return ref;
+    }
+
+    @Override
+    void updateFromReadResponse(AntidotePB.ApbReadObjectResp object) {
+        value = object.getInt().getValue();
+        assigned = OptionalLong.empty();
+        delta = 0;
+
+    }
+
+    @Override
+    public void push(AntidoteTransaction tx) {
+        if (assigned.isPresent()) {
+            ref.set(tx, assigned.getAsLong());
+        }
+        if (delta != 0) {
+            ref.increment(delta, tx);
+        }
+        assigned = OptionalLong.empty();
+        delta = 0;
     }
 }

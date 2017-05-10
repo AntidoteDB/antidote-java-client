@@ -52,10 +52,10 @@ public abstract class ObjectRef {
     /**
      * Reads the current value of this object from the database
      */
-    public abstract Object read(InteractiveTransaction tx);
+    public abstract Object read(TransactionWithReads tx);
 
 
-    AntidotePB.ApbReadObjectResp readValue(InteractiveTransaction tx) {
+    AntidotePB.ApbReadObjectResp readValue(TransactionWithReads tx) {
         return container.read(tx, type, key);
     }
 

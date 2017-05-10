@@ -19,8 +19,13 @@ public final class MVRegisterRef<T> extends ObjectRef {
         this.format = format;
     }
 
+
+    public ValueCoder<T> getFormat() {
+        return format;
+    }
+
     @Override
-    public List<T> read(InteractiveTransaction tx) {
+    public List<T> read(TransactionWithReads tx) {
         ApbGetMVRegResp response = getContainer().read(tx, getType(), getKey()).getMvreg();
         return format.decodeList(response.getValuesList());
     }

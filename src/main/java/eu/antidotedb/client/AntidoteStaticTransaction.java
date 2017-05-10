@@ -13,7 +13,6 @@ import java.util.List;
  */
 public final class AntidoteStaticTransaction extends AntidoteTransaction {
 
-    private ApbStartTransaction.Builder startTransaction;
     private AntidoteClient client;
 
     private TransactionStatus transactionStatus = TransactionStatus.STARTED;
@@ -28,7 +27,6 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction {
      */
     AntidoteStaticTransaction(AntidoteClient antidoteClient) {
         client = antidoteClient;
-        startTransaction = null;
     }
 
 
@@ -62,6 +60,7 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction {
      */
     protected ApbStaticUpdateObjects createUpdateStaticObject() {
         ApbStaticUpdateObjects.Builder updateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
+        ApbStartTransaction.Builder startTransaction = ApbStartTransaction.newBuilder();
         updateMessage.setTransaction(startTransaction);
         for (ApbUpdateOp.Builder updateInstruction : transactionUpdateList) {
             updateMessage.addUpdates(updateInstruction);

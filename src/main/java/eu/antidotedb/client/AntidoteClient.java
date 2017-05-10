@@ -79,5 +79,13 @@ public final class AntidoteClient {
 
 
     }
+
+    public Bucket bucket(String bucketKey) {
+        return bucket(ByteString.copyFromUtf8(bucketKey));
+    }
+
+    private Bucket bucket(ByteString bucketKey) {
+        return new Bucket(bucketKey);
+    }
 }
 

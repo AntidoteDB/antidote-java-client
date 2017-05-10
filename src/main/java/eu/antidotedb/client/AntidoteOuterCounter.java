@@ -1,91 +1,65 @@
 package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB;
-import eu.antidotedb.client.crdt.CounterCRDT;
 
 /**
  * The Class AntidoteOuterCounter.
  */
-public final class AntidoteOuterCounter extends AntidoteCRDT implements CounterCRDT {
+public final class AntidoteOuterCounter extends AntidoteCRDT {
 
     /**
      * The value of the counter.
      */
     private int value;
 
-    /**
-     * The low level counter.
-     */
-    private final CounterRef lowLevelCounter;
+    private int delta;
 
-    /**
-     * Instantiates a new antidote counter.
-     *
-     * @param name           the name
-     * @param bucket         the bucket
-     * @param value          the value of the counter
-     * @param antidoteClient the antidote client
-     */
-    public AntidoteOuterCounter(String name, String bucket, int value, AntidoteClient antidoteClient) {
-        this.value = value;
-        this.lowLevelCounter = new CounterRef(name, bucket, antidoteClient);
+    private final CounterRef ref;
+
+
+    public AntidoteOuterCounter(CounterRef ref) {
+        this.ref = ref;
     }
 
     /**
-     * Gets the value.
-     *
-     * @return the value
+     * Gets the current value.
      */
     public int getValue() {
         return value;
     }
 
-    protected void readSetValue(int newValue) {
-        value = newValue;
-    }
-
-    /**
-     * Gets the most recent state from the database.
-     */
-    public void readDatabase(AntidoteTransaction antidoteTransaction) {
-        value = lowLevelCounter.readValue(antidoteTransaction);
-    }
-
-    /**
-     * Gets the most recent state from the database.
-     */
-    public void readDatabase() {
-        value = lowLevelCounter.readValue();
-    }
-
     /**
      * Increment by one.
-     *
-     * @param antidoteTransaction the antidote static transaction
      */
-    public void increment(AntidoteTransaction antidoteTransaction) {
-        increment(1, antidoteTransaction);
+    public void increment() {
+        increment(1);
     }
 
 
     /**
      * Increment.
      *
-     * @param inc                 the value by which the counter is incremented
-     * @param antidoteTransaction the antidote transaction
+     * @param inc the value by which the counter is incremented
      */
-    public void increment(int inc, AntidoteTransaction antidoteTransaction) {
-        value = value + inc;
-        lowLevelCounter.increment(inc, antidoteTransaction);
+    public void increment(int inc) {
+        value += inc;
+        delta += inc;
     }
 
     @Override
     public ObjectRef getRef() {
-        return lowLevelCounter;
+        return ref;
     }
 
     @Override
     public void updateFromReadResponse(AntidotePB.ApbReadObjectResp readResponse) {
-        this.value = readResponse.getCounter().getValue();
+        value = readResponse.getCounter().getValue();
+        delta = 0;
+    }
+
+    @Override
+    public void push(AntidoteTransaction tx) {
+        ref.increment(delta, tx);
+        delta = 0;
     }
 }

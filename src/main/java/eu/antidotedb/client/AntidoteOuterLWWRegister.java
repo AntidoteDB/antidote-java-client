@@ -1,35 +1,27 @@
 package eu.antidotedb.client;
 
-import com.google.protobuf.ByteString;
-import eu.antidotedb.client.crdt.LWWRegisterCRDT;
+import com.basho.riak.protobuf.AntidotePB;
 
 /**
  * The Class AntidoteOuterLWWRegister.
  */
-public final class AntidoteOuterLWWRegister extends AntidoteCRDT implements LWWRegisterCRDT {
+public final class AntidoteOuterLWWRegister<T> extends AntidoteCRDT {
 
     /**
      * The value.
      */
-    private ByteString value;
+    private T value;
+
+    private boolean changed = false;
 
     /**
      * The low level register.
      */
-    private final LWWRegisterRef lowLevelRegister;
+    private final RegisterRef<T> ref;
 
-    /**
-     * Instantiates a new antidote register.
-     *
-     * @param name           the name
-     * @param bucket         the bucket
-     * @param value          the value of the register
-     * @param antidoteClient the antidote client
-     */
-    public AntidoteOuterLWWRegister(String name, String bucket, ByteString value, AntidoteClient antidoteClient) {
-        super(name, bucket, antidoteClient, AntidoteType.LWWRegisterType);
-        this.value = value;
-        lowLevelRegister = new LWWRegisterRef(name, bucket, antidoteClient);
+
+    AntidoteOuterLWWRegister(RegisterRef<T> lowLevelRegister) {
+        this.ref = lowLevelRegister;
     }
 
     /**
@@ -37,48 +29,35 @@ public final class AntidoteOuterLWWRegister extends AntidoteCRDT implements LWWR
      *
      * @return the value
      */
-    public String getValue() {
-        return value.toStringUtf8();
-    }
-
-    protected void readValueList(ByteString newValueList) {
-        value = newValueList;
-    }
-
-    /* (non-Javadoc)
-     * @see eu.antidotedb.client.RegisterInterface#getValueBS()
-     */
-    public ByteString getValueBS() {
+    public T getValue() {
         return value;
-    }
-
-    /**
-     * Gets the most recent state from the database.
-     */
-    public void readDatabase(AntidoteTransaction antidoteTransaction) {
-        value = lowLevelRegister.readRegisterValueBS(antidoteTransaction);
-    }
-
-    /**
-     * Gets the most recent state from the database.
-     */
-    public void readDatabase() {
-        value = lowLevelRegister.readRegisterValueBS();
     }
 
     /**
      * Set the value of the register.
      *
-     * @param element             the element
-     * @param antidoteTransaction the antidote transaction
      */
-    public void setValue(String element, AntidoteTransaction antidoteTransaction) {
-        value = ByteString.copyFromUtf8(element);
-        antidoteTransaction.updateHelper(lowLevelRegister.setOpBuilder(ByteString.copyFromUtf8(element)), getName(), getBucket(), getType());
+    public void set(T value) {
+        this.value = value;
+        this.changed = true;
     }
 
-    public void setValueBS(ByteString element, AntidoteTransaction antidoteTransaction) {
-        value = element;
-        antidoteTransaction.updateHelper(lowLevelRegister.setOpBuilder(element), getName(), getBucket(), getType());
+    @Override
+    public RegisterRef<T> getRef() {
+        return ref;
+    }
+
+    @Override
+    void updateFromReadResponse(AntidotePB.ApbReadObjectResp object) {
+        value = ref.getFormat().decode(object.getReg().getValue());
+        changed = false;
+    }
+
+    @Override
+    public void push(AntidoteTransaction tx) {
+        if (changed) {
+            ref.set(tx, value);
+        }
+        changed = false;
     }
 }

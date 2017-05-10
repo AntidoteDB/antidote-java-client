@@ -37,6 +37,7 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
     public InteractiveTransaction(AntidoteClient antidoteClient) {
         this.antidoteClient = antidoteClient;
         this.transactionStatus = TransactionStatus.STARTED;
+        this.connection = antidoteClient.getPoolManager().getConnection();
         startTransaction();
     }
 

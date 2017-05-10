@@ -1,93 +1,54 @@
 package eu.antidotedb.client;
 
+import com.basho.riak.protobuf.AntidotePB;
 import com.google.protobuf.ByteString;
-import eu.antidotedb.client.crdt.MVRegisterCRDT;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * The Class AntidoteOuterMVRegister.
  */
-public final class AntidoteOuterMVRegister extends AntidoteCRDT implements MVRegisterCRDT {
+public final class AntidoteOuterMVRegister<T> extends AntidoteCRDT {
 
-    /**
-     * The value list.
-     */
-    private List<ByteString> valueList;
 
-    /**
-     * The low level register.
-     */
-    private final MVRegisterRef lowLevelRegister;
+    private MVRegisterRef<T> ref;
 
-    /**
-     * Instantiates a new antidote MV register.
-     *
-     * @param name           the name
-     * @param bucket         the bucket
-     * @param valueList      the values of the MV-Register
-     * @param antidoteClient the antidote client
-     */
-    public AntidoteOuterMVRegister(String name, String bucket, List<ByteString> valueList, AntidoteClient antidoteClient) {
-        super(name, bucket, antidoteClient, AntidoteType.MVRegisterType);
-        this.valueList = valueList;
-        lowLevelRegister = new MVRegisterRef(name, bucket, antidoteClient);
+    private List<T> values;
+
+    private boolean changed = false;
+
+
+    AntidoteOuterMVRegister(MVRegisterRef<T> ref) {
+        this.ref = ref;
     }
 
-    /**
-     * Gets the value list.
-     *
-     * @return the value list
-     */
-    public List<String> getValueList() {
-        List<String> valueListString = new ArrayList<>();
-        for (ByteString value : valueList) {
-            valueListString.add(value.toStringUtf8());
+    @Override
+    public MVRegisterRef<T> getRef() {
+        return ref;
+    }
+
+    @Override
+    void updateFromReadResponse(AntidotePB.ApbReadObjectResp resp) {
+        List<ByteString> values = resp.getMvreg().getValuesList();
+        this.values = Collections.unmodifiableList(ref.getFormat().decodeList(values));
+    }
+
+    @Override
+    public void push(AntidoteTransaction tx) {
+        if (changed) {
+            ref.set(tx, values.get(0));
+            changed = false;
         }
-        return new ArrayList<String>(valueListString);
     }
 
-    protected void readValueList(List<ByteString> newValueList) {
-        valueList = new ArrayList<ByteString>(newValueList);
+    public List<T> getValues() {
+        return values;
     }
 
-    /* (non-Javadoc)
-     * @see eu.antidotedb.client.MVRegisterInterface#getValueListBS()
-     */
-    public List<ByteString> getValueListBS() {
-        return new ArrayList<ByteString>(valueList);
+    public void set(T value) {
+        values = Collections.singletonList(value);
+        changed = true;
     }
 
-    /**
-     * Gets the most recent state from the database.
-     */
-    public void readDatabase(AntidoteTransaction antidoteTransaction) {
-        valueList = new ArrayList<ByteString>(lowLevelRegister.readRegisterValuesBS(antidoteTransaction));
-    }
-
-    /**
-     * Gets the most recent state from the database.
-     */
-    public void readDatabase() {
-        valueList = new ArrayList<ByteString>(lowLevelRegister.readRegisterValuesBS());
-    }
-
-    /**
-     * Update the MV-Register.
-     *
-     * @param element             the element
-     * @param antidoteTransaction the antidote transaction
-     */
-    public void setValue(String element, AntidoteTransaction antidoteTransaction) {
-        valueList = new ArrayList<>();
-        valueList.add(ByteString.copyFromUtf8(element));
-        antidoteTransaction.updateHelper(lowLevelRegister.setOpBuilder(ByteString.copyFromUtf8(element)), getName(), getBucket(), getType());
-    }
-
-    public void setValueBS(ByteString element, AntidoteTransaction antidoteTransaction) {
-        valueList = new ArrayList<>();
-        valueList.add(element);
-        antidoteTransaction.updateHelper(lowLevelRegister.setOpBuilder(element), getName(), getBucket(), getType());
-    }
 }

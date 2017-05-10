@@ -6,6 +6,7 @@ import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class SetRef<T> extends ObjectRef {
     }
 
     @Override
-    public List<T> read(InteractiveTransaction tx) {
+    public List<T> read(TransactionWithReads tx) {
         AntidotePB.ApbGetSetResp set = getContainer().read(tx, getType(), getKey()).getSet();
         return format.decodeList(set.getValueList());
     }
@@ -31,7 +32,7 @@ public class SetRef<T> extends ObjectRef {
         addAll(tx, Collections.singletonList(element));
     }
 
-    public void addAll(AntidoteTransaction tx, List<T> ts) {
+    public void addAll(AntidoteTransaction tx, Collection<T> ts) {
         getContainer().update(tx, getType(), getKey(), addOpBuilder(ts));
     }
 
@@ -39,7 +40,7 @@ public class SetRef<T> extends ObjectRef {
         removeAll(tx, Collections.singletonList(element));
     }
 
-    public void removeAll(AntidoteTransaction tx, List<T> ts) {
+    public void removeAll(AntidoteTransaction tx, Collection<T> ts) {
         getContainer().update(tx, getType(), getKey(), removeOpBuilder(ts));
     }
 
@@ -50,7 +51,7 @@ public class SetRef<T> extends ObjectRef {
      * @param elements the elements
      * @return the apb update operation. builder
      */
-    private ApbUpdateOperation.Builder removeOpBuilder(List<T> elements) {
+    private ApbUpdateOperation.Builder removeOpBuilder(Collection<T> elements) {
         ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
         ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(2);
         setUpdateInstruction.setOptype(opType);
@@ -68,7 +69,7 @@ public class SetRef<T> extends ObjectRef {
      * @param elements the elements
      * @return the apb update operation. builder
      */
-    private ApbUpdateOperation.Builder addOpBuilder(List<T> elements) {
+    private ApbUpdateOperation.Builder addOpBuilder(Collection<T> elements) {
         ApbSetUpdate.Builder setUpdateInstruction = ApbSetUpdate.newBuilder(); // The specific instruction in update instructions
         ApbSetUpdate.SetOpType opType = ApbSetUpdate.SetOpType.forNumber(1);
         setUpdateInstruction.setOptype(opType);
@@ -81,4 +82,11 @@ public class SetRef<T> extends ObjectRef {
     }
 
 
+    public ValueCoder<T> getFormat() {
+        return format;
+    }
+
+    public AntidoteOuterSet createAntidoteORSet() {
+        return new AntidoteOuterSet<>(this);
+    }
 }

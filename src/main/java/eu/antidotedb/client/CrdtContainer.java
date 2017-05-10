@@ -13,7 +13,7 @@ import com.google.protobuf.ByteString;
  * </ul>
  */
 public interface CrdtContainer {
-    AntidotePB.ApbReadObjectResp read(InteractiveTransaction tx, CRDT_type type, ByteString key);
+    AntidotePB.ApbReadObjectResp read(TransactionWithReads tx, CRDT_type type, ByteString key);
 
     void update(AntidoteTransaction tx, CRDT_type type, ByteString key, AntidotePB.ApbUpdateOperation.Builder builder);
 
