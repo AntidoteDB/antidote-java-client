@@ -57,6 +57,9 @@ public interface CrdtContainer {
         return new MapRef(this, key, CRDT_type.GMAP);
     }
 
+    default MapRef map_g(String key) {
+        return map_g(ByteString.copyFromUtf8(key));
+    }
 
     default CounterRef counter(String key) {
         return counter(ByteString.copyFromUtf8(key));

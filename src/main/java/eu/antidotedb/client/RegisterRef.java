@@ -49,4 +49,8 @@ public class RegisterRef<T> extends ObjectRef {
     public ValueCoder<T> getFormat() {
         return format;
     }
+
+    public CrdtRegister<T> createAntidoteLWWRegister() {
+        return new CrdtRegister<>(this);
+    }
 }

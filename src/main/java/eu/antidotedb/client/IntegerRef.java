@@ -73,4 +73,7 @@ public final class IntegerRef extends ObjectRef {
         return updateOperation;
     }
 
+    public CrdtInteger createAntidoteInteger() {
+        return new CrdtInteger(this);
+    }
 }

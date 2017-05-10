@@ -2,7 +2,6 @@ package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB.*;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.util.List;
 
@@ -87,5 +86,6 @@ public final class AntidoteClient {
     private Bucket bucket(ByteString bucketKey) {
         return new Bucket(bucketKey);
     }
+
 }
 

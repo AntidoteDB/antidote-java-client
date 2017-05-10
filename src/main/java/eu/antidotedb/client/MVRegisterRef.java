@@ -49,4 +49,8 @@ public final class MVRegisterRef<T> extends ObjectRef {
         updateOperation.setRegop(regUpdateInstruction);
         return updateOperation;
     }
+
+    public CrdtMVRegister<T> createAntidoteMVRegister() {
+        return new CrdtMVRegister<>(this);
+    }
 }
