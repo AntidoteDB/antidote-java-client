@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * The Class AntidoteOuterMVRegister.
  */
-public final class AntidoteOuterMVRegister<T> extends AntidoteCRDT {
+public final class CrdtMVRegister<T> extends AntidoteCRDT {
 
 
     private MVRegisterRef<T> ref;
@@ -19,7 +19,7 @@ public final class AntidoteOuterMVRegister<T> extends AntidoteCRDT {
     private boolean changed = false;
 
 
-    AntidoteOuterMVRegister(MVRegisterRef<T> ref) {
+    CrdtMVRegister(MVRegisterRef<T> ref) {
         this.ref = ref;
     }
 

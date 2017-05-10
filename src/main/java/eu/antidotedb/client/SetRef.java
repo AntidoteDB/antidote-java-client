@@ -86,7 +86,7 @@ public class SetRef<T> extends ObjectRef {
         return format;
     }
 
-    public AntidoteOuterSet createAntidoteORSet() {
-        return new AntidoteOuterSet<>(this);
+    public CrdtSet createAntidoteORSet() {
+        return new CrdtSet<>(this);
     }
 }

@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 /**
  * A homogeneous map with values of type V
  */
-public class AntidoteOuterMap<K, V extends AntidoteCRDT> extends AntidoteCRDT {
+public class CrdtMap<K, V extends AntidoteCRDT> extends AntidoteCRDT {
 
     private final MapRef ref;
     private ValueCoder<K> keyCoder;
@@ -18,7 +18,7 @@ public class AntidoteOuterMap<K, V extends AntidoteCRDT> extends AntidoteCRDT {
     private final Map<K, V> data = new LinkedHashMap<>();
     private final Set<K> removedKeys = new HashSet<>();
 
-    public AntidoteOuterMap(MapRef ref, ValueCoder<K> keyCoder, CrdtCreator<V> valueCreator) {
+    public CrdtMap(MapRef ref, ValueCoder<K> keyCoder, CrdtCreator<V> valueCreator) {
         this.ref = ref;
         this.keyCoder = keyCoder;
         this.valueCreator = valueCreator;

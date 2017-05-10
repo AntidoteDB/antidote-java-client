@@ -5,7 +5,7 @@ import com.basho.riak.protobuf.AntidotePB;
 /**
  * The Class AntidoteOuterLWWRegister.
  */
-public final class AntidoteOuterLWWRegister<T> extends AntidoteCRDT {
+public final class CrdtRegister<T> extends AntidoteCRDT {
 
     /**
      * The value.
@@ -20,7 +20,7 @@ public final class AntidoteOuterLWWRegister<T> extends AntidoteCRDT {
     private final RegisterRef<T> ref;
 
 
-    AntidoteOuterLWWRegister(RegisterRef<T> lowLevelRegister) {
+    CrdtRegister(RegisterRef<T> lowLevelRegister) {
         this.ref = lowLevelRegister;
     }
 

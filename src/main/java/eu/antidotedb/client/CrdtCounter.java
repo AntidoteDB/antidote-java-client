@@ -3,9 +3,9 @@ package eu.antidotedb.client;
 import com.basho.riak.protobuf.AntidotePB;
 
 /**
- * The Class AntidoteOuterCounter.
+ * The Class CrdtCounter.
  */
-public final class AntidoteOuterCounter extends AntidoteCRDT {
+public final class CrdtCounter extends AntidoteCRDT {
 
     /**
      * The value of the counter.
@@ -17,7 +17,7 @@ public final class AntidoteOuterCounter extends AntidoteCRDT {
     private final CounterRef ref;
 
 
-    public AntidoteOuterCounter(CounterRef ref) {
+    public CrdtCounter(CounterRef ref) {
         this.ref = ref;
     }
 

@@ -57,7 +57,7 @@ public class AntidoteTest {
     public void seqIntractiveTransaction() {
         CounterRef lowCounter =  bucket.counter("testCounter5");
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            AntidoteOuterCounter counter = lowCounter.createAntidoteCounter();
+            CrdtCounter counter = lowCounter.createAntidoteCounter();
             counter.pull(tx);
             int oldValue = counter.getValue();
             assertEquals(0, oldValue);
@@ -67,7 +67,7 @@ public class AntidoteTest {
         }
 
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            AntidoteOuterCounter counter = lowCounter.createAntidoteCounter();
+            CrdtCounter counter = lowCounter.createAntidoteCounter();
             counter.pull(tx);
             int newValue = counter.getValue();
             assertEquals(5, newValue);
@@ -104,7 +104,7 @@ public class AntidoteTest {
         AWMapRef awMapRef = antidoteClient.awMapRef("testawMapRef", bucket);
 
         AntidoteOuterInteger integer = lowInt1.createAntidoteInteger();
-        AntidoteOuterCounter counter = lowCounter1.createAntidoteCounter();
+        CrdtCounter counter = lowCounter1.createAntidoteCounter();
         AntidoteOuterORSet orSet2 = orSetRef.createAntidoteORSet();
         AntidoteOuterORSet orSet = orSetRef1.createAntidoteORSet();
         AntidoteOuterRWSet rwSet = rwSetRef1.createAntidoteRWSet();
@@ -330,7 +330,7 @@ public class AntidoteTest {
         AWMapRef awMapRef = antidoteClient.awMapRef("testawMapRef", bucket);
 
         AntidoteOuterInteger integer = lowInt1.createAntidoteInteger();
-        AntidoteOuterCounter counter = lowCounter1.createAntidoteCounter();
+        CrdtCounter counter = lowCounter1.createAntidoteCounter();
         AntidoteOuterORSet orSet2 = orSetRef.createAntidoteORSet();
         AntidoteOuterORSet orSet = orSetRef1.createAntidoteORSet();
         AntidoteOuterRWSet rwSet = rwSetRef1.createAntidoteRWSet();
@@ -564,7 +564,7 @@ public class AntidoteTest {
         AWMapRef awMapRef = antidoteClient.awMapRef("testawMapRef", bucket);
 
         AntidoteOuterInteger integer = lowInt1.createAntidoteInteger();
-        AntidoteOuterCounter counter = lowCounter1.createAntidoteCounter();
+        CrdtCounter counter = lowCounter1.createAntidoteCounter();
         AntidoteOuterORSet orSet2 = orSetRef.createAntidoteORSet();
         AntidoteOuterORSet orSet = orSetRef1.createAntidoteORSet();
         AntidoteOuterRWSet rwSet = rwSetRef1.createAntidoteRWSet();
@@ -760,9 +760,9 @@ public class AntidoteTest {
         antidoteTransaction = antidoteClient.startTransaction();
         CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
         CounterRef lowCounter2 = new CounterRef("testCounter3", bucket, antidoteClient);
-        AntidoteOuterCounter counter1old = lowCounter1.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter1old = lowCounter1.createAntidoteCounter(antidoteTransaction);
         int oldValue1 = counter1old.getValue();
-        AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter2old = lowCounter2.createAntidoteCounter(antidoteTransaction);
         int oldValue2 = counter2old.getValue();
         antidoteTransaction.commitTransaction();
         antidoteTransaction.close();
@@ -774,8 +774,8 @@ public class AntidoteTest {
         tx.commitTransaction();
         tx.close();
         antidoteTransaction = antidoteClient.startTransaction();
-        AntidoteOuterCounter counter1new = lowCounter1.createAntidoteCounter(antidoteTransaction);
-        AntidoteOuterCounter counter2new = lowCounter2.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter1new = lowCounter1.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter2new = lowCounter2.createAntidoteCounter(antidoteTransaction);
 
         int newValue1 = counter1new.getValue();
         int newValue2 = counter2new.getValue();
@@ -799,9 +799,9 @@ public class AntidoteTest {
         CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
         CounterRef lowCounter2 = new CounterRef("testCounter3", bucket, antidoteClient);
         antidoteTransaction = antidoteClient.startTransaction();
-        AntidoteOuterCounter counter1old = lowCounter1.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter1old = lowCounter1.createAntidoteCounter(antidoteTransaction);
         int oldValue1 = counter1old.getValue();
-        AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter2old = lowCounter2.createAntidoteCounter(antidoteTransaction);
         int oldValue2 = counter2old.getValue();
 
         antidoteTransaction.commitTransaction();
@@ -815,8 +815,8 @@ public class AntidoteTest {
         tx.close();
 
         antidoteTransaction = antidoteClient.startTransaction();
-        AntidoteOuterCounter counter1new = lowCounter1.createAntidoteCounter(antidoteTransaction);
-        AntidoteOuterCounter counter2new = lowCounter2.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter1new = lowCounter1.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter2new = lowCounter2.createAntidoteCounter(antidoteTransaction);
         antidoteTransaction.commitTransaction();
 
         int newValue1 = counter1new.getValue();
@@ -838,9 +838,9 @@ public class AntidoteTest {
         antidoteTransaction = antidoteClient.startTransaction();
         CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
         CounterRef lowCounter2 = new CounterRef("testCounter3", bucket, antidoteClient);
-        AntidoteOuterCounter counter1old = lowCounter1.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter1old = lowCounter1.createAntidoteCounter(antidoteTransaction);
         int oldValue1 = counter1old.getValue();
-        AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter2old = lowCounter2.createAntidoteCounter(antidoteTransaction);
         int oldValue2 = counter2old.getValue();
 
         antidoteTransaction.commitTransaction();
@@ -875,9 +875,9 @@ public class AntidoteTest {
         antidoteTransaction = antidoteClient.startTransaction();
         CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
         CounterRef lowCounter2 = new CounterRef("testCounter3", bucket, antidoteClient);
-        AntidoteOuterCounter counter1old = lowCounter1.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter1old = lowCounter1.createAntidoteCounter(antidoteTransaction);
         int oldValue1 = counter1old.getValue();
-        AntidoteOuterCounter counter2old = lowCounter2.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter2old = lowCounter2.createAntidoteCounter(antidoteTransaction);
         int oldValue2 = counter2old.getValue();
         antidoteTransaction.commitTransaction();
 
@@ -910,7 +910,7 @@ public class AntidoteTest {
 
         antidoteTransaction = antidoteClient.startTransaction();
         CounterRef lowCounter = new CounterRef("testCounter5", bucket, antidoteClient);
-        AntidoteOuterCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
         int oldValue = counter.getValue();
         counter.increment(antidoteTransaction);
         counter.increment(antidoteTransaction);
@@ -928,7 +928,7 @@ public class AntidoteTest {
     public void decrementToZeroTest() {
         antidoteTransaction = antidoteClient.startTransaction();
         CounterRef lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
-        AntidoteOuterCounter testCounter = lowCounter.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter testCounter = lowCounter.createAntidoteCounter(antidoteTransaction);
         testCounter.increment(0 - testCounter.getValue(), antidoteTransaction);
         Assert.assertEquals(testCounter.getValue(), 0); //operation executed locally
         testCounter.readDatabase(antidoteTransaction);
@@ -941,7 +941,7 @@ public class AntidoteTest {
         antidoteTransaction = antidoteClient.startTransaction();
 
         CounterRef lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
-        AntidoteOuterCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
         int oldValue = counter.getValue();
         counter.increment(5, antidoteTransaction);
         antidoteTransaction.commitTransaction();
@@ -1426,7 +1426,7 @@ public class AntidoteTest {
         lowAWMap.update(gMapKey, gMapUpdate, antidoteTransaction);
         lowGMap.update(counterKey, counterUpdate, antidoteTransaction);
 
-        AntidoteOuterCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
         AntidoteOuterORSet orSet = lowORSet.createAntidoteORSet(antidoteTransaction);
         AntidoteOuterRWSet rwSet = lowRWSet.createAntidoteRWSet(antidoteTransaction);
         AntidoteOuterInteger integer = lowInteger.createAntidoteInteger(antidoteTransaction);
@@ -1552,7 +1552,7 @@ public class AntidoteTest {
         lowAWMap.update(gMapKey, gMapUpdate, antidoteTransaction);
         lowGMap.update(counterKey, counterUpdate, antidoteTransaction);
 
-        AntidoteOuterCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
+        CrdtCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
         AntidoteOuterORSet orSet = lowORSet.createAntidoteORSet(antidoteTransaction);
         AntidoteOuterRWSet rwSet = lowRWSet.createAntidoteRWSet(antidoteTransaction);
         AntidoteOuterInteger integer = lowInteger.createAntidoteInteger(antidoteTransaction);

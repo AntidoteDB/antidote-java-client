@@ -8,7 +8,7 @@ import java.util.*;
 /**
  * The Class AntidoteOuterSet.
  */
-public class AntidoteOuterSet<T> extends AntidoteCRDT implements Set<T> {
+public class CrdtSet<T> extends AntidoteCRDT implements Set<T> {
 
 
     private SetRef<T> ref;
@@ -23,7 +23,7 @@ public class AntidoteOuterSet<T> extends AntidoteCRDT implements Set<T> {
     /**
      * Instantiates a new antidote set.
      */
-    AntidoteOuterSet(SetRef<T> ref) {
+    CrdtSet(SetRef<T> ref) {
         this.ref = ref;
     }
 

@@ -7,7 +7,7 @@ import java.util.OptionalLong;
 /**
  * The Class AntidoteOuterInteger.
  */
-public final class AntidoteOuterInteger extends AntidoteCRDT {
+public final class CrdtInteger extends AntidoteCRDT {
 
     /**
      * The value of the integer.
@@ -27,7 +27,7 @@ public final class AntidoteOuterInteger extends AntidoteCRDT {
     /**
      * Instantiates a new antidote integer.
      */
-    AntidoteOuterInteger(IntegerRef ref) {
+    CrdtInteger(IntegerRef ref) {
         this.ref = ref;
     }
 

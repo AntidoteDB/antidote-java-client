@@ -52,7 +52,7 @@ public final class CounterRef extends ObjectRef {
     }
 
 
-    public AntidoteOuterCounter createAntidoteCounter() {
-        return new AntidoteOuterCounter(this);
+    public CrdtCounter createAntidoteCounter() {
+        return new CrdtCounter(this);
     }
 }
