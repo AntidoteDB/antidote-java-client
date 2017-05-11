@@ -3,6 +3,7 @@ package eu.antidotedb.client;
 import com.basho.riak.protobuf.AntidotePB.*;
 import com.google.protobuf.ByteString;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -87,5 +88,35 @@ public final class AntidoteClient {
         return new Bucket(bucketKey);
     }
 
+    /**
+     * Reads the values of a list of objects in one batch read
+     */
+    public List<Object> readObjects(List<ObjectRef> objectRefs) {
+        List<Object> results = new ArrayList<>(objectRefs.size());
+        // TODO change to batch read
+        for (ObjectRef objectRef : objectRefs) {
+            results.add(objectRef.read(noTransaction()));
+        }
+        return results;
+    }
+
+    private NoTransaction noTransaction() {
+        return new NoTransaction(this);
+    }
+
+    /**
+     * pulls in new state for a set of CRDTs
+     *
+     * all reads are based on the same snapshot
+     */
+    public void readCrdts(Iterable<? extends AntidoteCRDT> antidoteCRDTS) {
+        // TODO change
+        try (InteractiveTransaction tx = startTransaction()) {
+            for (AntidoteCRDT antidoteCRDT : antidoteCRDTS) {
+                antidoteCRDT.pull(tx);
+            }
+            tx.commitTransaction();
+        }
+    }
 }
 

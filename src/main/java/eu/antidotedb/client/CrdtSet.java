@@ -157,4 +157,11 @@ public class CrdtSet<T> extends AntidoteCRDT implements Set<T> {
         removed.addAll(values);
         values.clear();
     }
+
+    /**
+     * returns a copy of the internal values in this set
+     */
+    public Set<T> getValues() {
+        return new LinkedHashSet<>(values);
+    }
 }

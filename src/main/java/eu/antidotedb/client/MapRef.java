@@ -60,6 +60,11 @@ public class MapRef extends ObjectRef implements CrdtContainer {
         getContainer().update(tx, getType(), getKey(), updateOperation);
     }
 
+    public <T> CrdtMapDynamic<T> getMutable(ValueCoder<T> keyCoder) {
+        return new CrdtMapDynamic<>(this, keyCoder);
+    }
+
+
 //    /**
 //     * Prepare the update operation builder.
 //     *
