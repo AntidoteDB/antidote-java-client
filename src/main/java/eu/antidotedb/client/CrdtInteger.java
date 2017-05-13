@@ -1,6 +1,7 @@
 package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB;
+import com.google.protobuf.ByteString;
 
 import java.util.OptionalLong;
 
@@ -9,6 +10,22 @@ import java.util.OptionalLong;
  */
 public final class CrdtInteger extends AntidoteCRDT {
 
+    private static final CrdtCreator<CrdtInteger> CREATOR = new CrdtCreator<CrdtInteger>() {
+        @Override
+        public AntidotePB.CRDT_type type() {
+            return AntidotePB.CRDT_type.INTEGER;
+        }
+
+        @Override
+        public CrdtInteger create(CrdtContainer c, ByteString key) {
+            return c.integer(key).createAntidoteInteger();
+        }
+
+        @Override
+        public CrdtInteger cast(AntidoteCRDT value) {
+            return (CrdtInteger) value;
+        }
+    };
     /**
      * The value of the integer.
      */
@@ -84,9 +101,13 @@ public final class CrdtInteger extends AntidoteCRDT {
             ref.set(tx, assigned.getAsLong());
         }
         if (delta != 0) {
-            ref.increment(delta, tx);
+            ref.increment(tx, delta);
         }
         assigned = OptionalLong.empty();
         delta = 0;
+    }
+
+    public static CrdtCreator<CrdtInteger> creator() {
+        return CREATOR;
     }
 }

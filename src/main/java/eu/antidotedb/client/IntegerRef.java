@@ -8,7 +8,7 @@ import com.google.protobuf.ByteString;
 /**
  * The Class LowLevelInteger.
  */
-public final class IntegerRef extends ObjectRef {
+public final class IntegerRef extends ObjectRef<Long> {
 
 
     public IntegerRef(CrdtContainer container, ByteString key) {
@@ -19,7 +19,7 @@ public final class IntegerRef extends ObjectRef {
      * Increments the counter by one
      */
     public void increment(AntidoteTransaction tx) {
-        increment(1, tx);
+        increment(tx, 1);
     }
 
     /**
@@ -27,7 +27,7 @@ public final class IntegerRef extends ObjectRef {
      * <p>
      * Use negative values to decrement the counter.
      */
-    public void increment(long inc, AntidoteTransaction tx) {
+    public void increment(AntidoteTransaction tx, long inc) {
         getContainer().update(tx, getType(), getKey(), incrementOpBuilder(inc));
     }
 
@@ -40,8 +40,8 @@ public final class IntegerRef extends ObjectRef {
 
 
     @Override
-    public Long read(TransactionWithReads tx) {
-        return getContainer().read(tx, getType(), getKey()).getInt().getValue();
+    Long readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+        return resp.getInt().getValue();
     }
 
 

@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * The Class LowLevelMVRegister.
  */
-public final class MVRegisterRef<T> extends ObjectRef {
+public final class MVRegisterRef<T> extends ObjectRef<List<T>> {
 
 
     private ValueCoder<T> format;
@@ -25,8 +25,8 @@ public final class MVRegisterRef<T> extends ObjectRef {
     }
 
     @Override
-    public List<T> read(TransactionWithReads tx) {
-        ApbGetMVRegResp response = getContainer().read(tx, getType(), getKey()).getMvreg();
+    List<T> readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+        ApbGetMVRegResp response = resp.getMvreg();
         return format.decodeList(response.getValuesList());
     }
 

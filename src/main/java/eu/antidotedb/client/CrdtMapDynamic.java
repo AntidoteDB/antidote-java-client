@@ -92,12 +92,13 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
      * <p>
      * If the entry does not exist, a new one is created
      */
-    public <V extends AntidoteCRDT> V get(MapKey<K> key, CrdtCreator<V> valueCreator) {
-        Object value = data.get(key);
+    public <V extends AntidoteCRDT> V get(K key, CrdtCreator<V> valueCreator) {
+        MapKey<K> mapKey = new MapKey<>(valueCreator.type(), key);
+        Object value = data.get(mapKey);
         if (value instanceof AntidoteCRDT) {
             return valueCreator.cast(((AntidoteCRDT) value));
         } else {
-            V crdt = valueCreator.create(ref, keyCoder.encode(key.getKey()));
+            V crdt = valueCreator.create(ref, keyCoder.encode(mapKey.getKey()));
             if (value instanceof ApbReadObjectResp) {
                 // if we have a cached value, use it to update
                 crdt.updateFromReadResponse(((ApbReadObjectResp) value));
@@ -119,5 +120,88 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
     public Set<MapKey<K>> keySet() {
         return Collections.unmodifiableSet(data.keySet());
     }
+
+    // TODO inline or rename the functions below
+
+    public CrdtCounter getCounterEntry(K key) {
+        return get(key, CrdtCounter.creator());
+    }
+
+    public CrdtInteger getIntegerEntry(K key) {
+        return get(key, CrdtInteger.creator());
+    }
+
+    public <V> CrdtSet<V> getORSetEntry(K key, ValueCoder<V> valueCoder) {
+        return get(key, CrdtSet.creator(valueCoder));
+    }
+
+    public <V> CrdtSet<V> getRWSetEntry(K key, ValueCoder<V> valueCoder) {
+        return get(key, CrdtSet.creatorRemoveWins(valueCoder));
+    }
+
+    public <V> CrdtRegister<V> getLWWRegisterEntry(K key, ValueCoder<V> valueCoder) {
+        return get(key, CrdtRegister.creator(valueCoder));
+    }
+
+    public <V> CrdtMVRegister<V> getMVRegisterEntry(K key, ValueCoder<V> valueCoder) {
+        return get(key, CrdtMVRegister.creator(valueCoder));
+    }
+
+    public CrdtMapDynamic<K> getAWMapEntry(K key) {
+        return get(key, CrdtMapDynamic.creator_aw(keyCoder));
+    }
+
+    public <K2> CrdtMapDynamic<K2> getAWMapEntry(K key, ValueCoder<K2> keyCoder) {
+        return get(key, CrdtMapDynamic.creator_aw(keyCoder));
+    }
+
+    public CrdtMapDynamic<K> getGMapEntry(K key) {
+        return get(key, creatorGrowOnly(keyCoder));
+    }
+
+    public <K2> CrdtMapDynamic<K2> getGMapEntry(K key, ValueCoder<K2> keyCoder) {
+        return get(key, creatorGrowOnly(keyCoder));
+    }
+
+    public static <K2> CrdtCreator<CrdtMapDynamic<K2>> creator_aw(ValueCoder<K2> keyCoder) {
+        return new CrdtCreator<CrdtMapDynamic<K2>>() {
+            @Override
+            public AntidotePB.CRDT_type type() {
+                return AntidotePB.CRDT_type.AWMAP;
+            }
+
+            @Override
+            public CrdtMapDynamic<K2> create(CrdtContainer c, ByteString key) {
+                return c.map_aw(key).getMutable(keyCoder);
+            }
+
+            @Override
+            public CrdtMapDynamic<K2> cast(AntidoteCRDT value) {
+                //noinspection unchecked
+                return (CrdtMapDynamic<K2>) value;
+            }
+        };
+    }
+
+    public static <K2> CrdtCreator<CrdtMapDynamic<K2>> creatorGrowOnly(ValueCoder<K2> keyCoder) {
+        return new CrdtCreator<CrdtMapDynamic<K2>>() {
+            @Override
+            public AntidotePB.CRDT_type type() {
+                return AntidotePB.CRDT_type.GMAP;
+            }
+
+            @Override
+            public CrdtMapDynamic<K2> create(CrdtContainer c, ByteString key) {
+                return c.map_g(key).getMutable(keyCoder);
+            }
+
+            @Override
+            public CrdtMapDynamic<K2> cast(AntidoteCRDT value) {
+                //noinspection unchecked
+                return (CrdtMapDynamic<K2>) value;
+            }
+        };
+    }
+
 
 }

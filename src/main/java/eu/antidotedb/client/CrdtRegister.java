@@ -1,6 +1,7 @@
 package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB;
+import com.google.protobuf.ByteString;
 
 /**
  * The Class AntidoteOuterLWWRegister.
@@ -59,5 +60,25 @@ public final class CrdtRegister<T> extends AntidoteCRDT {
             ref.set(tx, value);
         }
         changed = false;
+    }
+
+    public static <V> CrdtCreator<CrdtRegister<V>> creator(ValueCoder<V> valueCoder) {
+        return new CrdtCreator<CrdtRegister<V>>() {
+            @Override
+            public AntidotePB.CRDT_type type() {
+                return AntidotePB.CRDT_type.LWWREG;
+            }
+
+            @Override
+            public CrdtRegister<V> create(CrdtContainer c, ByteString key) {
+                return c.register(key, valueCoder).createAntidoteLWWRegister();
+            }
+
+            @Override
+            public CrdtRegister<V> cast(AntidoteCRDT value) {
+                //noinspection unchecked
+                return (CrdtRegister<V>) value;
+            }
+        };
     }
 }

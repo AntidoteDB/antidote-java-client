@@ -1,6 +1,7 @@
 package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB;
+import com.basho.riak.protobuf.AntidotePB.ApbReadObjectResp;
 import com.google.protobuf.ByteString;
 
 public class Bucket implements CrdtContainer {
@@ -16,9 +17,14 @@ public class Bucket implements CrdtContainer {
 
 
     @Override
-    public AntidotePB.ApbReadObjectResp read(TransactionWithReads tx, AntidotePB.CRDT_type type, ByteString key) {
+    public ApbReadObjectResp read(TransactionWithReads tx, AntidotePB.CRDT_type type, ByteString key) {
         AntidotePB.ApbReadObjectsResp apbReadObjectsResp = tx.readHelper(name, key, type);
         return apbReadObjectsResp.getObjects(0);
+    }
+
+    @Override
+    public BatchReadResult<ApbReadObjectResp> readBatch(BatchRead tx, AntidotePB.CRDT_type type, ByteString key) {
+        return tx.readHelper(name, key, type);
     }
 
     @Override

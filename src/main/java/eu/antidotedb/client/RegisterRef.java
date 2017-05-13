@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * The Class LowLevelRegister.
  */
-public class RegisterRef<T> extends ObjectRef {
+public class RegisterRef<T> extends ObjectRef<T> {
 
     private ValueCoder<T> format;
 
@@ -20,10 +20,10 @@ public class RegisterRef<T> extends ObjectRef {
         this.format = format;
     }
 
+
     @Override
-    public T read(TransactionWithReads tx) {
-        AntidotePB.ApbGetRegResp response = getContainer().read(tx, getType(), getKey()).getReg();
-        return format.decode(response.getValue());
+    T readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+        return format.decode(resp.getReg().getValue());
     }
 
 

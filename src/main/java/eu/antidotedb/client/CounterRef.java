@@ -1,5 +1,6 @@
 package eu.antidotedb.client;
 
+import com.basho.riak.protobuf.AntidotePB;
 import com.basho.riak.protobuf.AntidotePB.ApbCounterUpdate;
 import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
@@ -8,7 +9,7 @@ import com.google.protobuf.ByteString;
 /**
  * The Class LowLevelCounter.
  */
-public final class CounterRef extends ObjectRef {
+public final class CounterRef extends ObjectRef<Integer> {
 
 
     public CounterRef(CrdtContainer container, ByteString key, CRDT_type type) {
@@ -19,7 +20,7 @@ public final class CounterRef extends ObjectRef {
      * Increments the counter by one
      */
     public void increment(AntidoteTransaction tx) {
-        increment(1, tx);
+        increment(tx, 1);
     }
 
     /**
@@ -27,13 +28,14 @@ public final class CounterRef extends ObjectRef {
      * <p>
      * Use negative values to decrement the counter.
      */
-    public void increment(int inc, AntidoteTransaction tx) {
+    public void increment(AntidoteTransaction tx, int inc) {
         getContainer().update(tx, getType(), getKey(), incrementOpBuilder(inc));
     }
 
+
     @Override
-    public Integer read(TransactionWithReads tx) {
-        return getContainer().read(tx, getType(), getKey()).getCounter().getValue();
+    Integer readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+        return resp.getCounter().getValue();
     }
 
 

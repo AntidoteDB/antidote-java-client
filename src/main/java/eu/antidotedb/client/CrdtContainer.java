@@ -15,6 +15,9 @@ import com.google.protobuf.ByteString;
 public interface CrdtContainer {
     AntidotePB.ApbReadObjectResp read(TransactionWithReads tx, CRDT_type type, ByteString key);
 
+    BatchReadResult<AntidotePB.ApbReadObjectResp> readBatch(BatchRead tx, CRDT_type type, ByteString key);
+
+
     void update(AntidoteTransaction tx, CRDT_type type, ByteString key, AntidotePB.ApbUpdateOperation.Builder builder);
 
     default CounterRef counter(ByteString key) {
@@ -100,6 +103,7 @@ public interface CrdtContainer {
     default MapRef gmap(String key) {
         return map_g(ByteString.copyFromUtf8(key));
     }
+
 
 
 }

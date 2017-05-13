@@ -1,5 +1,6 @@
 package eu.antidotedb.client;
 
+import com.basho.riak.protobuf.AntidotePB;
 import com.basho.riak.protobuf.AntidotePB.*;
 import com.google.protobuf.ByteString;
 
@@ -10,8 +11,9 @@ import java.util.List;
  * The Class LowLevelMap.
  * <p>
  * TODO add alternatives for homogeneous maps and maps that are used like structs
+ * TODO add ValueCoder for key?
  */
-public class MapRef extends ObjectRef implements CrdtContainer {
+public class MapRef extends ObjectRef<MapRef.MapReadResult> implements CrdtContainer {
 
     /**
      * Instantiates a new low level map.
@@ -20,16 +22,22 @@ public class MapRef extends ObjectRef implements CrdtContainer {
         super(container, key, type);
     }
 
+
     @Override
-    public MapReadResult read(TransactionWithReads tx) {
-        ApbGetMapResp map = getContainer().read(tx, getType(), getKey()).getMap();
-        return new MapReadResult(map.getEntriesList());
+    MapReadResult readResponseToValue(ApbReadObjectResp resp) {
+        return new MapReadResult(resp.getMap().getEntriesList());
     }
 
     @Override
     public ApbReadObjectResp read(TransactionWithReads tx, CRDT_type type, ByteString key) {
         MapReadResult res = read(tx);
         return res.getRaw(type, key);
+    }
+
+    @Override
+    public BatchReadResult<ApbReadObjectResp> readBatch(BatchRead tx, CRDT_type type, ByteString key) {
+        BatchReadResult<MapReadResult> res = read(tx);
+        return null;
     }
 
     @Override
@@ -116,7 +124,7 @@ public class MapRef extends ObjectRef implements CrdtContainer {
 //        antidoteTransaction.updateHelper(updateOpBuilder(mapKey, updates), getKey(), getBucket(), type);
 //    }
 
-    private static class MapReadResult {
+    public static class MapReadResult {
         private List<ApbMapEntry> entries;
 
         public MapReadResult(List<ApbMapEntry> entriesList) {

@@ -11,7 +11,7 @@ public abstract class AntidoteCRDT {
     /**
      * The immutable reference to the unerlying database object
      */
-    public abstract ObjectRef getRef();
+    public abstract ObjectRef<?> getRef();
 
     /**
      * update the internal state of this CRDT from a read response
@@ -24,9 +24,8 @@ public abstract class AntidoteCRDT {
      * The effect is only visible after the BatchRead is committed.
      */
     public void pull(BatchRead batchRead) {
-        // TODO batch reads
-//        AntidotePB.ApbReadObjectResp response = getRef().readValue(batchRead);
-//        updateFromReadResponse(response);
+        BatchReadResult<AntidotePB.ApbReadObjectResp> res = getRef().readValue(batchRead);
+        res.whenReady(this::updateFromReadResponse);
     }
 
     /**
@@ -39,4 +38,8 @@ public abstract class AntidoteCRDT {
 
     public abstract void push(AntidoteTransaction tx);
 
+    // TODO inline
+    public void readDatabase(TransactionWithReads tx) {
+        pull(tx);
+    }
 }

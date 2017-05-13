@@ -4,12 +4,10 @@ import com.basho.riak.protobuf.AntidotePB;
 import com.basho.riak.protobuf.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
-import java.util.List;
-
 /**
  * The Class LowLevelObject.
  */
-public abstract class ObjectRef {
+public abstract class ObjectRef<Value> {
     private final CrdtContainer container;
 
     private final ByteString key;
@@ -52,11 +50,25 @@ public abstract class ObjectRef {
     /**
      * Reads the current value of this object from the database
      */
-    public abstract Object read(TransactionWithReads tx);
+    public final Value read(TransactionWithReads tx) {
+        AntidotePB.ApbReadObjectResp resp = getContainer().read(tx, getType(), getKey());
+        return readResponseToValue(resp);
+    }
+
+    public final BatchReadResult<Value> read(BatchRead tx) {
+        BatchReadResult<AntidotePB.ApbReadObjectResp> resp = getContainer().readBatch(tx, getType(), getKey());
+        return resp.map(this::readResponseToValue);
+    }
+
+    abstract Value readResponseToValue(AntidotePB.ApbReadObjectResp resp);
 
 
     AntidotePB.ApbReadObjectResp readValue(TransactionWithReads tx) {
         return container.read(tx, type, key);
+    }
+
+    BatchReadResult<AntidotePB.ApbReadObjectResp> readValue(BatchRead tx) {
+        return container.readBatch(tx, type, key);
     }
 
 
@@ -65,4 +77,6 @@ public abstract class ObjectRef {
     public String toString() {
         return container + "/" + type + "_" + key;
     }
+
+
 }

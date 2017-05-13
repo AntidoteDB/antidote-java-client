@@ -164,4 +164,46 @@ public class CrdtSet<T> extends AntidoteCRDT implements Set<T> {
     public Set<T> getValues() {
         return new LinkedHashSet<>(values);
     }
+
+    public static <V> CrdtCreator<CrdtSet<V>> creator(ValueCoder<V> valueCoder) {
+        return new CrdtCreator<CrdtSet<V>>() {
+
+            @Override
+            public AntidotePB.CRDT_type type() {
+                return AntidotePB.CRDT_type.ORSET;
+            }
+
+            @Override
+            public CrdtSet<V> create(CrdtContainer c, ByteString key) {
+                return c.set(key, valueCoder).createAntidoteORSet();
+            }
+
+            @Override
+            public CrdtSet<V> cast(AntidoteCRDT value) {
+                //noinspection unchecked
+                return (CrdtSet<V>) value;
+            }
+        };
+    }
+
+    public static <V> CrdtCreator<CrdtSet<V>> creatorRemoveWins(ValueCoder<V> valueCoder) {
+        return new CrdtCreator<CrdtSet<V>>() {
+
+            @Override
+            public AntidotePB.CRDT_type type() {
+                return AntidotePB.CRDT_type.RWSET;
+            }
+
+            @Override
+            public CrdtSet<V> create(CrdtContainer c, ByteString key) {
+                return c.set_removeWins(key, valueCoder).createAntidoteRWSet();
+            }
+
+            @Override
+            public CrdtSet<V> cast(AntidoteCRDT value) {
+                //noinspection unchecked
+                return (CrdtSet<V>) value;
+            }
+        };
+    }
 }

@@ -51,4 +51,28 @@ public final class CrdtMVRegister<T> extends AntidoteCRDT {
         changed = true;
     }
 
+    public static <V> CrdtCreator<CrdtMVRegister<V>> creator(ValueCoder<V> valueCoder) {
+        return new CrdtCreator<CrdtMVRegister<V>>() {
+            @Override
+            public AntidotePB.CRDT_type type() {
+                return AntidotePB.CRDT_type.MVREG;
+            }
+
+            @Override
+            public CrdtMVRegister<V> create(CrdtContainer c, ByteString key) {
+                return c.multiValueRegister(key, valueCoder).createAntidoteMVRegister();
+            }
+
+            @Override
+            public CrdtMVRegister<V> cast(AntidoteCRDT value) {
+                return (CrdtMVRegister<V>) value;
+            }
+        };
+
+    }
+
+    @Deprecated // TODO inline
+    public List<T> getValueList() {
+        return getValues();
+    }
 }

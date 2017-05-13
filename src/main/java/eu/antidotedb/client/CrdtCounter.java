@@ -1,11 +1,30 @@
 package eu.antidotedb.client;
 
 import com.basho.riak.protobuf.AntidotePB;
+import com.google.protobuf.ByteString;
 
 /**
  * The Class CrdtCounter.
  */
 public final class CrdtCounter extends AntidoteCRDT {
+
+    private static final CrdtCreator<CrdtCounter> CREATOR = new CrdtCreator<CrdtCounter>() {
+        @Override
+        public AntidotePB.CRDT_type type() {
+            return AntidotePB.CRDT_type.COUNTER;
+        }
+
+        @Override
+        public CrdtCounter create(CrdtContainer c, ByteString key) {
+            return c.counter(key).createAntidoteCounter();
+        }
+
+        @Override
+        public CrdtCounter cast(AntidoteCRDT value) {
+            return (CrdtCounter) value;
+        }
+    };
+
 
     /**
      * The value of the counter.
@@ -59,7 +78,11 @@ public final class CrdtCounter extends AntidoteCRDT {
 
     @Override
     public void push(AntidoteTransaction tx) {
-        ref.increment(delta, tx);
+        ref.increment(tx, delta);
         delta = 0;
+    }
+
+    public static CrdtCreator<CrdtCounter> creator() {
+        return CREATOR;
     }
 }

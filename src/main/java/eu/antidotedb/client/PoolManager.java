@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * The Class PoolManager.
@@ -138,7 +139,8 @@ public class PoolManager {
             }
 
         }
-        throw new RuntimeException("Cannot open connection");
+        throw new AntidoteException("Cannot open connection to any host. " +
+                "(Configured hosts: " + pools.stream().map(p -> p.getHost() + ":" + p.getPort()).collect(Collectors.joining(", ")) + ")");
     }
 
     /**

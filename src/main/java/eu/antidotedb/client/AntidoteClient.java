@@ -55,12 +55,10 @@ public final class AntidoteClient {
         return new AntidoteStaticTransaction(this);
     }
 
-    public void pull(List<AntidoteCRDT> objects) {
-        BatchRead batchRead = new BatchRead();
-        for (AntidoteCRDT object : objects) {
-            object.pull(batchRead);
-        }
-        batchRead.commit();
+
+
+    public BatchRead newBatchRead() {
+        return new BatchRead(this);
     }
 
     /**
@@ -88,6 +86,10 @@ public final class AntidoteClient {
         return new Bucket(bucketKey);
     }
 
+
+
+
+
     /**
      * Reads the values of a list of objects in one batch read
      */
@@ -100,7 +102,7 @@ public final class AntidoteClient {
         return results;
     }
 
-    private NoTransaction noTransaction() {
+    public NoTransaction noTransaction() {
         return new NoTransaction(this);
     }
 
@@ -109,14 +111,29 @@ public final class AntidoteClient {
      *
      * all reads are based on the same snapshot
      */
-    public void readCrdts(Iterable<? extends AntidoteCRDT> antidoteCRDTS) {
-        // TODO change
-        try (InteractiveTransaction tx = startTransaction()) {
-            for (AntidoteCRDT antidoteCRDT : antidoteCRDTS) {
-                antidoteCRDT.pull(tx);
-            }
-            tx.commitTransaction();
+    public void pull(Iterable<? extends AntidoteCRDT> objects) {
+        BatchRead batchRead = newBatchRead();
+        for (AntidoteCRDT object : objects) {
+            object.pull(batchRead);
         }
+        batchRead.commit();
+    }
+
+    // TODO inline
+    public void readCrdts(Iterable<? extends AntidoteCRDT> antidoteCRDTS) {
+        pull(antidoteCRDTS);
+//        // TODO change to pull
+//        try (InteractiveTransaction tx = startTransaction()) {
+//            for (AntidoteCRDT antidoteCRDT : antidoteCRDTS) {
+//                antidoteCRDT.pull(tx);
+//            }
+//            tx.commitTransaction();
+//        }
+    }
+
+    // TODO inline
+    public void readOuterObjects(List<CrdtMapDynamic<String>> antidoteCRDTS) {
+        readCrdts(antidoteCRDTS);
     }
 }
 

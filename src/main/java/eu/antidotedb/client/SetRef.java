@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * The Class LowLevelSet.
  */
-public class SetRef<T> extends ObjectRef {
+public class SetRef<T> extends ObjectRef<List<T>> {
 
     private final ValueCoder<T> format;
 
@@ -23,8 +23,8 @@ public class SetRef<T> extends ObjectRef {
     }
 
     @Override
-    public List<T> read(TransactionWithReads tx) {
-        AntidotePB.ApbGetSetResp set = getContainer().read(tx, getType(), getKey()).getSet();
+    List<T> readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+        AntidotePB.ApbGetSetResp set = resp.getSet();
         return format.decodeList(set.getValueList());
     }
 
@@ -85,6 +85,8 @@ public class SetRef<T> extends ObjectRef {
     public ValueCoder<T> getFormat() {
         return format;
     }
+
+    // TODO unify these methods:
 
     public CrdtSet<T> createAntidoteORSet() {
         return new CrdtSet<>(this);
