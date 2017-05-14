@@ -2,6 +2,8 @@ package eu.antidotedb.client;
 
 import eu.antidotedb.antidotepb.AntidotePB.*;
 import com.google.protobuf.ByteString;
+import eu.antidotedb.client.messages.AntidoteRequest;
+import eu.antidotedb.client.transformer.Transformer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +15,8 @@ public final class AntidoteClient {
 
     private PoolManager poolManager;
 
+    private Transformer downstream;
+
     /**
      * Instantiates a new antidote client.
      *
@@ -20,21 +24,41 @@ public final class AntidoteClient {
      */
     public AntidoteClient(PoolManager poolManager) {
         this.poolManager = poolManager;
+        this.downstream = new SocketSender();
+    }
+
+    /**
+     * Adds a transformer on top of the stack of transformers of this connection.
+     *
+     * @param transformer the new transformer to be added
+     */
+    public void addTransformer(Transformer transformer) {
+        transformer.connect(this.downstream);
+        this.downstream = transformer;
+    }
+
+    /**
+     * Send message to database.
+     * This will use an arbitrary connection from the connection pool.
+     *
+     * @param requestMessage the update message
+     * @return the response
+     */
+    <R> R sendMessageArbitraryConnection(AntidoteRequest<R> requestMessage) {
+        try (Connection connection = getPoolManager().getConnection()) {
+            return sendMessage(requestMessage, connection);
+        }
     }
 
     /**
      * Send message to database.
      *
      * @param requestMessage the update message
+     * @param connection     the connection to use for sending
      * @return the response
      */
-    AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
-        return getPoolManager().sendMessage(requestMessage);
-    }
-
-
-    AntidoteMessage sendMessage(AntidoteRequest requestMessage, Connection connection) {
-        return getPoolManager().sendMessage(requestMessage, connection);
+    <R> R sendMessage(AntidoteRequest<R> requestMessage, Connection connection) {
+        return getPoolManager().sendMessage(requestMessage, connection, downstream);
     }
 
     /**
@@ -54,7 +78,6 @@ public final class AntidoteClient {
     public AntidoteStaticTransaction createStaticTransaction() {
         return new AntidoteStaticTransaction(this);
     }
-
 
 
     public BatchRead newBatchRead() {
@@ -87,9 +110,6 @@ public final class AntidoteClient {
     }
 
 
-
-
-
     /**
      * Reads the values of a list of objects in one batch read
      */
@@ -108,7 +128,7 @@ public final class AntidoteClient {
 
     /**
      * pulls in new state for a set of CRDTs
-     *
+     * <p>
      * all reads are based on the same snapshot
      */
     public void pull(Iterable<? extends AntidoteCRDT> objects) {

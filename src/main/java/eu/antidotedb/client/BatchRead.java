@@ -3,6 +3,8 @@ package eu.antidotedb.client;
 import eu.antidotedb.antidotepb.AntidotePB;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import eu.antidotedb.client.messages.AntidoteRequest;
+import eu.antidotedb.client.messages.AntidoteRequest.MsgStaticReadObjects;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +18,7 @@ public class BatchRead {
     private AntidoteClient antidoteClient;
 
 
-    public BatchRead(AntidoteClient antidoteClient) {
+    BatchRead(AntidoteClient antidoteClient) {
         this.antidoteClient = antidoteClient;
     }
 
@@ -36,14 +38,8 @@ public class BatchRead {
 
         AntidotePB.ApbStaticReadObjects readObjectsMessage = readObject.build();
         Connection connection = antidoteClient.getPoolManager().getConnection();
-        AntidoteRequest request = new AntidoteRequest(RiakPbMsgs.ApbStaticReadObjects, readObjectsMessage);
-        AntidoteMessage readMessage = antidoteClient.sendMessage(request, connection);
-        AntidotePB.ApbStaticReadObjectsResp readResponse;
-        try {
-            readResponse = AntidotePB.ApbStaticReadObjectsResp.parseFrom(readMessage.getMessage());
-        } catch (InvalidProtocolBufferException e) {
-            throw new AntidoteException("Could not parse read response for objects", e);
-        }
+        MsgStaticReadObjects request = AntidoteRequest.of(readObjectsMessage);
+        AntidotePB.ApbStaticReadObjectsResp readResponse = antidoteClient.sendMessage(request, connection);
         int i = 0;
         for (AntidotePB.ApbReadObjectResp resp : readResponse.getObjects().getObjectsList()) {
             requests.get(i).setResult(resp);

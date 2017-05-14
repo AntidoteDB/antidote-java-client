@@ -3,7 +3,7 @@ package eu.antidotedb.client;
 /**
  * The Class AntidoteException.
  */
-public final class AntidoteException extends RuntimeException {
+public class AntidoteException extends RuntimeException {
 
     /**
      * The Constant serialVersionUID.

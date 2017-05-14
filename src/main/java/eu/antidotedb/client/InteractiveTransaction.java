@@ -5,6 +5,7 @@ import eu.antidotedb.antidotepb.AntidotePB.ApbStartTransaction;
 import eu.antidotedb.antidotepb.AntidotePB.ApbTxnProperties;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import eu.antidotedb.client.messages.AntidoteRequest;
 
 public class InteractiveTransaction extends TransactionWithReads implements AutoCloseable {
 
@@ -36,9 +37,9 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
      */
     public InteractiveTransaction(AntidoteClient antidoteClient) {
         this.antidoteClient = antidoteClient;
-        this.transactionStatus = TransactionStatus.STARTED;
         this.connection = antidoteClient.getPoolManager().getConnection();
         startTransaction();
+        this.transactionStatus = TransactionStatus.STARTED;
     }
 
     private void startTransaction() {
@@ -48,14 +49,8 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         readwriteTransaction.setProperties(transactionProperties);
 
         ApbStartTransaction startTransactionMessage = readwriteTransaction.build();
-        AntidoteMessage startMessage = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStartTransaction, startTransactionMessage));
-
-        try {
-            AntidotePB.ApbStartTransactionResp transactionResponse = AntidotePB.ApbStartTransactionResp.parseFrom(startMessage.getMessage());
-            descriptor = transactionResponse.getTransactionDescriptor();
-        } catch (InvalidProtocolBufferException e) {
-           throw new AntidoteException("Could not parse start-transaction response", e);
-        }
+        AntidotePB.ApbStartTransactionResp transactionResponse = getClient().sendMessage(AntidoteRequest.of(startTransactionMessage), connection);
+        descriptor = transactionResponse.getTransactionDescriptor();
     }
 
     /**
@@ -90,16 +85,11 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
 
         AntidotePB.ApbCommitTransaction commitTransactionMessage = commitTransaction.build();
         descriptor = null;
-        AntidoteMessage message = getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbCommitTransaction, commitTransactionMessage), connection);
+        AntidotePB.ApbCommitResp commitResponse = getClient().sendMessage(AntidoteRequest.of(commitTransactionMessage), connection);
 
-        try {
-            AntidotePB.ApbCommitResp commitResponse = AntidotePB.ApbCommitResp.parseFrom(message.getMessage());
-            CommitInfo res = antidoteClient.completeTransaction(commitResponse);
-            this.transactionStatus = TransactionStatus.COMMITTED;
-            return res;
-        } catch (InvalidProtocolBufferException e) {
-            throw new AntidoteException("Could not parse commit response", e);
-        }
+        CommitInfo res = antidoteClient.completeTransaction(commitResponse);
+        this.transactionStatus = TransactionStatus.COMMITTED;
+        return res;
     }
 
     /**
@@ -113,7 +103,7 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         abortTransaction.setTransactionDescriptor(descriptor);
 
         AntidotePB.ApbAbortTransaction abortTransactionMessage = abortTransaction.build();
-        getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbAbortTransaction, abortTransactionMessage), connection);
+        getClient().sendMessage(AntidoteRequest.of(abortTransactionMessage), connection);
         this.transactionStatus = TransactionStatus.ABORTED;
     }
 
@@ -152,7 +142,10 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         updateMessage.addUpdates(updateInstruction);
 
         AntidotePB.ApbUpdateObjects updateMessageObject = updateMessage.build();
-        getClient().sendMessage(new AntidoteRequest(RiakPbMsgs.ApbUpdateObjects, updateMessageObject), connection);
+        AntidotePB.ApbOperationResp resp = getClient().sendMessage(AntidoteRequest.of(updateMessageObject), connection);
+        if (!resp.getSuccess()) {
+            throw new AntidoteException("Could not perform update (error code: " + resp.getErrorcode() + ")");
+        }
     }
 
     /**
@@ -178,14 +171,7 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         readObject.setTransactionDescriptor(getDescriptor());
 
         AntidotePB.ApbReadObjects readObjectsMessage = readObject.build();
-        AntidoteMessage readMessage = antidoteClient.sendMessage(new AntidoteRequest(RiakPbMsgs.ApbReadObjects, readObjectsMessage), connection);
-        AntidotePB.ApbReadObjectsResp readResponse;
-        try {
-            readResponse = AntidotePB.ApbReadObjectsResp.parseFrom(readMessage.getMessage());
-        } catch (InvalidProtocolBufferException e) {
-            throw new AntidoteException("Could not parse read response for object " + bucket + "/" + type + "_" + key, e);
-        }
-        return readResponse;
+        return antidoteClient.sendMessage(AntidoteRequest.of(readObjectsMessage), connection);
     }
 
     protected ByteString getDescriptor() {

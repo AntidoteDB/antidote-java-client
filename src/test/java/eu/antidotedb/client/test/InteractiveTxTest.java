@@ -13,6 +13,12 @@ import static org.junit.Assert.assertEquals;
 public class InteractiveTxTest  extends AbstractAntidoteTest{
 
     @Test
+    public void testEmptyTx() {
+        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+        }
+    }
+
+    @Test
     public void testInteractiveTx() {
         RegisterRef<String> reg = bucket.register("testInteractiveTx_reg1", ValueCoder.utf8String);
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {

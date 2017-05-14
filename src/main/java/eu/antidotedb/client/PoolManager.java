@@ -1,5 +1,9 @@
 package eu.antidotedb.client;
 
+import eu.antidotedb.client.messages.AntidoteRequest;
+import eu.antidotedb.client.messages.AntidoteResponse;
+import eu.antidotedb.client.transformer.Transformer;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -148,40 +152,41 @@ public class PoolManager {
      *
      * @param requestMessage the request message
      * @param c              the connection object
+     * @param downstream     handler for sending message
      * @return the antidote message
      */
-    public AntidoteMessage sendMessage(AntidoteRequest requestMessage, Connection c) {
-        try {
-            DataOutputStream dataOutputStream = new DataOutputStream(c.getSocket().getOutputStream());
-            dataOutputStream.writeInt(requestMessage.getLength());
-            dataOutputStream.writeByte(requestMessage.getCode());
-            requestMessage.getMessage().writeTo(dataOutputStream);
-            dataOutputStream.flush();
-            DataInputStream dataInputStream = new DataInputStream(c.getSocket().getInputStream());
-            int responseLength = dataInputStream.readInt();
-            int responseCode = dataInputStream.readByte();
-            byte[] messageData = new byte[responseLength - 1];
-            dataInputStream.readFully(messageData, 0, responseLength - 1);
-            return new AntidoteMessage(responseLength, responseCode, messageData);
-        } catch (IOException e) {
-            //if msg fails make it to unhealthy
-            c.setunHealthyConnection();
-            throw new AntidoteException("Could not send message", e);
-        } finally {
-            c.returnConnection();
+    public <R> R sendMessage(AntidoteRequest<R> requestMessage, Connection c, Transformer downstream) {
+        AntidoteResponse.Handler<R> responseExtractor = requestMessage.readResponseExtractor();
+        AntidoteResponse response = requestMessage.accept(downstream.toHandler(c));
+        if (responseExtractor == null) {
+            return null;
         }
+        if (response == null) {
+            throw new AntidoteException("Missing response for " + requestMessage);
+        }
+        return response.accept(responseExtractor);
+
+//        try {
+//            DataOutputStream dataOutputStream = new DataOutputStream(c.getSocket().getOutputStream());
+//            dataOutputStream.writeInt(requestMessage.getLength());
+//            dataOutputStream.writeByte(requestMessage.getCode());
+//            requestMessage.getMessage().writeTo(dataOutputStream);
+//            dataOutputStream.flush();
+//            DataInputStream dataInputStream = new DataInputStream(c.getSocket().getInputStream());
+//            int responseLength = dataInputStream.readInt();
+//            int responseCode = dataInputStream.readByte();
+//            byte[] messageData = new byte[responseLength - 1];
+//            dataInputStream.readFully(messageData, 0, responseLength - 1);
+//            return new AntidoteMessage(responseLength, responseCode, messageData);
+//        } catch (IOException e) {
+//            //if msg fails make it to unhealthy
+//            c.setunHealthyConnection();
+//            throw new AntidoteException("Could not send message", e);
+//        } finally {
+//            c.returnConnection();
+//        }
     }
 
 
-    /**
-     * Send message.
-     *
-     * @param requestMessage the request message
-     * @return the antidote message
-     */
-    public AntidoteMessage sendMessage(AntidoteRequest requestMessage) {
-        Connection c = this.getConnection();
-        return sendMessage(requestMessage, c);
-    }
 
 }

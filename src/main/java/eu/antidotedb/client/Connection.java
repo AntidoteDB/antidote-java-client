@@ -5,7 +5,7 @@ import java.net.Socket;
 /**
  * The Class Connection.
  */
-public class Connection {
+public class Connection implements AutoCloseable {
 
     /**
      * The pool.
@@ -46,5 +46,10 @@ public class Connection {
      */
     public Socket getSocket() {
         return socket;
+    }
+
+    @Override
+    public void close() {
+        returnConnection();
     }
 }

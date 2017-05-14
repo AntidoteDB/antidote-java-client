@@ -1,10 +1,9 @@
 package eu.antidotedb.client;
 
 import eu.antidotedb.antidotepb.AntidotePB.*;
-import com.google.protobuf.InvalidProtocolBufferException;
 import eu.antidotedb.client.InteractiveTransaction.TransactionStatus;
+import eu.antidotedb.client.messages.AntidoteRequest;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +29,6 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction {
     }
 
 
-
     /**
      * Commit static transaction.
      */
@@ -38,19 +36,11 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction {
         if (transactionStatus != TransactionStatus.STARTED) {
             throw new AntidoteException("Transaction already closed");
         }
-        AntidoteMessage responseMessage = client.sendMessage(new AntidoteRequest(RiakPbMsgs.ApbStaticUpdateObjects, createUpdateStaticObject()));
-        try {
-            ApbCommitResp commitResponse = ApbCommitResp.parseFrom(responseMessage.getMessage());
-            CommitInfo res = client.completeTransaction(commitResponse);
-            transactionStatus = TransactionStatus.COMMITTED;
-            return res;
-        } catch (InvalidProtocolBufferException e) {
-            throw new AntidoteException("Could not parse commit response", e);
-        }
-
-
+        ApbCommitResp commitResponse = client.sendMessageArbitraryConnection(AntidoteRequest.of(createUpdateStaticObject()));
+        CommitInfo res = client.completeTransaction(commitResponse);
+        transactionStatus = TransactionStatus.COMMITTED;
+        return res;
     }
-
 
 
     /**

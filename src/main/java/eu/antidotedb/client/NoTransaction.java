@@ -2,7 +2,7 @@ package eu.antidotedb.client;
 
 import eu.antidotedb.antidotepb.AntidotePB;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
+import eu.antidotedb.client.messages.AntidoteRequest;
 
 /**
  * This class can be used to execute an individual operation without any transactional context
@@ -21,16 +21,9 @@ public class NoTransaction extends TransactionWithReads {
         AntidotePB.ApbStartTransaction.Builder startTransaction = AntidotePB.ApbStartTransaction.newBuilder();
         updateMessage.setTransaction(startTransaction);
         updateMessage.addUpdates(updateInstruction);
-        AntidoteMessage responseMessage =
-                client.sendMessage(new AntidoteRequest(
-                        RiakPbMsgs.ApbStaticUpdateObjects,
-                        updateMessage.build()));
-        try {
-            AntidotePB.ApbCommitResp commitResponse = AntidotePB.ApbCommitResp.parseFrom(responseMessage.getMessage());
-            client.completeTransaction(commitResponse);
-        } catch (InvalidProtocolBufferException e) {
-            throw new AntidoteException("Could not parse commit response", e);
-        }
+        AntidotePB.ApbCommitResp commitResponse =
+                client.sendMessageArbitraryConnection(AntidoteRequest.of(updateMessage.build()));
+        client.completeTransaction(commitResponse);
     }
 
     @Override
@@ -44,16 +37,10 @@ public class NoTransaction extends TransactionWithReads {
         AntidotePB.ApbStartTransaction.Builder startTransaction = AntidotePB.ApbStartTransaction.newBuilder();
         readMessage.setTransaction(startTransaction);
 
-        AntidoteMessage responseMessage =
-                client.sendMessage(new AntidoteRequest(
-                        RiakPbMsgs.ApbStaticReadObjects,
-                        readMessage.build()));
-        try {
-            AntidotePB.ApbStaticReadObjectsResp resp = AntidotePB.ApbStaticReadObjectsResp.parseFrom(responseMessage.getMessage());
-            return resp.getObjects();
-        } catch (InvalidProtocolBufferException e) {
-            throw new AntidoteException("Could not parse read objects response", e);
-        }
+        AntidotePB.ApbStaticReadObjectsResp resp =
+                client.sendMessageArbitraryConnection(AntidoteRequest.of(readMessage.build()));
+        client.completeTransaction(resp.getCommittime());
+        return resp.getObjects();
     }
 
 }

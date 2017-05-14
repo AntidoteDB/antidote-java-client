@@ -30,7 +30,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
 
     @Test(timeout = 10000)
     public void explicitHost() {
-        assertTrue(antidotePoolManager.addHost(20, 5, new Host("localhost", 8087)));
+        assertTrue(antidoteClient.getPoolManager().addHost(20, 5, new Host("localhost", 8087)));
     }
 
 
