@@ -36,31 +36,47 @@ public interface CrdtContainer<Key> {
     }
 
     default <T> RegisterRef<T> register(Key key, ValueCoder<T> format) {
-        return new RegisterRef<T>(this, keyCoder().encode(key), CRDT_type.LWWREG, format);
+        return new RegisterRef<>(this, keyCoder().encode(key), CRDT_type.LWWREG, format);
+    }
+
+    default RegisterRef<String> register(Key key) {
+        return register(key, ValueCoder.utf8String);
     }
 
     default <T> MVRegisterRef<T> multiValueRegister(Key key, ValueCoder<T> format) {
-        return new MVRegisterRef<T>(this, keyCoder().encode(key), CRDT_type.MVREG, format);
+        return new MVRegisterRef<>(this, keyCoder().encode(key), CRDT_type.MVREG, format);
+    }
+
+    default MVRegisterRef<String> multiValueRegister(Key key) {
+        return multiValueRegister(key, ValueCoder.utf8String);
     }
 
     default <T> SetRef<T> set(Key key, ValueCoder<T> format) {
-        return new SetRef<T>(this, keyCoder().encode(key), CRDT_type.ORSET, format);
+        return new SetRef<>(this, keyCoder().encode(key), CRDT_type.ORSET, format);
+    }
+
+    default SetRef<String> set(Key key) {
+        return set(key, ValueCoder.utf8String);
     }
 
     default <T> SetRef<T> set_removeWins(Key key, ValueCoder<T> format) {
-        return new SetRef<T>(this, keyCoder().encode(key), CRDT_type.RWSET, format);
+        return new SetRef<>(this, keyCoder().encode(key), CRDT_type.RWSET, format);
+    }
+
+    default SetRef<String> set_removeWins(Key key) {
+        return set_removeWins(key, ValueCoder.utf8String);
     }
 
     default <K> MapRef<K> map_aw(Key key, ValueCoder<K> keyCoder) {
-        return new MapRef<K>(this, keyCoder().encode(key), CRDT_type.AWMAP, keyCoder);
+        return new MapRef<>(this, keyCoder().encode(key), CRDT_type.AWMAP, keyCoder);
     }
 
     default <K> MapRef<K> map_rr(Key key, ValueCoder<K> keyCoder) {
-        return new MapRef<K>(this, keyCoder().encode(key), CRDT_type.RRMAP, keyCoder);
+        return new MapRef<>(this, keyCoder().encode(key), CRDT_type.RRMAP, keyCoder);
     }
 
     default <K> MapRef<K> map_g(Key key, ValueCoder<K> keyCoder) {
-        return new MapRef<K>(this, keyCoder().encode(key), CRDT_type.GMAP, keyCoder);
+        return new MapRef<>(this, keyCoder().encode(key), CRDT_type.GMAP, keyCoder);
     }
 
     default MapRef<String> map_aw(Key key) {

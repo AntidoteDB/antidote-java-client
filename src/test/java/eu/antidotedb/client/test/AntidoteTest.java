@@ -25,10 +25,6 @@ public class AntidoteTest extends AbstractAntidoteTest {
         super();
     }
 
-    @Test
-    public void explicitHost() {
-        assertTrue(antidoteClient.getPoolManager().addHost(20, 5, new Host("localhost", 8087)));
-    }
 
     @Test
     public void bucketName() {
@@ -55,7 +51,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     public void seqInteractiveTransaction() {
         CounterRef lowCounter =  bucket.counter("testCounter5");
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            CrdtCounter counter = lowCounter.createAntidoteCounter();
+            CrdtCounter counter = lowCounter.toMutable();
             counter.pull(tx);
             int oldValue = counter.getValue();
             assertEquals(0, oldValue);
@@ -65,7 +61,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
         }
 
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            CrdtCounter counter = lowCounter.createAntidoteCounter();
+            CrdtCounter counter = lowCounter.toMutable();
             counter.pull(tx);
             int newValue = counter.getValue();
             assertEquals(5, newValue);
@@ -106,18 +102,18 @@ public class AntidoteTest extends AbstractAntidoteTest {
 
 
 
-        CrdtInteger integer = lowInt1.createAntidoteInteger();
-        CrdtCounter counter = lowCounter1.createAntidoteCounter();
-        CrdtSet<String> orSet2 = orSetRef.createAntidoteORSet();
-        CrdtSet<String> orSet = orSetRef1.createAntidoteORSet();
-        CrdtSet<String> rwSet = rwSetRef1.createAntidoteRWSet();
-        CrdtSet<String> rwSet2 = rwSetRef.createAntidoteRWSet();
-        CrdtMVRegister<String> mvRegister = mvRegisterRef1.createAntidoteMVRegister();
-        CrdtMVRegister<String> mvRegister2 = mvRegisterRef.createAntidoteMVRegister();
-        CrdtRegister<String> lwwRegister = lwwRegisterRef1.createAntidoteLWWRegister();
-        CrdtRegister<String> lwwRegister2 = lwwRegisterRef.createAntidoteLWWRegister();
-        CrdtMapDynamic<String> awMap = awMapRef.getMutable();
-        CrdtMapDynamic<String> gMap = gMapRef.getMutable();
+        CrdtInteger integer = lowInt1.toMutable();
+        CrdtCounter counter = lowCounter1.toMutable();
+        CrdtSet<String> orSet2 = orSetRef.toMutable();
+        CrdtSet<String> orSet = orSetRef1.toMutable();
+        CrdtSet<String> rwSet = rwSetRef1.toMutable();
+        CrdtSet<String> rwSet2 = rwSetRef.toMutable();
+        CrdtMVRegister<String> mvRegister = mvRegisterRef1.toMutable();
+        CrdtMVRegister<String> mvRegister2 = mvRegisterRef.toMutable();
+        CrdtRegister<String> lwwRegister = lwwRegisterRef1.toMutable();
+        CrdtRegister<String> lwwRegister2 = lwwRegisterRef.toMutable();
+        CrdtMapDynamic<String> awMap = awMapRef.toMutable();
+        CrdtMapDynamic<String> gMap = gMapRef.toMutable();
 
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
             lowInt.increment(tx, 3);
@@ -141,7 +137,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
         objectRefs.add(mvRegisterRef);
         objectRefs.add(lwwRegisterRef);
 
-        List<Object> objects = antidoteClient.readObjects(objectRefs);
+        List<Object> objects = antidoteClient.readObjects(antidoteClient.noTransaction(), objectRefs);
 
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
             integer.increment(1);
@@ -168,7 +164,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
             tx.commitTransaction();
         }
 
-        antidoteClient.readCrdts(Arrays.asList(integer, counter, orSet, rwSet, mvRegister, lwwRegister, orSet2, rwSet2, mvRegister2, lwwRegister2));
+        antidoteClient.pull(antidoteClient.noTransaction(), Arrays.asList(integer, counter, orSet, rwSet, mvRegister, lwwRegister, orSet2, rwSet2, mvRegister2, lwwRegister2));
 
         Assert.assertEquals(3L, objects.get(0));
         Assert.assertEquals(4, objects.get(1));
@@ -186,8 +182,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
 
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
 
-            List<MapRef> maps = Arrays.asList(awMapRef, gMapRef);
-            for (MapRef map : maps) {
+            List<MapRef<String>> maps = Arrays.asList(awMapRef, gMapRef);
+            for (MapRef<String> map : maps) {
 
                 map.counter("testCounter").increment(tx, 5);
 
@@ -212,10 +208,10 @@ public class AntidoteTest extends AbstractAntidoteTest {
                 MVRegisterRef<String> testMVRegister = map.multiValueRegister("testMVRegister", ValueCoder.utf8String);
                 testMVRegister.set(tx, "Hi");
 
-                MapRef testAWMap = map.map_aw("testAWMap");
+                MapRef<String> testAWMap = map.map_aw("testAWMap");
                 testAWMap.counter("testCounter").increment(tx, 5);
 
-                MapRef testGMap = map.map_g("testGMap");
+                MapRef<String> testGMap = map.map_g("testGMap");
                 testGMap.counter("testCounter").increment(tx, 5);
             }
 
@@ -223,7 +219,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
             tx.commitTransaction();
         }
 
-        antidoteClient.readOuterObjects(Arrays.asList(awMap, gMap));
+        antidoteClient.pull(antidoteClient.noTransaction(), Arrays.asList(awMap, gMap));
 
 
         Assert.assertEquals(5, awMap.getCounterEntry("testCounter").getValue());
@@ -269,7 +265,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
             tx.abortTransaction();
         }
 
-        antidoteClient.readOuterObjects(Arrays.asList(awMap));
+        antidoteClient.pull(antidoteClient.noTransaction(), Arrays.asList(awMap));
 
         Assert.assertEquals(5, awMap.getCounterEntry("testCounter").getValue());
         Assert.assertEquals(8, awMap.getIntegerEntry("testInteger").getValue());
@@ -306,7 +302,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
         }
 
 
-        antidoteClient.readOuterObjects(Collections.singletonList(awMap));
+        antidoteClient.pull(antidoteClient.noTransaction(), Collections.singletonList(awMap));
 
         Assert.assertEquals(10, awMap.getCounterEntry("testCounter").getValue());
         Assert.assertEquals(10, awMap.getIntegerEntry("testInteger").getValue());
@@ -770,8 +766,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
     public void counterRefCommitStaticTransaction() {
         CounterRef lowCounter1 = bucket.counter("testCounter5");
         CounterRef lowCounter2 = bucket.counter("testCounter3");
-        CrdtCounter counter1 = lowCounter1.createAntidoteCounter();
-        CrdtCounter counter2 = lowCounter2.createAntidoteCounter();
+        CrdtCounter counter1 = lowCounter1.toMutable();
+        CrdtCounter counter2 = lowCounter2.toMutable();
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
             counter1.pull(tx);
             counter2.pull(tx);
@@ -798,8 +794,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
         Assert.assertEquals(newValue2, oldValue2 + 6);
 
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            counter1.readDatabase(tx);
-            counter2.readDatabase(tx);
+            counter1.pull(tx);
+            counter2.pull(tx);
             newValue1 = counter1.getValue();
             newValue2 = counter2.getValue();
             tx.commitTransaction();
@@ -814,10 +810,10 @@ public class AntidoteTest extends AbstractAntidoteTest {
         CounterRef lowCounter1 = bucket.counter("testCounter5");
         CounterRef lowCounter2 = bucket.counter("testCounter3");
         InteractiveTransaction antidoteTransaction = antidoteClient.startTransaction();
-        CrdtCounter counter1old = lowCounter1.createAntidoteCounter();
+        CrdtCounter counter1old = lowCounter1.toMutable();
         counter1old.pull(antidoteTransaction);
         int oldValue1 = counter1old.getValue();
-        CrdtCounter counter2old = lowCounter2.createAntidoteCounter();
+        CrdtCounter counter2old = lowCounter2.toMutable();
         counter2old.pull(antidoteTransaction);
         int oldValue2 = counter2old.getValue();
 
@@ -832,9 +828,9 @@ public class AntidoteTest extends AbstractAntidoteTest {
         tx.close();
 
         antidoteTransaction = antidoteClient.startTransaction();
-        CrdtCounter counter1new = lowCounter1.createAntidoteCounter();
+        CrdtCounter counter1new = lowCounter1.toMutable();
         counter1new.pull(antidoteTransaction);
-        CrdtCounter counter2new = lowCounter2.createAntidoteCounter();
+        CrdtCounter counter2new = lowCounter2.toMutable();
         counter2new.pull(antidoteTransaction);
         antidoteTransaction.commitTransaction();
 
@@ -843,8 +839,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
         Assert.assertEquals(newValue1, oldValue1 + 10);
         Assert.assertEquals(newValue2, oldValue2 + 6);
         antidoteTransaction = antidoteClient.startTransaction();
-        counter1new.readDatabase(antidoteTransaction);
-        counter2new.readDatabase(antidoteTransaction);
+        counter1new.pull(antidoteTransaction);
+        counter2new.pull(antidoteTransaction);
         newValue1 = counter1new.getValue();
         newValue2 = counter2new.getValue();
         antidoteTransaction.commitTransaction();

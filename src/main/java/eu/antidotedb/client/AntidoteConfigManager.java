@@ -106,7 +106,7 @@ public class AntidoteConfigManager {
     }
 
     public List<Host> getConfigHosts(String filepath) {
-        List<Host> list = new LinkedList<Host>();
+        List<Host> list = new LinkedList<>();
         String cfgPath = filepath;
         if (!this.configFileExist(cfgPath)) {
             // No File Found, returning default values

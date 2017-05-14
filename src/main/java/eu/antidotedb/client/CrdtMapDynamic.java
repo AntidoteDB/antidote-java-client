@@ -2,7 +2,6 @@ package eu.antidotedb.client;
 
 import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.ApbReadObjectResp;
-import com.google.protobuf.ByteString;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -63,17 +62,18 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
 
     @Override
     public void push(AntidoteTransaction tx) {
-        // TODO more efficient to collect updates in a special transaction and then build a single batch update?
+        AntidoteStaticTransaction tempTx = new AntidoteStaticTransaction(null);
         for (Object v : data.values()) {
             if (v instanceof AntidoteCRDT) {
-                ((AntidoteCRDT) v).push(tx);
+                ((AntidoteCRDT) v).push(tempTx);
             }
         }
         List<AntidotePB.ApbMapKey> removedApbKeys = removedKeys.stream()
                 .map(key -> key.toApb(ref.keyCoder()))
                 .collect(Collectors.toList());
-        ref.removeKeys(tx, removedApbKeys);
+        ref.removeKeys(tempTx, removedApbKeys);
         removedKeys.clear();
+        tx.performUpdates(tempTx.getTransactionUpdateList());
     }
 
     /**
@@ -170,7 +170,7 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
 
             @Override
             public <K> CrdtMapDynamic<K2> create(CrdtContainer<K> c, K key) {
-                return c.map_aw(key, keyCoder).getMutable();
+                return c.map_aw(key, keyCoder).toMutable();
             }
 
             @Override
@@ -190,7 +190,7 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
 
             @Override
             public <K> CrdtMapDynamic<K2> create(CrdtContainer<K> c, K key) {
-                return c.map_g(key, keyCoder).getMutable();
+                return c.map_g(key, keyCoder).toMutable();
             }
 
             @Override

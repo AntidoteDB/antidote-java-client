@@ -1,7 +1,6 @@
 package eu.antidotedb.client;
 
 import eu.antidotedb.antidotepb.AntidotePB;
-import com.google.protobuf.ByteString;
 
 /**
  * The Class AntidoteOuterLWWRegister.
@@ -71,7 +70,7 @@ public final class CrdtRegister<T> extends AntidoteCRDT {
 
             @Override
             public <K> CrdtRegister<V> create(CrdtContainer<K> c, K key) {
-                return c.register(key, valueCoder).createAntidoteLWWRegister();
+                return c.register(key, valueCoder).toMutable();
             }
 
             @Override

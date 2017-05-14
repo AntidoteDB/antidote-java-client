@@ -1,7 +1,6 @@
 package eu.antidotedb.client;
 
 import eu.antidotedb.antidotepb.AntidotePB;
-import com.google.protobuf.ByteString;
 
 import java.util.OptionalLong;
 
@@ -18,7 +17,7 @@ public final class CrdtInteger extends AntidoteCRDT {
 
         @Override
         public <K> CrdtInteger create(CrdtContainer<K> c, K key) {
-            return c.integer(key).createAntidoteInteger();
+            return c.integer(key).toMutable();
         }
 
         @Override

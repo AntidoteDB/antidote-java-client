@@ -28,7 +28,7 @@ public class AbstractAntidoteTest {
         }
         antidoteClient.addTransformer(messageCounter = new CountingTransformer());
         bucketKey = nextSessionId();
-        bucket = antidoteClient.bucket(bucketKey);
+        bucket = Bucket.create(bucketKey);
     }
 
     public String nextSessionId() {

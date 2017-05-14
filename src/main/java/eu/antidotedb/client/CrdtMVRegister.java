@@ -60,7 +60,7 @@ public final class CrdtMVRegister<T> extends AntidoteCRDT {
 
             @Override
             public <K> CrdtMVRegister<V> create(CrdtContainer<K> c, K key) {
-                return c.multiValueRegister(key, valueCoder).createAntidoteMVRegister();
+                return c.multiValueRegister(key, valueCoder).toMutable();
             }
 
             @Override

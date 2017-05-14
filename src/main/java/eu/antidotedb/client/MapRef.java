@@ -10,7 +10,6 @@ import java.util.List;
  * The Class LowLevelMap.
  * <p>
  * TODO add alternatives for homogeneous maps and maps that are used like structs
- * TODO add ValueCoder for key?
  */
 public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements CrdtContainer<Key> {
 
@@ -75,11 +74,11 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
         getContainer().update(tx, getType(), getKey(), updateOperation);
     }
 
-    public CrdtMapDynamic<Key> getMutable() {
+    public CrdtMapDynamic<Key> toMutable() {
         return new CrdtMapDynamic<>(this);
     }
 
-    public <V extends AntidoteCRDT> CrdtMap<Key, V> getMutable(CrdtCreator<V> valueCreator) {
+    public <V extends AntidoteCRDT> CrdtMap<Key, V> toMutable(CrdtCreator<V> valueCreator) {
         return new CrdtMap<>(this, keyCoder, valueCreator);
     }
 
@@ -151,7 +150,6 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
             return new MapReadResult<>(entries, keyCoder);
         }
 
-        // TODO add methods to get embedded values of counters, maps, etc.
     }
 
 }

@@ -1,7 +1,6 @@
 package eu.antidotedb.client;
 
 import eu.antidotedb.antidotepb.AntidotePB;
-import com.google.protobuf.ByteString;
 
 /**
  * The Class CrdtCounter.
@@ -16,7 +15,7 @@ public final class CrdtCounter extends AntidoteCRDT {
 
         @Override
         public <K> CrdtCounter create(CrdtContainer<K> c, K key) {
-            return c.counter(key).createAntidoteCounter();
+            return c.counter(key).toMutable();
         }
 
         @Override
@@ -66,7 +65,7 @@ public final class CrdtCounter extends AntidoteCRDT {
     }
 
     @Override
-    public ObjectRef getRef() {
+    public CounterRef getRef() {
         return ref;
     }
 

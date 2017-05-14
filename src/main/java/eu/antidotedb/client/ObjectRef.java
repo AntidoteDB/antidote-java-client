@@ -42,7 +42,7 @@ public abstract class ObjectRef<Value> {
      *
      * @return the client
      */
-    public CrdtContainer getContainer() {
+    public CrdtContainer<?> getContainer() {
         return container;
     }
 

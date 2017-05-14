@@ -11,7 +11,7 @@ import com.google.protobuf.ByteString;
 public final class IntegerRef extends ObjectRef<Long> {
 
 
-    public IntegerRef(CrdtContainer container, ByteString key) {
+    public IntegerRef(CrdtContainer<?> container, ByteString key) {
         super(container, key, AntidotePB.CRDT_type.INTEGER);
     }
 
@@ -73,7 +73,7 @@ public final class IntegerRef extends ObjectRef<Long> {
         return updateOperation;
     }
 
-    public CrdtInteger createAntidoteInteger() {
+    public CrdtInteger toMutable() {
         return new CrdtInteger(this);
     }
 }

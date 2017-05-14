@@ -8,10 +8,24 @@ public class Bucket<Key> implements CrdtContainer<Key> {
     private final ByteString name;
     private final ValueCoder<Key> keyCoder;
 
-    public Bucket(ByteString name, ValueCoder<Key> keyCoder) {
+
+    Bucket(ByteString name, ValueCoder<Key> keyCoder) {
         this.name = name;
         this.keyCoder = keyCoder;
     }
+
+    public static Bucket<String> create(String name) {
+        return new Bucket<>(ByteString.copyFromUtf8(name), ValueCoder.utf8String);
+    }
+
+    public static <K> Bucket<K> create(String name, ValueCoder<K> keyCoder) {
+        return new Bucket<>(ByteString.copyFromUtf8(name), keyCoder);
+    }
+
+    public static <K> Bucket<K> create(ByteString name, ValueCoder<K> keyCoder) {
+        return new Bucket<>(name, keyCoder);
+    }
+
 
     public ByteString getName() {
         return name;

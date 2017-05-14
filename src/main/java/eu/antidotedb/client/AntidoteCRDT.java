@@ -38,8 +38,4 @@ public abstract class AntidoteCRDT {
 
     public abstract void push(AntidoteTransaction tx);
 
-    // TODO inline
-    public void readDatabase(TransactionWithReads tx) {
-        pull(tx);
-    }
 }

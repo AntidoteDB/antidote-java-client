@@ -18,7 +18,7 @@ import static eu.antidotedb.client.MessageCodes.*;
  * Created by mweber on 12.04.17.
  */
 public class ApbCoder {
-    public static AntidoteRequest decodeRequest(InputStream stream) throws IOException {
+    public static AntidoteRequest<?> decodeRequest(InputStream stream) throws IOException {
         byte[] sizeRaw = new byte[4];
         int numRead = stream.read(sizeRaw);
         if (numRead == -1) {
@@ -173,7 +173,7 @@ public class ApbCoder {
     }
 
 
-    public static void encodeRequest(AntidoteRequest request, OutputStream stream) {
+    public static void encodeRequest(AntidoteRequest<?> request, OutputStream stream) {
         request.accept(new AntidoteRequest.Handler<Void>() {
             @Override
             public Void handle(AntidotePB.ApbReadObjects op) {

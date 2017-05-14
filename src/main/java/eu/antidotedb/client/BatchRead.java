@@ -23,30 +23,24 @@ public class BatchRead {
     }
 
     /**
-     * Commits this batch-read
+     * Commits this batch-read using a static transaction
      */
     public void commit() {
+        commit(antidoteClient.noTransaction());
+    }
+
+    /**
+     * Performs this batch of reads in the context of another transaction
+     */
+    public void commit(TransactionWithReads tx) {
         if (requests.isEmpty()) {
             // nothing to do
             return;
         }
-        AntidotePB.ApbStaticReadObjects.Builder readObject = AntidotePB.ApbStaticReadObjects.newBuilder();
-        for (BatchReadResultImpl request : requests) {
-            readObject.addObjects(request.getObject());
-        }
-        readObject.setTransaction(AntidotePB.ApbStartTransaction.newBuilder().build());
-
-        AntidotePB.ApbStaticReadObjects readObjectsMessage = readObject.build();
-        Connection connection = antidoteClient.getPoolManager().getConnection();
-        MsgStaticReadObjects request = AntidoteRequest.of(readObjectsMessage);
-        AntidotePB.ApbStaticReadObjectsResp readResponse = antidoteClient.sendMessage(request, connection);
-        int i = 0;
-        for (AntidotePB.ApbReadObjectResp resp : readResponse.getObjects().getObjectsList()) {
-            requests.get(i).setResult(resp);
-            i++;
-        }
+        tx.batchReadHelper(requests);
         requests.clear();
     }
+
 
     public BatchReadResultImpl readHelper(ByteString bucket, ByteString key, AntidotePB.CRDT_type type) {
         AntidotePB.ApbBoundObject.Builder object = AntidotePB.ApbBoundObject.newBuilder(); // The object in the message to update

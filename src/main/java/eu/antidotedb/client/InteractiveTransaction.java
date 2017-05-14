@@ -185,6 +185,25 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         return antidoteClient.sendMessage(AntidoteRequest.of(readObjectsMessage), connection);
     }
 
+    @Override
+    void batchReadHelper(List<BatchReadResultImpl> readRequests) {
+        AntidotePB.ApbReadObjects.Builder readObject = AntidotePB.ApbReadObjects.newBuilder();
+        for (BatchReadResultImpl request : readRequests) {
+            readObject.addBoundobjects(request.getObject());
+        }
+        readObject.setTransactionDescriptor(descriptor);
+
+        AntidotePB.ApbReadObjects readObjectsMessage = readObject.build();
+        Connection connection = antidoteClient.getPoolManager().getConnection();
+        AntidoteRequest.MsgReadObjects request = AntidoteRequest.of(readObjectsMessage);
+        AntidotePB.ApbReadObjectsResp readResponse = antidoteClient.sendMessage(request, connection);
+        int i = 0;
+        for (AntidotePB.ApbReadObjectResp resp : readResponse.getObjectsList()) {
+            readRequests.get(i).setResult(resp);
+            i++;
+        }
+    }
+
     protected ByteString getDescriptor() {
         return descriptor;
     }

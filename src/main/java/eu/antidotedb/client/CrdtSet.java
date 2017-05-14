@@ -14,11 +14,11 @@ public class CrdtSet<T> extends AntidoteCRDT implements Set<T> {
     private SetRef<T> ref;
 
     // current values
-    private Set<T> values = new LinkedHashSet<T>();
+    private Set<T> values = new LinkedHashSet<>();
 
     // uncommitted changes:
-    private Set<T> added = new HashSet<T>();
-    private Set<T> removed = new HashSet<T>();
+    private Set<T> added = new HashSet<>();
+    private Set<T> removed = new HashSet<>();
 
     /**
      * Instantiates a new antidote set.
@@ -175,7 +175,7 @@ public class CrdtSet<T> extends AntidoteCRDT implements Set<T> {
 
             @Override
             public <K> CrdtSet<V> create(CrdtContainer<K> c, K key) {
-                return c.set(key, valueCoder).createAntidoteORSet();
+                return c.set(key, valueCoder).toMutable();
             }
 
             @Override
@@ -196,7 +196,7 @@ public class CrdtSet<T> extends AntidoteCRDT implements Set<T> {
 
             @Override
             public <K> CrdtSet<V> create(CrdtContainer<K> c, K key) {
-                return c.set_removeWins(key, valueCoder).createAntidoteRWSet();
+                return c.set_removeWins(key, valueCoder).toMutable();
             }
 
             @Override

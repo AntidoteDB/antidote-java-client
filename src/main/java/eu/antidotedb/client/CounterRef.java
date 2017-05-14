@@ -12,7 +12,7 @@ import com.google.protobuf.ByteString;
 public final class CounterRef extends ObjectRef<Integer> {
 
 
-    public CounterRef(CrdtContainer container, ByteString key, CRDT_type type) {
+    public CounterRef(CrdtContainer<?> container, ByteString key, CRDT_type type) {
         super(container, key, type);
     }
 
@@ -54,7 +54,7 @@ public final class CounterRef extends ObjectRef<Integer> {
     }
 
 
-    public CrdtCounter createAntidoteCounter() {
+    public CrdtCounter toMutable() {
         return new CrdtCounter(this);
     }
 }

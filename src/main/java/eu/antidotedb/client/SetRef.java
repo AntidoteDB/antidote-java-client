@@ -17,7 +17,7 @@ public class SetRef<T> extends ObjectRef<List<T>> {
 
     private final ValueCoder<T> format;
 
-    SetRef(CrdtContainer container, ByteString key, CRDT_type type, ValueCoder<T> format) {
+    SetRef(CrdtContainer<?> container, ByteString key, CRDT_type type, ValueCoder<T> format) {
         super(container, key, type);
         this.format = format;
     }
@@ -92,13 +92,8 @@ public class SetRef<T> extends ObjectRef<List<T>> {
         return format;
     }
 
-    // TODO unify these methods:
-
-    public CrdtSet<T> createAntidoteORSet() {
+    public CrdtSet<T> toMutable() {
         return new CrdtSet<>(this);
     }
 
-    public CrdtSet<T> createAntidoteRWSet() {
-        return new CrdtSet<>(this);
-    }
 }

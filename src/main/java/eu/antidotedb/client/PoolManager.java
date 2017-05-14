@@ -1,15 +1,8 @@
 package eu.antidotedb.client;
 
-import eu.antidotedb.client.messages.AntidoteRequest;
-import eu.antidotedb.client.messages.AntidoteResponse;
-import eu.antidotedb.client.transformer.Transformer;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.net.Socket;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -21,16 +14,20 @@ import java.util.stream.Collectors;
 public class PoolManager {
 
     private static final int CHECK_INTERVAL = 3;
+    public static final int DEFAULT_INITIAL_POOL_SIZE = 1;
+    public static final int DEFAULT_MAX_POOL_SIZE = 50;
     /**
      * The pools.
      */
-    private List<ConnectionPool> pools = new LinkedList<ConnectionPool>();
+    private List<ConnectionPool> pools = new CopyOnWriteArrayList<>();
+
 
     /**
-     * The retries.
+     * Creates a new empty pool manager.
+     * Use addHost to add hosts.
      */
-    private int retries = 0;
-
+    public PoolManager() {
+    }
 
     /**
      * Instantiates a new pool manager.
@@ -45,7 +42,7 @@ public class PoolManager {
             throw new RuntimeException("Config File not found!");
         }
         List<Host> hosts = cfgMgr.getConfigHosts(configFilePath);
-        createPool(maxPoolSize, initialPoolSize, hosts);
+        createPools(maxPoolSize, initialPoolSize, hosts);
     }
 
     /**
@@ -60,7 +57,7 @@ public class PoolManager {
             cfgMgr.generateDefaultConfig();
         }
         List<Host> hosts = cfgMgr.getConfigHosts();
-        createPool(maxPoolSize, initialPoolSize, hosts);
+        createPools(maxPoolSize, initialPoolSize, hosts);
 
     }
 
@@ -71,9 +68,9 @@ public class PoolManager {
      * @param initialPoolSize the initial pool size
      * @param hosts           the hosts
      */
-    private void createPool(int maxPoolSize, int initialPoolSize, List<Host> hosts) {
-        ConnectionPool obj;
+    private void createPools(int maxPoolSize, int initialPoolSize, List<Host> hosts) {
         for (Host h : hosts) {
+            addHost(maxPoolSize, initialPoolSize, h);
             pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
         }
         //if pool is empty
@@ -91,16 +88,23 @@ public class PoolManager {
      * @param initialPoolSize the initial pool size
      * @param h               Host to add into pool
      */
-    public boolean addHost(int maxPoolSize, int initialPoolSize, Host h) {
-        int initSize = pools.size();
+    public void addHost(int maxPoolSize, int initialPoolSize, Host h) {
         pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
-        return pools.size() > initSize;
+    }
+
+    /**
+     * Instantiates a new pool manager.
+     *
+     * @param h               Host to add into pool
+     */
+    public void addHost(Host h) {
+        addHost(DEFAULT_MAX_POOL_SIZE, DEFAULT_INITIAL_POOL_SIZE, h);
     }
 
     /**
      * Recover unhealthy pools.
      */
-    public void unhealthyHostRecovery() {
+    private void unhealthyHostRecovery() {
         ScheduledExecutorService executor =
                 Executors.newSingleThreadScheduledExecutor();
         Runnable periodicTask = new Runnable() {
@@ -119,11 +123,8 @@ public class PoolManager {
     }
 
     /**
-     * Gets the connection.
-     *
-     * @return the connection
+     * Returns a random healthy connection
      */
-    //todo retruning connection sending redundent pools
     public Connection getConnection() {
         int selectedIndex = 0;
         if (pools.size() > 0) {
@@ -146,47 +147,6 @@ public class PoolManager {
         throw new AntidoteException("Cannot open connection to any host. " +
                 "(Configured hosts: " + pools.stream().map(p -> p.getHost() + ":" + p.getPort()).collect(Collectors.joining(", ")) + ")");
     }
-
-    /**
-     * Send message.
-     *
-     * @param requestMessage the request message
-     * @param c              the connection object
-     * @param downstream     handler for sending message
-     * @return the antidote message
-     */
-    public <R> R sendMessage(AntidoteRequest<R> requestMessage, Connection c, Transformer downstream) {
-        AntidoteResponse.Handler<R> responseExtractor = requestMessage.readResponseExtractor();
-        AntidoteResponse response = requestMessage.accept(downstream.toHandler(c));
-        if (responseExtractor == null) {
-            return null;
-        }
-        if (response == null) {
-            throw new AntidoteException("Missing response for " + requestMessage);
-        }
-        return response.accept(responseExtractor);
-
-//        try {
-//            DataOutputStream dataOutputStream = new DataOutputStream(c.getSocket().getOutputStream());
-//            dataOutputStream.writeInt(requestMessage.getLength());
-//            dataOutputStream.writeByte(requestMessage.getCode());
-//            requestMessage.getMessage().writeTo(dataOutputStream);
-//            dataOutputStream.flush();
-//            DataInputStream dataInputStream = new DataInputStream(c.getSocket().getInputStream());
-//            int responseLength = dataInputStream.readInt();
-//            int responseCode = dataInputStream.readByte();
-//            byte[] messageData = new byte[responseLength - 1];
-//            dataInputStream.readFully(messageData, 0, responseLength - 1);
-//            return new AntidoteMessage(responseLength, responseCode, messageData);
-//        } catch (IOException e) {
-//            //if msg fails make it to unhealthy
-//            c.setunHealthyConnection();
-//            throw new AntidoteException("Could not send message", e);
-//        } finally {
-//            c.returnConnection();
-//        }
-    }
-
 
 
 }

@@ -14,7 +14,7 @@ public final class MVRegisterRef<T> extends ObjectRef<List<T>> {
 
     private ValueCoder<T> format;
 
-    MVRegisterRef(CrdtContainer container, ByteString key, AntidotePB.CRDT_type type, ValueCoder<T> format) {
+    MVRegisterRef(CrdtContainer<?> container, ByteString key, AntidotePB.CRDT_type type, ValueCoder<T> format) {
         super(container, key, type);
         this.format = format;
     }
@@ -50,7 +50,7 @@ public final class MVRegisterRef<T> extends ObjectRef<List<T>> {
         return updateOperation;
     }
 
-    public CrdtMVRegister<T> createAntidoteMVRegister() {
+    public CrdtMVRegister<T> toMutable() {
         return new CrdtMVRegister<>(this);
     }
 }

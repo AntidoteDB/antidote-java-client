@@ -15,7 +15,7 @@ public class RegisterRef<T> extends ObjectRef<T> {
 
     private ValueCoder<T> format;
 
-    RegisterRef(CrdtContainer container, ByteString key, CRDT_type type, ValueCoder<T> format) {
+    RegisterRef(CrdtContainer<?> container, ByteString key, CRDT_type type, ValueCoder<T> format) {
         super(container, key, type);
         this.format = format;
     }
@@ -50,7 +50,7 @@ public class RegisterRef<T> extends ObjectRef<T> {
         return format;
     }
 
-    public CrdtRegister<T> createAntidoteLWWRegister() {
+    public CrdtRegister<T> toMutable() {
         return new CrdtRegister<>(this);
     }
 }

@@ -53,4 +53,23 @@ public class NoTransaction extends TransactionWithReads {
         return resp.getObjects();
     }
 
+    @Override
+    void batchReadHelper(List<BatchReadResultImpl> requests) {
+        AntidotePB.ApbStaticReadObjects.Builder readObject = AntidotePB.ApbStaticReadObjects.newBuilder();
+        for (BatchReadResultImpl request : requests) {
+            readObject.addObjects(request.getObject());
+        }
+        readObject.setTransaction(AntidotePB.ApbStartTransaction.newBuilder().build());
+
+        AntidotePB.ApbStaticReadObjects readObjectsMessage = readObject.build();
+        Connection connection = client.getPoolManager().getConnection();
+        AntidoteRequest.MsgStaticReadObjects request = AntidoteRequest.of(readObjectsMessage);
+        AntidotePB.ApbStaticReadObjectsResp readResponse = client.sendMessage(request, connection);
+        int i = 0;
+        for (AntidotePB.ApbReadObjectResp resp : readResponse.getObjects().getObjectsList()) {
+            requests.get(i).setResult(resp);
+            i++;
+        }
+    }
+
 }

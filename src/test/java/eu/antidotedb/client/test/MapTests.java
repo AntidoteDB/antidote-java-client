@@ -56,7 +56,8 @@ public class MapTests extends AbstractAntidoteTest {
         int readCount = messageCounter.getStaticReadsCounter();
         int updateCount = messageCounter.getStaticUpdatesCounter();
         {
-            CrdtMap<String, CrdtSet<String>> testmap = bucket.map_aw("testmap2", ValueCoder.utf8String).getMutable(CrdtSet.creator(ValueCoder.utf8String));
+            MapRef<String> testmapRef = bucket.map_aw("testmap2");
+            CrdtMap<String, CrdtSet<String>> testmap = testmapRef.toMutable(CrdtSet.creator(ValueCoder.utf8String));
 
             CrdtSet<String> a = testmap.get("a");
             a.add("1");
@@ -67,7 +68,7 @@ public class MapTests extends AbstractAntidoteTest {
         }
 
         {
-            CrdtMap<String, CrdtSet<String>> testmap = bucket.map_aw("testmap2", ValueCoder.utf8String).getMutable(CrdtSet.creator(ValueCoder.utf8String));
+            CrdtMap<String, CrdtSet<String>> testmap = bucket.map_aw("testmap2", ValueCoder.utf8String).toMutable(CrdtSet.creator(ValueCoder.utf8String));
             testmap.pull(antidoteClient.noTransaction());
 
 

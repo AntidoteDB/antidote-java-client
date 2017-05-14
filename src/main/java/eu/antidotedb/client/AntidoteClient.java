@@ -1,12 +1,13 @@
 package eu.antidotedb.client;
 
 import eu.antidotedb.antidotepb.AntidotePB.*;
-import com.google.protobuf.ByteString;
 import eu.antidotedb.client.messages.AntidoteRequest;
+import eu.antidotedb.client.messages.AntidoteResponse;
 import eu.antidotedb.client.transformer.Transformer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * The Class AntidoteClient.
@@ -15,16 +16,23 @@ public final class AntidoteClient {
 
     private PoolManager poolManager;
 
-    private Transformer downstream;
+    private Transformer downstream = new SocketSender();
+
+
+    public AntidoteClient(Host ... hosts) {
+        this.poolManager = new PoolManager();
+        for (Host host : hosts) {
+            poolManager.addHost(host);
+        }
+    }
 
     /**
      * Instantiates a new antidote client.
      *
-     * @param poolManager the pool manager object
+     * @param poolManager defines where to find Antidote hosts
      */
     public AntidoteClient(PoolManager poolManager) {
         this.poolManager = poolManager;
-        this.downstream = new SocketSender();
     }
 
     /**
@@ -38,8 +46,9 @@ public final class AntidoteClient {
     }
 
     /**
-     * Send message to database.
+     * Sends a message to the database.
      * This will use an arbitrary connection from the connection pool.
+     * This is a synchronous call which will block until the response is available.
      *
      * @param requestMessage the update message
      * @return the response
@@ -51,29 +60,37 @@ public final class AntidoteClient {
     }
 
     /**
-     * Send message to database.
+     * Sends a message to the database.
+     * This is a synchronous call which will block until the response is available.
      *
      * @param requestMessage the update message
      * @param connection     the connection to use for sending
      * @return the response
      */
     <R> R sendMessage(AntidoteRequest<R> requestMessage, Connection connection) {
-        return getPoolManager().sendMessage(requestMessage, connection, downstream);
+        AntidoteResponse.Handler<R> responseExtractor = requestMessage.readResponseExtractor();
+        AntidoteResponse response = requestMessage.accept(downstream.toHandler(connection));
+        if (responseExtractor == null) {
+            return null;
+        }
+        if (response == null) {
+            throw new AntidoteException("Missing response for " + requestMessage);
+        }
+        return response.accept(responseExtractor);
     }
 
     /**
-     * Create antidote transaction.
-     *
-     * @return the antidote transaction
+     * Starts an interactive transactions.
+     * Interactive transactions allow to mix several reads and writes in a single atomic unit.
      */
     public InteractiveTransaction startTransaction() {
         return new InteractiveTransaction(this);
     }
 
     /**
-     * Create antidote static transaction.
+     * Creates a static transaction.
+     * Static transactions can be used to execute a set of updates atomically.
      *
-     * @return the antidote static transaction
      */
     public AntidoteStaticTransaction createStaticTransaction() {
         return new AntidoteStaticTransaction(this);
@@ -85,12 +102,16 @@ public final class AntidoteClient {
     }
 
     /**
-     * Pool Manager.
+     * Get the pool manager.
+     * This can be used to configure connections at runtime.
      */
     public PoolManager getPoolManager() {
         return poolManager;
     }
 
+    /**
+     * Completes a transaction and throws an exception if there was a problem
+     */
     CommitInfo completeTransaction(ApbCommitResp commitResponse) {
         if (commitResponse.getSuccess()) {
             return new CommitInfo(commitResponse.getCommitTime());
@@ -101,31 +122,26 @@ public final class AntidoteClient {
 
     }
 
-    public Bucket<String> bucket(String bucketKey) {
-        return bucket(bucketKey, ValueCoder.utf8String);
-    }
-
-    public <K> Bucket<K> bucket(String bucketKey, ValueCoder<K> keyCoder) {
-        return bucket(ByteString.copyFromUtf8(bucketKey), keyCoder);
-    }
-
-    public <K> Bucket<K> bucket(ByteString bucketKey, ValueCoder<K> keyCoder) {
-        return new Bucket<>(bucketKey, keyCoder);
-    }
-
 
     /**
      * Reads the values of a list of objects in one batch read
      */
-    public <T> List<T> readObjects(List<ObjectRef<? extends T>> objectRefs) {
-        List<T> results = new ArrayList<>(objectRefs.size());
-        // TODO change to batch read
+    public <T> List<T> readObjects(TransactionWithReads tx, List<ObjectRef<? extends T>> objectRefs) {
+        BatchRead batchRead = newBatchRead();
+        List<BatchReadResult<? extends T>> results = new ArrayList<>(objectRefs.size());
         for (ObjectRef<? extends T> objectRef : objectRefs) {
-            results.add(objectRef.read(noTransaction()));
+            BatchReadResult<? extends T> res = objectRef.read(batchRead);
+            results.add(res);
         }
-        return results;
+        batchRead.commit(tx);
+        return results.stream()
+                .map(BatchReadResult::get)
+                .collect(Collectors.toList());
     }
 
+    /**
+     * Use this for executing updates and reads without a transaction context.
+     */
     public NoTransaction noTransaction() {
         return new NoTransaction(this);
     }
@@ -135,29 +151,13 @@ public final class AntidoteClient {
      * <p>
      * all reads are based on the same snapshot
      */
-    public void pull(Iterable<? extends AntidoteCRDT> objects) {
+    public void pull(TransactionWithReads tx, Iterable<? extends AntidoteCRDT> objects) {
         BatchRead batchRead = newBatchRead();
         for (AntidoteCRDT object : objects) {
             object.pull(batchRead);
         }
-        batchRead.commit();
+        batchRead.commit(tx);
     }
 
-    // TODO inline
-    public void readCrdts(Iterable<? extends AntidoteCRDT> antidoteCRDTS) {
-        pull(antidoteCRDTS);
-//        // TODO change to pull
-//        try (InteractiveTransaction tx = startTransaction()) {
-//            for (AntidoteCRDT antidoteCRDT : antidoteCRDTS) {
-//                antidoteCRDT.pull(tx);
-//            }
-//            tx.commitTransaction();
-//        }
-    }
-
-    // TODO inline
-    public void readOuterObjects(List<CrdtMapDynamic<String>> antidoteCRDTS) {
-        readCrdts(antidoteCRDTS);
-    }
 }
 
