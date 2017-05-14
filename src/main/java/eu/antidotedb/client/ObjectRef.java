@@ -1,7 +1,7 @@
 package eu.antidotedb.client;
 
-import com.basho.riak.protobuf.AntidotePB;
-import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import eu.antidotedb.antidotepb.AntidotePB;
+import eu.antidotedb.antidotepb.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
 /**

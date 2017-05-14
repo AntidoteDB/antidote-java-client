@@ -1,6 +1,6 @@
 package eu.antidotedb.client;
 
-import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import eu.antidotedb.antidotepb.AntidotePB.CRDT_type;
 
 /**
  * The Class AntidoteType.

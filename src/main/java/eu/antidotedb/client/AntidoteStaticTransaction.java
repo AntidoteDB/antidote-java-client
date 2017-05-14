@@ -1,6 +1,6 @@
 package eu.antidotedb.client;
 
-import com.basho.riak.protobuf.AntidotePB.*;
+import eu.antidotedb.antidotepb.AntidotePB.*;
 import com.google.protobuf.InvalidProtocolBufferException;
 import eu.antidotedb.client.InteractiveTransaction.TransactionStatus;
 

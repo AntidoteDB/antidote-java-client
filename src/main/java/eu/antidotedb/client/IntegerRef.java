@@ -1,8 +1,8 @@
 package eu.antidotedb.client;
 
-import com.basho.riak.protobuf.AntidotePB;
-import com.basho.riak.protobuf.AntidotePB.ApbIntegerUpdate;
-import com.basho.riak.protobuf.AntidotePB.ApbUpdateOperation;
+import eu.antidotedb.antidotepb.AntidotePB;
+import eu.antidotedb.antidotepb.AntidotePB.ApbIntegerUpdate;
+import eu.antidotedb.antidotepb.AntidotePB.ApbUpdateOperation;
 import com.google.protobuf.ByteString;
 
 /**

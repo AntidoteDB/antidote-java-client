@@ -1,7 +1,7 @@
 package eu.antidotedb.client;
 
-import com.basho.riak.protobuf.AntidotePB.ApbMapKey;
-import com.basho.riak.protobuf.AntidotePB.CRDT_type;
+import eu.antidotedb.antidotepb.AntidotePB.ApbMapKey;
+import eu.antidotedb.antidotepb.AntidotePB.CRDT_type;
 import com.google.protobuf.ByteString;
 
 import java.util.Objects;

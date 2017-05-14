@@ -1,7 +1,7 @@
 package eu.antidotedb.client;
 
-import com.basho.riak.protobuf.AntidotePB;
-import com.basho.riak.protobuf.AntidotePB.ApbReadObjectResp;
+import eu.antidotedb.antidotepb.AntidotePB;
+import eu.antidotedb.antidotepb.AntidotePB.ApbReadObjectResp;
 import com.google.protobuf.ByteString;
 
 import java.util.*;

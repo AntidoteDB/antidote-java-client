@@ -1,8 +1,8 @@
 package eu.antidotedb.client;
 
-import com.basho.riak.protobuf.AntidotePB;
-import com.basho.riak.protobuf.AntidotePB.ApbStartTransaction;
-import com.basho.riak.protobuf.AntidotePB.ApbTxnProperties;
+import eu.antidotedb.antidotepb.AntidotePB;
+import eu.antidotedb.antidotepb.AntidotePB.ApbStartTransaction;
+import eu.antidotedb.antidotepb.AntidotePB.ApbTxnProperties;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
