@@ -70,7 +70,7 @@ public final class CrdtRegister<T> extends AntidoteCRDT {
             }
 
             @Override
-            public CrdtRegister<V> create(CrdtContainer c, ByteString key) {
+            public <K> CrdtRegister<V> create(CrdtContainer<K> c, K key) {
                 return c.register(key, valueCoder).createAntidoteLWWRegister();
             }
 

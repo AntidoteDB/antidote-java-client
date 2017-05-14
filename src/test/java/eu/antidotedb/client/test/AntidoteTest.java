@@ -1,14 +1,11 @@
 package eu.antidotedb.client.test;
 
 
-import com.google.protobuf.ByteString;
 import eu.antidotedb.client.*;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,9 +25,14 @@ public class AntidoteTest extends AbstractAntidoteTest {
         super();
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void explicitHost() {
         assertTrue(antidoteClient.getPoolManager().addHost(20, 5, new Host("localhost", 8087)));
+    }
+
+    @Test
+    public void bucketName() {
+        assertEquals(bucketKey, bucket.getName().toStringUtf8());
     }
 
 
@@ -97,8 +99,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
         RegisterRef<String> lwwRegisterRef = bucket.register("testLwwRegisterRef", ValueCoder.utf8String);
         RegisterRef<String> lwwRegisterRef1 = bucket.register("testLwwRegisterRef1", ValueCoder.utf8String);
 
-        MapRef gMapRef = bucket.map_g("testgMapRef");
-        MapRef awMapRef = bucket.map_aw("testawMapRef");
+        MapRef<String> gMapRef = bucket.map_g("testgMapRef");
+        MapRef<String> awMapRef = bucket.map_aw("testawMapRef");
 
 
 
@@ -114,8 +116,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
         CrdtMVRegister<String> mvRegister2 = mvRegisterRef.createAntidoteMVRegister();
         CrdtRegister<String> lwwRegister = lwwRegisterRef1.createAntidoteLWWRegister();
         CrdtRegister<String> lwwRegister2 = lwwRegisterRef.createAntidoteLWWRegister();
-        CrdtMapDynamic<String> awMap = awMapRef.getMutable(ValueCoder.utf8String);
-        CrdtMapDynamic<String> gMap = gMapRef.getMutable(ValueCoder.utf8String);
+        CrdtMapDynamic<String> awMap = awMapRef.getMutable();
+        CrdtMapDynamic<String> gMap = gMapRef.getMutable();
 
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
             lowInt.increment(tx, 3);
@@ -131,7 +133,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
             tx.commitTransaction();
         }
 
-        List<ObjectRef> objectRefs = new ArrayList<>();
+        List<ObjectRef<?>> objectRefs = new ArrayList<>();
         objectRefs.add(lowInt);
         objectRefs.add(lowCounter);
         objectRefs.add(orSetRef);
@@ -229,7 +231,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
         Assert.assertThat(awMap.getORSetEntry("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
         Assert.assertThat(awMap.getRWSetEntry("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
         Assert.assertEquals("Hi", awMap.getLWWRegisterEntry("testRegister", ValueCoder.utf8String).getValue());
-        Assert.assertThat(awMap.getMVRegisterEntry("testMVRegister", ValueCoder.utf8String).getValueList(), CoreMatchers.hasItem("Hi"));
+        Assert.assertThat(awMap.getMVRegisterEntry("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
         Assert.assertEquals(5, awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue());
         Assert.assertEquals(5, awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue());
 
@@ -238,7 +240,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
         Assert.assertThat(gMap.getORSetEntry("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
         Assert.assertThat(gMap.getRWSetEntry("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
         Assert.assertEquals("Hi", gMap.getLWWRegisterEntry("testRegister", ValueCoder.utf8String).getValue());
-        Assert.assertThat(gMap.getMVRegisterEntry("testMVRegister", ValueCoder.utf8String).getValueList(), CoreMatchers.hasItem("Hi"));
+        Assert.assertThat(gMap.getMVRegisterEntry("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
         Assert.assertEquals(5, gMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue());
         Assert.assertEquals(5, gMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue());
 
@@ -274,7 +276,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
         Assert.assertThat(awMap.getORSetEntry("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
         Assert.assertThat(awMap.getRWSetEntry("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
         Assert.assertEquals("Hi", awMap.getLWWRegisterEntry("testRegister", ValueCoder.utf8String).getValue());
-        Assert.assertThat(awMap.getMVRegisterEntry("testMVRegister", ValueCoder.utf8String).getValueList(), CoreMatchers.hasItem("Hi"));
+        Assert.assertThat(awMap.getMVRegisterEntry("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
         Assert.assertEquals(5, awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue());
         Assert.assertEquals(5, awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue());
 
@@ -311,7 +313,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
         Assert.assertThat(awMap.getORSetEntry("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.not(CoreMatchers.hasItems("Hi", "Hi2")));
         Assert.assertThat(awMap.getRWSetEntry("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.not(CoreMatchers.hasItems("Hi", "Hi2")));
         Assert.assertEquals("Hi2", awMap.getLWWRegisterEntry("testRegister", ValueCoder.utf8String).getValue());
-        Assert.assertThat(awMap.getMVRegisterEntry("testMVRegister", ValueCoder.utf8String).getValueList(), CoreMatchers.hasItem("Hi2"));
+        Assert.assertThat(awMap.getMVRegisterEntry("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi2"));
         Assert.assertEquals(10, awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue());
         Assert.assertEquals(10, awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue());
 

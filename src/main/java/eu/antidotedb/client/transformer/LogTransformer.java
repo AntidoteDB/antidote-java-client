@@ -15,42 +15,56 @@ public class LogTransformer extends Transformer {
     @Override
     public AntidoteResponse handle(Connection connection, AntidotePB.ApbReadObjects op) {
         logger.info("ApbReadObjects <<\n" + op + "\n>>");
-        return super.handle(connection, op);
+        AntidoteResponse response = super.handle(connection, op);
+        logger.info("response -> " + response);
+        return response;
     }
 
     @Override
     public AntidoteResponse handle(Connection connection, AntidotePB.ApbUpdateObjects op) {
         logger.info("ApbUpdateObjects <<\n" + op + "\n>>");
-        return super.handle(connection, op);
+        AntidoteResponse response = super.handle(connection, op);
+        logger.info("response -> " + response);
+        return response;
     }
 
     @Override
     public AntidoteResponse handle(Connection connection, AntidotePB.ApbStartTransaction op) {
         logger.info("ApbStartTransaction <<\n" + op + "\n>>");
-        return super.handle(connection, op);
+        AntidoteResponse response = super.handle(connection, op);
+        logger.info("response -> " + response);
+        return response;
     }
 
     @Override
     public AntidoteResponse handle(Connection connection, AntidotePB.ApbAbortTransaction op) {
         logger.info("ApbAbortTransaction <<\n" + op + "\n>>");
-        return super.handle(connection, op);
+        AntidoteResponse response = super.handle(connection, op);
+        logger.info("response -> " + response);
+        return response;
     }
 
     @Override
     public AntidoteResponse handle(Connection connection, AntidotePB.ApbCommitTransaction op) {
         logger.info("ApbCommitTransaction <<\n" + op + "\n>>");
-        return super.handle(connection, op);
+        AntidoteResponse response = super.handle(connection, op);
+        logger.info("response -> " + response);
+        return response;
     }
 
     @Override
     public AntidoteResponse handle(Connection connection, AntidotePB.ApbStaticReadObjects op) {
         logger.info("ApbStaticReadObjects <<\n" + op + "\n>>");
-        return super.handle(connection, op);
+        AntidoteResponse response = super.handle(connection, op);
+        logger.info("response -> " + response);
+        return response;
     }
 
     @Override
     public AntidoteResponse handle(Connection connection, AntidotePB.ApbStaticUpdateObjects op) {
         logger.info("ApbStaticUpdateObjects <<\n" + op + "\n>>");
-        return super.handle(connection, op);
+        AntidoteResponse response = super.handle(connection, op);
+        logger.info("response -> " + response);
+        return response;
     }
 }

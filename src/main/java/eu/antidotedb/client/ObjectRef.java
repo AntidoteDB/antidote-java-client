@@ -8,7 +8,7 @@ import com.google.protobuf.ByteString;
  * The Class LowLevelObject.
  */
 public abstract class ObjectRef<Value> {
-    private final CrdtContainer container;
+    private final CrdtContainer<?> container;
 
     private final ByteString key;
 
@@ -17,7 +17,7 @@ public abstract class ObjectRef<Value> {
     /**
      * Instantiates a new reference to a crdt
      */
-    ObjectRef(CrdtContainer container, ByteString key, CRDT_type type) {
+    ObjectRef(CrdtContainer<?> container, ByteString key, CRDT_type type) {
         this.key = key;
         this.container = container;
         this.type = type;

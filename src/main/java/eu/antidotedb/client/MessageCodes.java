@@ -1,14 +1,10 @@
 package eu.antidotedb.client;
 
-/**
- * Created by king on 12/6/2016.
- */
-public class RiakPbMsgs {
+public class MessageCodes {
 
     /**
      * The Constant ApbStaticUpdateObjects.
      */
-    //list of all msgs, better than enum because we don't need to call method to get value
     public static final int ApbStaticUpdateObjects = 122;
 
     /**
@@ -40,6 +36,5 @@ public class RiakPbMsgs {
      * The Constant ApbAbortTransaction.
      */
     public static final int ApbAbortTransaction = 120;
-    //all other message codes can be added
 }
 

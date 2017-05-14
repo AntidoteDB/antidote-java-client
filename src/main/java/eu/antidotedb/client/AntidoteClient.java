@@ -101,22 +101,26 @@ public final class AntidoteClient {
 
     }
 
-    public Bucket bucket(String bucketKey) {
-        return bucket(ByteString.copyFromUtf8(bucketKey));
+    public Bucket<String> bucket(String bucketKey) {
+        return bucket(bucketKey, ValueCoder.utf8String);
     }
 
-    private Bucket bucket(ByteString bucketKey) {
-        return new Bucket(bucketKey);
+    public <K> Bucket<K> bucket(String bucketKey, ValueCoder<K> keyCoder) {
+        return bucket(ByteString.copyFromUtf8(bucketKey), keyCoder);
+    }
+
+    public <K> Bucket<K> bucket(ByteString bucketKey, ValueCoder<K> keyCoder) {
+        return new Bucket<>(bucketKey, keyCoder);
     }
 
 
     /**
      * Reads the values of a list of objects in one batch read
      */
-    public List<Object> readObjects(List<ObjectRef> objectRefs) {
-        List<Object> results = new ArrayList<>(objectRefs.size());
+    public <T> List<T> readObjects(List<ObjectRef<? extends T>> objectRefs) {
+        List<T> results = new ArrayList<>(objectRefs.size());
         // TODO change to batch read
-        for (ObjectRef objectRef : objectRefs) {
+        for (ObjectRef<? extends T> objectRef : objectRefs) {
             results.add(objectRef.read(noTransaction()));
         }
         return results;

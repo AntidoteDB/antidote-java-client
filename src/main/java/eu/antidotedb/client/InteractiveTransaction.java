@@ -7,6 +7,10 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import eu.antidotedb.client.messages.AntidoteRequest;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 public class InteractiveTransaction extends TransactionWithReads implements AutoCloseable {
 
     /**
@@ -134,12 +138,19 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
 
     @Override
     void performUpdate(AntidotePB.ApbUpdateOp.Builder updateInstruction) {
+        performUpdates(Collections.singletonList(updateInstruction));
+    }
+
+    @Override
+    void performUpdates(List<AntidotePB.ApbUpdateOp.Builder> updateInstructions) {
         if (getDescriptor() == null) {
             throw new AntidoteException("You need to start the transaction first");
         }
         AntidotePB.ApbUpdateObjects.Builder updateMessage = AntidotePB.ApbUpdateObjects.newBuilder();
         updateMessage.setTransactionDescriptor(getDescriptor());
-        updateMessage.addUpdates(updateInstruction);
+        for (AntidotePB.ApbUpdateOp.Builder updateInstruction : updateInstructions) {
+            updateMessage.addUpdates(updateInstruction);
+        }
 
         AntidotePB.ApbUpdateObjects updateMessageObject = updateMessage.build();
         AntidotePB.ApbOperationResp resp = getClient().sendMessage(AntidoteRequest.of(updateMessageObject), connection);

@@ -11,22 +11,20 @@ import java.util.stream.Collectors;
  */
 public class CrdtMap<K, V extends AntidoteCRDT> extends AntidoteCRDT {
 
-    private final MapRef ref;
-    private ValueCoder<K> keyCoder;
+    private final MapRef<K> ref;
     private final CrdtCreator<V> valueCreator;
 
     private final Map<K, V> data = new LinkedHashMap<>();
     private final Set<K> removedKeys = new HashSet<>();
 
-    public CrdtMap(MapRef ref, ValueCoder<K> keyCoder, CrdtCreator<V> valueCreator) {
+    public CrdtMap(MapRef<K> ref, ValueCoder<K> keyCoder, CrdtCreator<V> valueCreator) {
         this.ref = ref;
-        this.keyCoder = keyCoder;
         this.valueCreator = valueCreator;
     }
 
 
     @Override
-    public ObjectRef getRef() {
+    public MapRef<K> getRef() {
         return ref;
     }
 
@@ -42,11 +40,12 @@ public class CrdtMap<K, V extends AntidoteCRDT> extends AntidoteCRDT {
             }
             AntidotePB.ApbReadObjectResp value = entry.getValue();
             ByteString keyBytes = key.getKey();
-            K keyValue = keyCoder.decode(keyBytes);
+            K keyValue = ref.keyCoder().decode(keyBytes);
             V valueCrdt = data.get(keyValue);
             if (valueCrdt == null) {
                 // create a new entry
-                valueCrdt = valueCreator.create(ref, keyBytes);
+                valueCrdt = valueCreator.create(ref, keyValue);
+                data.put(keyValue, valueCrdt);
             } else {
                 // don't remove entry:
                 toRemove.remove(keyValue);
@@ -62,18 +61,24 @@ public class CrdtMap<K, V extends AntidoteCRDT> extends AntidoteCRDT {
 
     @Override
     public void push(AntidoteTransaction tx) {
-        // TODO more efficient to collect updates in a special transaction and then build a single batch update?
+        // collect all updates before applying them:
+        List<AntidotePB.ApbUpdateOp.Builder> updates = new ArrayList<>();
+        AntidoteStaticTransaction tempTx = new AntidoteStaticTransaction(null);
+
         for (V v : data.values()) {
-            v.push(tx);
+            v.push(tempTx);
         }
         List<AntidotePB.ApbMapKey> removedApbKeys = removedKeys.stream()
                 .map(key -> AntidotePB.ApbMapKey.newBuilder()
                         .setType(valueCreator.type())
-                        .setKey(keyCoder.encode(key))
+                        .setKey(ref.keyCoder().encode(key))
                         .build())
                 .collect(Collectors.toList());
-        ref.removeKeys(tx, removedApbKeys);
-        removedKeys.clear();
+        if (!removedKeys.isEmpty()) {
+            ref.removeKeys(tempTx, removedApbKeys);
+            removedKeys.clear();
+        }
+        tx.performUpdates(tempTx.getTransactionUpdateList());
     }
 
     /**
@@ -91,7 +96,7 @@ public class CrdtMap<K, V extends AntidoteCRDT> extends AntidoteCRDT {
      * If the entry does not exist, a new one is created
      */
     public V get(K key) {
-        return data.computeIfAbsent(key, k -> valueCreator.create(ref, keyCoder.encode(k)));
+        return data.computeIfAbsent(key, k -> valueCreator.create(ref, k));
     }
 
     /**

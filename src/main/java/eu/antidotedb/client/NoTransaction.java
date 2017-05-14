@@ -4,6 +4,9 @@ import eu.antidotedb.antidotepb.AntidotePB;
 import com.google.protobuf.ByteString;
 import eu.antidotedb.client.messages.AntidoteRequest;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * This class can be used to execute an individual operation without any transactional context
  */
@@ -17,10 +20,17 @@ public class NoTransaction extends TransactionWithReads {
 
     @Override
     void performUpdate(AntidotePB.ApbUpdateOp.Builder updateInstruction) {
+        performUpdates(Collections.singletonList(updateInstruction));
+    }
+
+    @Override
+    void performUpdates(List<AntidotePB.ApbUpdateOp.Builder> updateInstructions) {
         AntidotePB.ApbStaticUpdateObjects.Builder updateMessage = AntidotePB.ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
         AntidotePB.ApbStartTransaction.Builder startTransaction = AntidotePB.ApbStartTransaction.newBuilder();
         updateMessage.setTransaction(startTransaction);
-        updateMessage.addUpdates(updateInstruction);
+        for (AntidotePB.ApbUpdateOp.Builder updateInstruction : updateInstructions) {
+            updateMessage.addUpdates(updateInstruction);
+        }
         AntidotePB.ApbCommitResp commitResponse =
                 client.sendMessageArbitraryConnection(AntidoteRequest.of(updateMessage.build()));
         client.completeTransaction(commitResponse);

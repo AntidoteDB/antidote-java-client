@@ -1,5 +1,6 @@
 package eu.antidotedb.client;
 
+import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.*;
 import eu.antidotedb.client.InteractiveTransaction.TransactionStatus;
 import eu.antidotedb.client.messages.AntidoteRequest;
@@ -52,6 +53,7 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction {
         ApbStaticUpdateObjects.Builder updateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
         ApbStartTransaction.Builder startTransaction = ApbStartTransaction.newBuilder();
         updateMessage.setTransaction(startTransaction);
+        // TODO could optimize this by combining updates on same key
         for (ApbUpdateOp.Builder updateInstruction : transactionUpdateList) {
             updateMessage.addUpdates(updateInstruction);
         }
@@ -62,5 +64,14 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction {
     @Override
     void performUpdate(ApbUpdateOp.Builder updateInstruction) {
         transactionUpdateList.add(updateInstruction);
+    }
+
+    @Override
+    void performUpdates(List<ApbUpdateOp.Builder> updateInstructions) {
+        transactionUpdateList.addAll(updateInstructions);
+    }
+
+    List<ApbUpdateOp.Builder> getTransactionUpdateList() {
+        return transactionUpdateList;
     }
 }

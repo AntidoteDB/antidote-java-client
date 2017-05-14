@@ -16,4 +16,5 @@ public abstract class AntidoteTransaction implements UpdateContext {
 
     abstract void performUpdate(AntidotePB.ApbUpdateOp.Builder updateInstruction);
 
+    abstract void performUpdates(List<ApbUpdateOp.Builder> updateInstructions);
 }

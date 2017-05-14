@@ -4,11 +4,13 @@ import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.ApbReadObjectResp;
 import com.google.protobuf.ByteString;
 
-public class Bucket implements CrdtContainer {
+public class Bucket<Key> implements CrdtContainer<Key> {
     private final ByteString name;
+    private final ValueCoder<Key> keyCoder;
 
-    public Bucket(ByteString name) {
+    public Bucket(ByteString name, ValueCoder<Key> keyCoder) {
         this.name = name;
+        this.keyCoder = keyCoder;
     }
 
     public ByteString getName() {
@@ -37,5 +39,10 @@ public class Bucket implements CrdtContainer {
         update.setBoundobject(boundObject);
         update.setOperation(builder);
         tx.performUpdate(update);
+    }
+
+    @Override
+    public ValueCoder<Key> keyCoder() {
+        return keyCoder;
     }
 }

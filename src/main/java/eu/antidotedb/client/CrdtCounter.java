@@ -15,7 +15,7 @@ public final class CrdtCounter extends AntidoteCRDT {
         }
 
         @Override
-        public CrdtCounter create(CrdtContainer c, ByteString key) {
+        public <K> CrdtCounter create(CrdtContainer<K> c, K key) {
             return c.counter(key).createAntidoteCounter();
         }
 

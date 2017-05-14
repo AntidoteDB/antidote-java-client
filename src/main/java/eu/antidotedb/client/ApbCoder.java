@@ -12,6 +12,8 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import static eu.antidotedb.client.MessageCodes.*;
+
 /**
  * Created by mweber on 12.04.17.
  */
@@ -34,25 +36,25 @@ public class ApbCoder {
 //        byte[] data = new byte[size - 1];
 //        dataInputStream.readFully(data, 0, size - 1);
         switch (msgCode) {
-            case 116:
+            case ApbReadObjects:
                 AntidotePB.ApbReadObjects apbReadObjects = AntidotePB.ApbReadObjects.parseFrom(data);
                 return AntidoteRequest.of(apbReadObjects);
-            case 118:
+            case ApbUpdateObjects:
                 AntidotePB.ApbUpdateObjects apbUpdateObjects = AntidotePB.ApbUpdateObjects.parseFrom(data);
                 return AntidoteRequest.of(apbUpdateObjects);
-            case 119:
+            case ApbStartTransaction:
                 AntidotePB.ApbStartTransaction apbStartTransaction = AntidotePB.ApbStartTransaction.parseFrom(data);
                 return AntidoteRequest.of(apbStartTransaction);
-            case 120:
+            case ApbAbortTransaction:
                 AntidotePB.ApbAbortTransaction apbAbortTransaction = AntidotePB.ApbAbortTransaction.parseFrom(data);
                 return AntidoteRequest.of(apbAbortTransaction);
-            case 121:
+            case ApbCommitTransaction:
                 AntidotePB.ApbCommitTransaction apbCommitTransaction = AntidotePB.ApbCommitTransaction.parseFrom(data);
                 return AntidoteRequest.of(apbCommitTransaction);
-            case 122:
+            case ApbStaticUpdateObjects:
                 AntidotePB.ApbStaticUpdateObjects apbStaticUpdateObjects = AntidotePB.ApbStaticUpdateObjects.parseFrom(data);
                 return AntidoteRequest.of(apbStaticUpdateObjects);
-            case 123:
+            case ApbStaticReadObjects:
                 AntidotePB.ApbStaticReadObjects apbStaticReadObjects = AntidotePB.ApbStaticReadObjects.parseFrom(data);
                 return AntidoteRequest.of(apbStaticReadObjects);
             default:

@@ -17,7 +17,7 @@ public final class CrdtInteger extends AntidoteCRDT {
         }
 
         @Override
-        public CrdtInteger create(CrdtContainer c, ByteString key) {
+        public <K> CrdtInteger create(CrdtContainer<K> c, K key) {
             return c.integer(key).createAntidoteInteger();
         }
 

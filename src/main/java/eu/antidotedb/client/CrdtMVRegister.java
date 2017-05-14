@@ -59,20 +59,17 @@ public final class CrdtMVRegister<T> extends AntidoteCRDT {
             }
 
             @Override
-            public CrdtMVRegister<V> create(CrdtContainer c, ByteString key) {
+            public <K> CrdtMVRegister<V> create(CrdtContainer<K> c, K key) {
                 return c.multiValueRegister(key, valueCoder).createAntidoteMVRegister();
             }
 
             @Override
             public CrdtMVRegister<V> cast(AntidoteCRDT value) {
+                //noinspection unchecked
                 return (CrdtMVRegister<V>) value;
             }
         };
 
     }
 
-    @Deprecated // TODO inline
-    public List<T> getValueList() {
-        return getValues();
-    }
 }

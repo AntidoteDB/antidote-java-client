@@ -7,7 +7,7 @@ public interface CrdtCreator<V extends AntidoteCRDT> {
 
     AntidotePB.CRDT_type type();
 
-    V create(CrdtContainer c, ByteString key);
+    <K> V create(CrdtContainer<K> c, K key);
 
     V cast(AntidoteCRDT value);
 }

@@ -174,7 +174,7 @@ public class CrdtSet<T> extends AntidoteCRDT implements Set<T> {
             }
 
             @Override
-            public CrdtSet<V> create(CrdtContainer c, ByteString key) {
+            public <K> CrdtSet<V> create(CrdtContainer<K> c, K key) {
                 return c.set(key, valueCoder).createAntidoteORSet();
             }
 
@@ -195,7 +195,7 @@ public class CrdtSet<T> extends AntidoteCRDT implements Set<T> {
             }
 
             @Override
-            public CrdtSet<V> create(CrdtContainer c, ByteString key) {
+            public <K> CrdtSet<V> create(CrdtContainer<K> c, K key) {
                 return c.set_removeWins(key, valueCoder).createAntidoteRWSet();
             }
 

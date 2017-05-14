@@ -1,8 +1,8 @@
 package eu.antidotedb.client;
 
+import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.CRDT_type;
-import com.google.protobuf.ByteString;
 
 /**
  * A CRDT container contains CRDTs stored under keys
@@ -12,7 +12,7 @@ import com.google.protobuf.ByteString;
  * <li>A Map CRDT is CRDT container since it contains nested CRDTs</li>
  * </ul>
  */
-public interface CrdtContainer {
+public interface CrdtContainer<Key> {
     AntidotePB.ApbReadObjectResp read(TransactionWithReads tx, CRDT_type type, ByteString key);
 
     BatchReadResult<AntidotePB.ApbReadObjectResp> readBatch(BatchRead tx, CRDT_type type, ByteString key);
@@ -20,90 +20,60 @@ public interface CrdtContainer {
 
     void update(AntidoteTransaction tx, CRDT_type type, ByteString key, AntidotePB.ApbUpdateOperation.Builder builder);
 
-    default CounterRef counter(ByteString key) {
-        return new CounterRef(this, key, CRDT_type.COUNTER);
+    ValueCoder<Key> keyCoder();
+
+
+    default CounterRef counter(Key key) {
+        return new CounterRef(this, keyCoder().encode(key), CRDT_type.COUNTER);
     }
 
-    default CounterRef fatCounter(ByteString key) {
-        return new CounterRef(this, key, CRDT_type.COUNTER); // TODO change to fat counter
+    default CounterRef fatCounter(Key key) {
+        return new CounterRef(this, keyCoder().encode(key), CRDT_type.FATCOUNTER);
     }
 
-    default IntegerRef integer(ByteString key) {
-        return new IntegerRef(this, key);
+    default IntegerRef integer(Key key) {
+        return new IntegerRef(this, keyCoder().encode(key));
     }
 
-    default <T> RegisterRef<T> register(ByteString key, ValueCoder<T> format) {
-        return new RegisterRef<T>(this, key, CRDT_type.LWWREG, format);
+    default <T> RegisterRef<T> register(Key key, ValueCoder<T> format) {
+        return new RegisterRef<T>(this, keyCoder().encode(key), CRDT_type.LWWREG, format);
     }
 
-    default <T> MVRegisterRef<T> multiValueRegister(ByteString key, ValueCoder<T> format) {
-        return new MVRegisterRef<T>(this, key, CRDT_type.MVREG, format);
+    default <T> MVRegisterRef<T> multiValueRegister(Key key, ValueCoder<T> format) {
+        return new MVRegisterRef<T>(this, keyCoder().encode(key), CRDT_type.MVREG, format);
     }
 
-    default <T> SetRef<T> set(ByteString key, ValueCoder<T> format) {
-        return new SetRef<T>(this, key, CRDT_type.ORSET, format);
+    default <T> SetRef<T> set(Key key, ValueCoder<T> format) {
+        return new SetRef<T>(this, keyCoder().encode(key), CRDT_type.ORSET, format);
     }
 
-    default <T> SetRef<T> set_removeWins(ByteString key, ValueCoder<T> format) {
-        return new SetRef<T>(this, key, CRDT_type.RWSET, format);
+    default <T> SetRef<T> set_removeWins(Key key, ValueCoder<T> format) {
+        return new SetRef<T>(this, keyCoder().encode(key), CRDT_type.RWSET, format);
     }
 
-    default MapRef map_aw(ByteString key) {
-        return new MapRef(this, key, CRDT_type.AWMAP);
+    default <K> MapRef<K> map_aw(Key key, ValueCoder<K> keyCoder) {
+        return new MapRef<K>(this, keyCoder().encode(key), CRDT_type.AWMAP, keyCoder);
     }
 
-    default MapRef map_rr(ByteString key) {
-        return new MapRef(this, key, CRDT_type.AWMAP); // TODO fix type
+    default <K> MapRef<K> map_rr(Key key, ValueCoder<K> keyCoder) {
+        return new MapRef<K>(this, keyCoder().encode(key), CRDT_type.RRMAP, keyCoder);
     }
 
-    default MapRef map_g(ByteString key) {
-        return new MapRef(this, key, CRDT_type.GMAP);
+    default <K> MapRef<K> map_g(Key key, ValueCoder<K> keyCoder) {
+        return new MapRef<K>(this, keyCoder().encode(key), CRDT_type.GMAP, keyCoder);
     }
 
-    default MapRef map_g(String key) {
-        return map_g(ByteString.copyFromUtf8(key));
+    default MapRef<String> map_aw(Key key) {
+        return new MapRef<>(this, keyCoder().encode(key), CRDT_type.AWMAP, ValueCoder.utf8String);
     }
 
-    default CounterRef counter(String key) {
-        return counter(ByteString.copyFromUtf8(key));
+    default MapRef<String> map_rr(Key key) {
+        return new MapRef<>(this, keyCoder().encode(key), CRDT_type.RRMAP, ValueCoder.utf8String);
     }
 
-    default CounterRef fatCounter(String key) {
-        return fatCounter(ByteString.copyFromUtf8(key));
+    default MapRef<String> map_g(Key key) {
+        return new MapRef<>(this, keyCoder().encode(key), CRDT_type.GMAP, ValueCoder.utf8String);
     }
-
-    default IntegerRef integer(String key) {
-        return integer(ByteString.copyFromUtf8(key));
-    }
-
-    default <T> RegisterRef<T> register(String key, ValueCoder<T> format) {
-        return register(ByteString.copyFromUtf8(key), format);
-    }
-
-    default <T> MVRegisterRef<T> multiValueRegister(String key, ValueCoder<T> format) {
-        return multiValueRegister(ByteString.copyFromUtf8(key), format);
-    }
-
-    default <T> SetRef<T> set(String key, ValueCoder<T> format) {
-        return set(ByteString.copyFromUtf8(key), format);
-    }
-
-    default <T> SetRef<T> set_removeWins(String key, ValueCoder<T> format) {
-        return set_removeWins(ByteString.copyFromUtf8(key), format);
-    }
-
-    default MapRef map_aw(String key) {
-        return map_aw(ByteString.copyFromUtf8(key));
-    }
-
-    default MapRef map_rr(String key) {
-        return map_rr(ByteString.copyFromUtf8(key));
-    }
-
-    default MapRef gmap(String key) {
-        return map_g(ByteString.copyFromUtf8(key));
-    }
-
 
 
 }

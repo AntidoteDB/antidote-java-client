@@ -1,6 +1,5 @@
 package eu.antidotedb.client;
 
-import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.*;
 import com.google.protobuf.ByteString;
 
@@ -13,31 +12,34 @@ import java.util.List;
  * TODO add alternatives for homogeneous maps and maps that are used like structs
  * TODO add ValueCoder for key?
  */
-public class MapRef extends ObjectRef<MapRef.MapReadResult> implements CrdtContainer {
+public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements CrdtContainer<Key> {
+
+    private ValueCoder<Key> keyCoder;
 
     /**
      * Instantiates a new low level map.
      */
-    MapRef(CrdtContainer container, ByteString key, CRDT_type type) {
+    MapRef(CrdtContainer<?> container, ByteString key, CRDT_type type, ValueCoder<Key> keyCoder) {
         super(container, key, type);
+        this.keyCoder = keyCoder;
     }
 
 
     @Override
-    MapReadResult readResponseToValue(ApbReadObjectResp resp) {
-        return new MapReadResult(resp.getMap().getEntriesList());
+    MapReadResult<Key> readResponseToValue(ApbReadObjectResp resp) {
+        return new MapReadResult<>(resp.getMap().getEntriesList(), keyCoder);
     }
 
     @Override
     public ApbReadObjectResp read(TransactionWithReads tx, CRDT_type type, ByteString key) {
-        MapReadResult res = read(tx);
-        return res.getRaw(type, key);
+        MapReadResult<Key> res = read(tx);
+        return res.getRawFromByteString(type, key);
     }
 
     @Override
     public BatchReadResult<ApbReadObjectResp> readBatch(BatchRead tx, CRDT_type type, ByteString key) {
-        BatchReadResult<MapReadResult> res = read(tx);
-        return null;
+        BatchReadResult<MapReadResult<Key>> res = read(tx);
+        return res.map(r -> r.getRawFromByteString(type, key));
     }
 
     @Override
@@ -50,6 +52,11 @@ public class MapRef extends ObjectRef<MapRef.MapReadResult> implements CrdtConta
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
         updateOperation.setMapop(mapUpdate);
         getContainer().update(tx, getType(), getKey(), updateOperation);
+    }
+
+    @Override
+    public ValueCoder<Key> keyCoder() {
+        return keyCoder;
     }
 
     public void removeKey(AntidoteTransaction tx, CRDT_type type, ByteString key) {
@@ -68,70 +75,29 @@ public class MapRef extends ObjectRef<MapRef.MapReadResult> implements CrdtConta
         getContainer().update(tx, getType(), getKey(), updateOperation);
     }
 
-    public <T> CrdtMapDynamic<T> getMutable(ValueCoder<T> keyCoder) {
-        return new CrdtMapDynamic<>(this, keyCoder);
+    public CrdtMapDynamic<Key> getMutable() {
+        return new CrdtMapDynamic<>(this);
+    }
+
+    public <V extends AntidoteCRDT> CrdtMap<Key, V> getMutable(CrdtCreator<V> valueCreator) {
+        return new CrdtMap<>(this, keyCoder, valueCreator);
     }
 
 
-//    /**
-//     * Prepare the update operation builder.
-//     *
-//     * @param mapKey  the map key
-//     * @param updates the updates
-//     * @return the apb update operation. builder
-//     */
-//    protected ApbUpdateOperation.Builder updateOpBuilder(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates) {
-//        ApbMapNestedUpdate.Builder mapNestedUpdateBuilder = ApbMapNestedUpdate.newBuilder(); // The specific instruction in update instruction
-//        List<ApbMapNestedUpdate> mapNestedUpdateList = new ArrayList<ApbMapNestedUpdate>();
-//        ApbMapNestedUpdate mapNestedUpdate;
-//        for (AntidoteMapUpdate update : updates) {
-//            mapNestedUpdateBuilder.setUpdate(update.getOperation());
-//            mapNestedUpdateBuilder.setKey(mapKey.getApbKey());
-//            mapNestedUpdate = mapNestedUpdateBuilder.build();
-//            mapNestedUpdateList.add(mapNestedUpdate);
-//        }
-//        ApbMapUpdate.Builder mapUpdateInstruction = ApbMapUpdate.newBuilder(); // The specific instruction in update instruction
-//        mapUpdateInstruction.addAllUpdates(mapNestedUpdateList);
-//
-//        ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
-//        updateOperation.setMapop(mapUpdateInstruction);
-//        return updateOperation;
-//    }
-//
-//    /**
-//     * Update.
-//     *
-//     * @param mapKey              the map key
-//     * @param update              the update
-//     * @param type                the type
-//     * @param antidoteTransaction the antidote transaction
-//     */
-//    public void update(AntidoteMapKey mapKey, AntidoteMapUpdate update, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-//        List<AntidoteMapUpdate> updates = new ArrayList<>();
-//        updates.add(update);
-//        update(mapKey, updates, type, antidoteTransaction);
-//    }
-//
-//    /**
-//     * Update.
-//     *
-//     * @param mapKey              the map key
-//     * @param updates             the updates
-//     * @param type                the type
-//     * @param antidoteTransaction the antidote transaction
-//     */
-//    public void update(AntidoteMapKey mapKey, List<AntidoteMapUpdate> updates, CRDT_type type, AntidoteTransaction antidoteTransaction) {
-//        antidoteTransaction.updateHelper(updateOpBuilder(mapKey, updates), getKey(), getBucket(), type);
-//    }
-
-    public static class MapReadResult {
+    public static class MapReadResult<Key> {
         private List<ApbMapEntry> entries;
+        private ValueCoder<Key> keyCoder;
 
-        public MapReadResult(List<ApbMapEntry> entriesList) {
+        MapReadResult(List<ApbMapEntry> entriesList, ValueCoder<Key> keyCoder) {
             entries = entriesList;
+            this.keyCoder = keyCoder;
         }
 
-        public ApbReadObjectResp getRaw(CRDT_type type, ByteString key) {
+        public ApbReadObjectResp getRaw(CRDT_type type, Key key) {
+            return getRawFromByteString(type, keyCoder.encode(key));
+        }
+
+        public ApbReadObjectResp getRawFromByteString(CRDT_type type, ByteString key) {
             for (ApbMapEntry entry : entries) {
                 if (entry.getKey().getType().equals(type)
                         && entry.getKey().getKey().equals(key)) {
@@ -141,75 +107,51 @@ public class MapRef extends ObjectRef<MapRef.MapReadResult> implements CrdtConta
             return null;
         }
 
+        public int counter(Key key) {
+            return getRaw(CRDT_type.COUNTER, key).getCounter().getValue();
+        }
+
+        public int fatCounter(Key key) {
+            return getRaw(CRDT_type.FATCOUNTER, key).getCounter().getValue();
+        }
+
+        public long integer(Key key) {
+            return getRaw(CRDT_type.INTEGER, key).getInt().getValue();
+        }
+
+        public <T> T register(Key key, ValueCoder<T> format) {
+            return format.decode(getRaw(CRDT_type.LWWREG, key).getReg().getValue());
+        }
+
+        public <T> List<T> multiValueRegister(Key key, ValueCoder<T> format) {
+            return format.decodeList(getRaw(CRDT_type.MVREG, key).getMvreg().getValuesList());
+        }
+
+
+        public <T> List<T> set(Key key, ValueCoder<T> format) {
+            return format.decodeList(getRaw(CRDT_type.ORSET, key).getSet().getValueList());
+        }
+
+        public <T> List<T> set_removeWins(Key key, ValueCoder<T> format) {
+            return format.decodeList(getRaw(CRDT_type.RWSET, key).getSet().getValueList());
+        }
+
+        public <K> MapReadResult<K> map_aw(Key key, ValueCoder<K> keyCoder) {
+            List<ApbMapEntry> entries = getRaw(CRDT_type.AWMAP, key).getMap().getEntriesList();
+            return new MapReadResult<>(entries, keyCoder);
+        }
+
+        public <K> MapReadResult<K> map_rr(Key key, ValueCoder<K> keyCoder) {
+            List<ApbMapEntry> entries = getRaw(CRDT_type.RRMAP, key).getMap().getEntriesList();
+            return new MapReadResult<>(entries, keyCoder);
+        }
+
+        public <K> MapReadResult<K> map_g(Key key, ValueCoder<K> keyCoder) {
+            List<ApbMapEntry> entries = getRaw(CRDT_type.GMAP, key).getMap().getEntriesList();
+            return new MapReadResult<>(entries, keyCoder);
+        }
+
         // TODO add methods to get embedded values of counters, maps, etc.
     }
 
-//    /**
-//     * Helper method for the common part of reading both kinds of maps.
-//     *
-//     * @param path         the path storing the key and type of all inner maps leading to the entry. This is needed when storing Map entries in variables
-//     *                     that are a subclass of AntidoteMapEntry if we want to give them an update method.
-//     * @param apbEntryList the ApbEntryList of the map, which is transformed into AntidoteMapEntries
-//     * @param outerMapType the type of the outer Map (G-Map or AW-Map). The type of the outermost Map is not stored in the path
-//     * @return the list of AntidoteMapEntries
-//     */
-//    protected List<AntidoteInnerCRDT> readMapHelper(List<ApbMapKey> path, List<ApbMapEntry> apbEntryList, CRDT_type outerMapType) {
-//        List<AntidoteInnerCRDT> antidoteEntryList = new ArrayList<AntidoteInnerCRDT>();
-//        path.add(null);
-//        for (ApbMapEntry e : apbEntryList) {
-//            path.set(path.size() - 1, e.getKey());
-//            List<ApbMapKey> path2 = new ArrayList<ApbMapKey>();
-//            switch (e.getKey().getType()) {
-//                case COUNTER:
-//                    path2 = new ArrayList<ApbMapKey>();
-//                    path2.addAll(path);
-//                    antidoteEntryList.add(new AntidoteInnerCounter(
-//                            e.getValue().getCounter().getValue(), getClient(), getKey(), getBucket(), path2, outerMapType));
-//                    break;
-//                case ORSET:
-//                    path2 = new ArrayList<ApbMapKey>();
-//                    path2.addAll(path);
-//                    antidoteEntryList.add(new AntidoteInnerORSet(
-//                            e.getValue().getSet().getValueList(), getClient(), getKey(), getBucket(), path2, outerMapType));
-//                    break;
-//                case RWSET:
-//                    path2 = new ArrayList<ApbMapKey>();
-//                    path2.addAll(path);
-//                    antidoteEntryList.add(new AntidoteInnerRWSet(
-//                            e.getValue().getSet().getValueList(), getClient(), getKey(), getBucket(), path2, outerMapType));
-//                    break;
-//                case AWMAP:
-//                    path2 = new ArrayList<ApbMapKey>();
-//                    path2.addAll(path);
-//                    antidoteEntryList.add(new AntidoteInnerAWMap(
-//                            readMapHelper(path, e.getValue().getMap().getEntriesList(), outerMapType), getClient(), getKey(), getBucket(), path2, outerMapType));
-//                    break;
-//                case INTEGER:
-//                    path2 = new ArrayList<ApbMapKey>();
-//                    path2.addAll(path);
-//                    antidoteEntryList.add(new AntidoteInnerInteger(
-//                            toIntExact(e.getValue().getInt().getValue()), getClient(), getKey(), getBucket(), path2, outerMapType));
-//                    break;
-//                case LWWREG:
-//                    path2 = new ArrayList<ApbMapKey>();
-//                    path2.addAll(path);
-//                    antidoteEntryList.add(new AntidoteInnerLWWRegister(
-//                            e.getValue().getReg().getValue(), getClient(), getKey(), getBucket(), path2, outerMapType));
-//                    break;
-//                case MVREG:
-//                    path2 = new ArrayList<ApbMapKey>();
-//                    path2.addAll(path);
-//                    antidoteEntryList.add(new AntidoteInnerMVRegister(e.getValue().getMvreg().getValuesList(), getClient(), getKey(), getBucket(), path2, outerMapType));
-//                    break;
-//                case GMAP:
-//                    path2 = new ArrayList<ApbMapKey>();
-//                    path2.addAll(path);
-//                    antidoteEntryList.add(new AntidoteInnerGMap(
-//                            readMapHelper(path, e.getValue().getMap().getEntriesList(), outerMapType), getClient(), getKey(), getBucket(), path2, outerMapType));
-//                    break;
-//            }
-//        }
-//        path.remove(0);
-//        return antidoteEntryList;
-//    }
 }

@@ -16,7 +16,8 @@ public class AbstractAntidoteTest {
     final static boolean debugLog = false;
     final CountingTransformer messageCounter;
     final AntidoteClient antidoteClient;
-    final Bucket bucket;
+    final Bucket<String> bucket;
+    final String bucketKey;
 
     public AbstractAntidoteTest() {
         PoolManager antidotePoolManager = new PoolManager(20, 5);
@@ -26,7 +27,7 @@ public class AbstractAntidoteTest {
             antidoteClient.addTransformer(new LogTransformer());
         }
         antidoteClient.addTransformer(messageCounter = new CountingTransformer());
-        String bucketKey = nextSessionId();
+        bucketKey = nextSessionId();
         bucket = antidoteClient.bucket(bucketKey);
     }
 

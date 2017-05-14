@@ -12,8 +12,7 @@ import java.util.stream.Collectors;
  */
 public class CrdtMapDynamic<K> extends AntidoteCRDT {
 
-    private final MapRef ref;
-    private ValueCoder<K> keyCoder;
+    private final MapRef<K> ref;
 
     /**
      * the Object value is either an AntidoteCRDT or the last read response
@@ -23,14 +22,13 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
 
 
 
-    public CrdtMapDynamic(MapRef ref, ValueCoder<K> keyCoder) {
+    public CrdtMapDynamic(MapRef<K> ref) {
         this.ref = ref;
-        this.keyCoder = keyCoder;
     }
 
 
     @Override
-    public ObjectRef getRef() {
+    public MapRef<K> getRef() {
         return ref;
     }
 
@@ -41,7 +39,7 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
         for (AntidotePB.ApbMapEntry entry : entries) {
             AntidotePB.ApbMapKey key = entry.getKey();
             ApbReadObjectResp value = entry.getValue();
-            MapKey<K> mapKey = new MapKey<>(key, keyCoder);
+            MapKey<K> mapKey = new MapKey<>(key, ref.keyCoder());
 
             Object mapValue = data.get(mapKey);
             if (mapValue != null) {
@@ -72,7 +70,7 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
             }
         }
         List<AntidotePB.ApbMapKey> removedApbKeys = removedKeys.stream()
-                .map(key -> key.toApb(keyCoder))
+                .map(key -> key.toApb(ref.keyCoder()))
                 .collect(Collectors.toList());
         ref.removeKeys(tx, removedApbKeys);
         removedKeys.clear();
@@ -98,7 +96,7 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
         if (value instanceof AntidoteCRDT) {
             return valueCreator.cast(((AntidoteCRDT) value));
         } else {
-            V crdt = valueCreator.create(ref, keyCoder.encode(mapKey.getKey()));
+            V crdt = valueCreator.create(ref, key);
             if (value instanceof ApbReadObjectResp) {
                 // if we have a cached value, use it to update
                 crdt.updateFromReadResponse(((ApbReadObjectResp) value));
@@ -148,7 +146,7 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
     }
 
     public CrdtMapDynamic<K> getAWMapEntry(K key) {
-        return get(key, CrdtMapDynamic.creator_aw(keyCoder));
+        return get(key, CrdtMapDynamic.creator_aw(ref.keyCoder()));
     }
 
     public <K2> CrdtMapDynamic<K2> getAWMapEntry(K key, ValueCoder<K2> keyCoder) {
@@ -156,7 +154,7 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
     }
 
     public CrdtMapDynamic<K> getGMapEntry(K key) {
-        return get(key, creatorGrowOnly(keyCoder));
+        return get(key, creatorGrowOnly(ref.keyCoder()));
     }
 
     public <K2> CrdtMapDynamic<K2> getGMapEntry(K key, ValueCoder<K2> keyCoder) {
@@ -171,8 +169,8 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
             }
 
             @Override
-            public CrdtMapDynamic<K2> create(CrdtContainer c, ByteString key) {
-                return c.map_aw(key).getMutable(keyCoder);
+            public <K> CrdtMapDynamic<K2> create(CrdtContainer<K> c, K key) {
+                return c.map_aw(key, keyCoder).getMutable();
             }
 
             @Override
@@ -191,8 +189,8 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
             }
 
             @Override
-            public CrdtMapDynamic<K2> create(CrdtContainer c, ByteString key) {
-                return c.map_g(key).getMutable(keyCoder);
+            public <K> CrdtMapDynamic<K2> create(CrdtContainer<K> c, K key) {
+                return c.map_g(key, keyCoder).getMutable();
             }
 
             @Override
