@@ -33,6 +33,9 @@ public class SetRef<T> extends ObjectRef<List<T>> {
     }
 
     public void addAll(AntidoteTransaction tx, Collection<T> ts) {
+        if (ts.isEmpty()) {
+            return;
+        }
         getContainer().update(tx, getType(), getKey(), addOpBuilder(ts));
     }
 
@@ -41,6 +44,9 @@ public class SetRef<T> extends ObjectRef<List<T>> {
     }
 
     public void removeAll(AntidoteTransaction tx, Collection<T> ts) {
+        if (ts.isEmpty()) {
+            return;
+        }
         getContainer().update(tx, getType(), getKey(), removeOpBuilder(ts));
     }
 

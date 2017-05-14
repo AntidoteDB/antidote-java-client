@@ -67,7 +67,7 @@ public class MapTests extends AbstractAntidoteTest {
         }
 
         {
-            CrdtMap<String, CrdtSet<String>> testmap = bucket.map_aw("testmap", ValueCoder.utf8String).getMutable(CrdtSet.creator(ValueCoder.utf8String));
+            CrdtMap<String, CrdtSet<String>> testmap = bucket.map_aw("testmap2", ValueCoder.utf8String).getMutable(CrdtSet.creator(ValueCoder.utf8String));
             testmap.pull(antidoteClient.noTransaction());
 
 
