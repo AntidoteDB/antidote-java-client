@@ -5,6 +5,4 @@ language: java
 jdk:
   - oraclejdk8
 before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y protobuf-compiler
   - docker run -d --name antidote -p "8087:8087" mweber/antidotedb

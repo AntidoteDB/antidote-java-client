@@ -30,6 +30,10 @@ dependencies {
 
 protobuf {
     generatedFilesBaseDir = "$projectDir/gen"
+    protoc {
+        // Download protoc from repositories
+        artifact = 'com.google.protobuf:protoc:3.0.0'
+    }
 }
 
 sourceSets {
