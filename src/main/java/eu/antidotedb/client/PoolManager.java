@@ -1,6 +1,7 @@
 package eu.antidotedb.client;
 
-import java.net.Socket;
+import eu.antidotedb.client.transformer.TransformerFactory;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -20,66 +21,19 @@ public class PoolManager {
      * The pools.
      */
     private List<ConnectionPool> pools = new CopyOnWriteArrayList<>();
+    private final List<TransformerFactory> transformerFactories;
 
 
     /**
      * Creates a new empty pool manager.
      * Use addHost to add hosts.
      */
-    public PoolManager() {
-    }
-
-    /**
-     * Instantiates a new pool manager.
-     *
-     * @param maxPoolSize     the max pool size
-     * @param initialPoolSize the initial pool size
-     * @param configFilePath  the path of config file
-     */
-    public PoolManager(int maxPoolSize, int initialPoolSize, String configFilePath) {
-        AntidoteConfigManager cfgMgr = new AntidoteConfigManager();
-        if (!cfgMgr.configExist(configFilePath)) {
-            throw new RuntimeException("Config File not found!");
-        }
-        List<Host> hosts = cfgMgr.getConfigHosts(configFilePath);
-        createPools(maxPoolSize, initialPoolSize, hosts);
-    }
-
-    /**
-     * Instantiates a new pool manager.
-     *
-     * @param maxPoolSize     the max pool size
-     * @param initialPoolSize the initial pool size
-     */
-    public PoolManager(int maxPoolSize, int initialPoolSize) {
-        AntidoteConfigManager cfgMgr = new AntidoteConfigManager();
-        if (!cfgMgr.configExist()) {
-            cfgMgr.generateDefaultConfig();
-        }
-        List<Host> hosts = cfgMgr.getConfigHosts();
-        createPools(maxPoolSize, initialPoolSize, hosts);
-
-    }
-
-    /**
-     * Generates pool.
-     *
-     * @param maxPoolSize     the max pool size
-     * @param initialPoolSize the initial pool size
-     * @param hosts           the hosts
-     */
-    private void createPools(int maxPoolSize, int initialPoolSize, List<Host> hosts) {
-        for (Host h : hosts) {
-            addHost(maxPoolSize, initialPoolSize, h);
-            pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
-        }
-        //if pool is empty
-        if (pools.size() == 0) {
-            throw new IllegalArgumentException("Unable to make Database connection ! Please try again.");
-        }
+    public PoolManager(List<TransformerFactory> transformerFactories) {
+        this.transformerFactories = transformerFactories;
         //starting concurrent thread for heartbeat
         unhealthyHostRecovery();
     }
+
 
     /**
      * Instantiates a new pool manager.
@@ -89,13 +43,13 @@ public class PoolManager {
      * @param h               Host to add into pool
      */
     public void addHost(int maxPoolSize, int initialPoolSize, Host h) {
-        pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort()));
+        pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort(), transformerFactories));
     }
 
     /**
      * Instantiates a new pool manager.
      *
-     * @param h               Host to add into pool
+     * @param h Host to add into pool
      */
     public void addHost(Host h) {
         addHost(DEFAULT_MAX_POOL_SIZE, DEFAULT_INITIAL_POOL_SIZE, h);
@@ -133,9 +87,9 @@ public class PoolManager {
                 ConnectionPool p = pools.get(selectedIndex);
                 if (p.isHealthy()) {
                     try {
-                        Socket s = p.getConnection();
-                        if (s != null) {
-                            return new Connection(p, s);
+                        Connection c = p.getConnection();
+                        if (c != null) {
+                            return c;
                         }
                     } catch (InterruptedException e) {
                         throw new AntidoteException(e);

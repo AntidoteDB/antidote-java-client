@@ -1,7 +1,7 @@
 package eu.antidotedb.client;
 
-import eu.antidotedb.antidotepb.AntidotePB;
 import com.google.protobuf.ByteString;
+import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.client.messages.AntidoteRequest;
 
 import java.util.Collections;

@@ -1,9 +1,8 @@
 package eu.antidotedb.client;
 
-import eu.antidotedb.antidotepb.AntidotePB;
 import com.google.protobuf.ByteString;
+import eu.antidotedb.antidotepb.AntidotePB;
 
-import java.io.IOException;
 import java.util.List;
 
 public abstract class TransactionWithReads extends AntidoteTransaction {

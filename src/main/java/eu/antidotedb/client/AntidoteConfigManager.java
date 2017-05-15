@@ -10,7 +10,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -72,7 +71,7 @@ public class AntidoteConfigManager {
             StreamResult result = new StreamResult(new File(cfgPath));
             transformer.transform(source, result);
         } catch (TransformerException | ParserConfigurationException ex) {
-            throw new AntidoteException("Could not create default config file", ex);
+            throw new AntidoteException("Could not newTransformer default config file", ex);
         }
     }
 

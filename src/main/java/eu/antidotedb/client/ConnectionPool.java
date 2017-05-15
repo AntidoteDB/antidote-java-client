@@ -1,11 +1,15 @@
 package eu.antidotedb.client;
 
-import java.io.DataInputStream;
+import eu.antidotedb.client.transformer.TransformerFactory;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,12 +31,12 @@ public class ConnectionPool {
     /**
      * Pool of available connections
      */
-    private final BlockingQueue<Socket> pool;
+    private final BlockingQueue<Connection> pool;
 
     /**
      * List of all connections created for this pool.
      */
-    private final List<Socket> connections = new CopyOnWriteArrayList<>();
+    private final List<Connection> connections = new CopyOnWriteArrayList<>();
 
 
     private final int maxPoolSize;
@@ -49,17 +53,20 @@ public class ConnectionPool {
      * The failures.
      */
     private AtomicInteger failures = new AtomicInteger();
+    private List<TransformerFactory> transformerFactories;
 
 
     /**
      * Instantiates a new connection pool.
      *
-     * @param maxPoolSize     the max pool size
-     * @param initialPoolSize the initial pool size
-     * @param host            the host
-     * @param port            the port
+     * @param maxPoolSize          the max pool size
+     * @param initialPoolSize      the initial pool size
+     * @param host                 the host
+     * @param port                 the port
+     * @param transformerFactories
      */
-    public ConnectionPool(int maxPoolSize, int initialPoolSize, String host, int port) {
+    public ConnectionPool(int maxPoolSize, int initialPoolSize, String host, int port, List<TransformerFactory> transformerFactories) {
+        this.transformerFactories = transformerFactories;
 
         if ((initialPoolSize > maxPoolSize) || initialPoolSize < 1 || maxPoolSize < 1) {
             throw new IllegalArgumentException("Invalid pool size parameters");
@@ -95,10 +102,10 @@ public class ConnectionPool {
 
     public boolean checkHealth(ConnectionPool p) {
         try {
-            Socket s = p.getConnection();
-            s.setSoTimeout(DEFAULT_TIMEOUT);
-            DataInputStream din = new DataInputStream(s.getInputStream());
-            //what message I should send for heartbeat.
+            Connection s = p.getConnection();
+            s.getSocket().setSoTimeout(DEFAULT_TIMEOUT);
+//            DataInputStream din = new DataInputStream(s.getSocket().getInputStream());
+            // TODO send heartbeat message
             p.surrenderConnection(s);
             p.setHealthy(true);
             return true;
@@ -118,8 +125,8 @@ public class ConnectionPool {
      */
     private boolean openAndPoolConnection() {
         try {
-            Socket s = openConnection();
-            pool.offer(s);
+            Connection c = openConnection();
+            pool.offer(c);
             return true;
         } catch (IOException e) {
             logger.log(Level.WARNING, "Error opening connection to " + host + ":" + port, e);
@@ -127,27 +134,27 @@ public class ConnectionPool {
         }
     }
 
-    private Socket openConnection() throws IOException {
+    private Connection openConnection() throws IOException {
         Socket s = new Socket();
         s.setSoTimeout(DEFAULT_TIMEOUT);
         s.connect(new InetSocketAddress(getHost(), getPort()), DEFAULT_TIMEOUT);
-        connections.add(s);
-        return s;
+        Connection c = new Connection(this, s, transformerFactories);
+        connections.add(c);
+        return c;
     }
 
     /**
      * returns a connection from the pool
      */
-    public Socket getConnection() throws InterruptedException {
-        Socket connection = pool.poll(GET_CONNECTION_WAIT_MS, TimeUnit.MILLISECONDS);
+    public Connection getConnection() throws InterruptedException {
+        Connection connection = pool.poll(GET_CONNECTION_WAIT_MS, TimeUnit.MILLISECONDS);
         if (connection != null) {
             return connection;
         }
         if (getCurrentPoolSize() < getMaxPoolSize()) {
             // there is a small chance here, that we generate too many connections
             try {
-                Socket socket = openConnection();
-                return socket;
+                return openConnection();
             } catch (IOException e) {
                 throw new AntidoteException("Could not open connection to " + host + ":" + port, e);
             }
@@ -160,17 +167,13 @@ public class ConnectionPool {
      *
      * @param s the s
      */
-    public void surrenderConnection(Socket s) {
+    public void surrenderConnection(Connection s) {
         try {
             pool.add(s);
         } catch (IllegalStateException e) {
             // over capacity, discard connection
-            try {
-                s.close();
-                connections.remove(s);
-            } catch (IOException e1) {
-                // ignore
-            }
+            s.discard();
+            connections.remove(s);
         }
     }
 

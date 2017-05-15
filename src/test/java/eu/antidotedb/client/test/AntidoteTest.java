@@ -15,10 +15,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 
-/**
- * hint: before running the test start Antidote. For example with docker:
- * docker run --rm -it -p "8087:8087" mweber/antidotedb
- */
 public class AntidoteTest extends AbstractAntidoteTest {
 
     public AntidoteTest() {
@@ -49,7 +45,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
 
     @Test(timeout = 10000)
     public void seqInteractiveTransaction() {
-        CounterRef lowCounter =  bucket.counter("testCounter5");
+        CounterRef lowCounter = bucket.counter("testCounter5");
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
             CrdtCounter counter = lowCounter.toMutable();
             counter.pull(tx);
@@ -67,8 +63,6 @@ public class AntidoteTest extends AbstractAntidoteTest {
             assertEquals(5, newValue);
             tx.commitTransaction();
         }
-
-
 
 
 //        counter.increment(antidoteTransaction);
@@ -97,9 +91,6 @@ public class AntidoteTest extends AbstractAntidoteTest {
 
         MapRef<String> gMapRef = bucket.map_g("testgMapRef");
         MapRef<String> awMapRef = bucket.map_aw("testawMapRef");
-
-
-
 
 
         CrdtInteger integer = lowInt1.toMutable();

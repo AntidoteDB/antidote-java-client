@@ -35,7 +35,6 @@ public final class CrdtRegister<T> extends AntidoteCRDT {
 
     /**
      * Set the value of the register.
-     *
      */
     public void set(T value) {
         this.value = value;

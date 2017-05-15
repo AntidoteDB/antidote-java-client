@@ -1,9 +1,9 @@
 package eu.antidotedb.client;
 
+import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.ApbIntegerUpdate;
 import eu.antidotedb.antidotepb.AntidotePB.ApbUpdateOperation;
-import com.google.protobuf.ByteString;
 
 /**
  * The Class LowLevelInteger.

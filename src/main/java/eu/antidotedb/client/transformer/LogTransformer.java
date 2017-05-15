@@ -1,69 +1,72 @@
 package eu.antidotedb.client.transformer;
 
 import eu.antidotedb.antidotepb.AntidotePB;
-import eu.antidotedb.client.Connection;
 import eu.antidotedb.client.messages.AntidoteResponse;
 
 import java.util.logging.Logger;
 
 /**
- *A Transformer, which logs all messages
+ * A Transformer, which logs all messages
  */
-public class LogTransformer extends Transformer {
+public class LogTransformer extends TransformerWithDownstream {
     private Logger logger = Logger.getLogger("Antidote Messages");
 
+    public LogTransformer(Transformer downstream) {
+        super(downstream);
+    }
+
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbReadObjects op) {
+    public AntidoteResponse handle(AntidotePB.ApbReadObjects op) {
         logger.info("ApbReadObjects <<\n" + op + "\n>>");
-        AntidoteResponse response = super.handle(connection, op);
+        AntidoteResponse response = super.handle(op);
         logger.info("response -> " + response);
         return response;
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbUpdateObjects op) {
+    public AntidoteResponse handle(AntidotePB.ApbUpdateObjects op) {
         logger.info("ApbUpdateObjects <<\n" + op + "\n>>");
-        AntidoteResponse response = super.handle(connection, op);
+        AntidoteResponse response = super.handle(op);
         logger.info("response -> " + response);
         return response;
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbStartTransaction op) {
+    public AntidoteResponse handle(AntidotePB.ApbStartTransaction op) {
         logger.info("ApbStartTransaction <<\n" + op + "\n>>");
-        AntidoteResponse response = super.handle(connection, op);
+        AntidoteResponse response = super.handle(op);
         logger.info("response -> " + response);
         return response;
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbAbortTransaction op) {
+    public AntidoteResponse handle(AntidotePB.ApbAbortTransaction op) {
         logger.info("ApbAbortTransaction <<\n" + op + "\n>>");
-        AntidoteResponse response = super.handle(connection, op);
+        AntidoteResponse response = super.handle(op);
         logger.info("response -> " + response);
         return response;
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbCommitTransaction op) {
+    public AntidoteResponse handle(AntidotePB.ApbCommitTransaction op) {
         logger.info("ApbCommitTransaction <<\n" + op + "\n>>");
-        AntidoteResponse response = super.handle(connection, op);
+        AntidoteResponse response = super.handle(op);
         logger.info("response -> " + response);
         return response;
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbStaticReadObjects op) {
+    public AntidoteResponse handle(AntidotePB.ApbStaticReadObjects op) {
         logger.info("ApbStaticReadObjects <<\n" + op + "\n>>");
-        AntidoteResponse response = super.handle(connection, op);
+        AntidoteResponse response = super.handle(op);
         logger.info("response -> " + response);
         return response;
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbStaticUpdateObjects op) {
+    public AntidoteResponse handle(AntidotePB.ApbStaticUpdateObjects op) {
         logger.info("ApbStaticUpdateObjects <<\n" + op + "\n>>");
-        AntidoteResponse response = super.handle(connection, op);
+        AntidoteResponse response = super.handle(op);
         logger.info("response -> " + response);
         return response;
     }

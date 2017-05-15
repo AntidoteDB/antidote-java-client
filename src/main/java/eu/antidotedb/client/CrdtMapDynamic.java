@@ -20,7 +20,6 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
     private final Set<MapKey<K>> removedKeys = new HashSet<>();
 
 
-
     public CrdtMapDynamic(MapRef<K> ref) {
         this.ref = ref;
     }

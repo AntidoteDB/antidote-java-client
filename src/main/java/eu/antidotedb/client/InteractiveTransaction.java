@@ -1,13 +1,11 @@
 package eu.antidotedb.client;
 
+import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.ApbStartTransaction;
 import eu.antidotedb.antidotepb.AntidotePB.ApbTxnProperties;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 import eu.antidotedb.client.messages.AntidoteRequest;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 

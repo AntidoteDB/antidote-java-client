@@ -1,7 +1,6 @@
 package eu.antidotedb.client;
 
 import eu.antidotedb.antidotepb.AntidotePB;
-import eu.antidotedb.client.messages.AntidoteRequest;
 import eu.antidotedb.client.messages.AntidoteResponse;
 import eu.antidotedb.client.transformer.Transformer;
 
@@ -9,8 +8,14 @@ import java.io.IOException;
 import java.net.Socket;
 
 
-class SocketSender extends Transformer {
+class SocketSender implements Transformer {
 
+    private Socket socket;
+
+    public SocketSender(Socket s) {
+
+        socket = s;
+    }
 
     private class AntidoteSocketException extends AntidoteException {
         public AntidoteSocketException(IOException cause) {
@@ -19,39 +24,39 @@ class SocketSender extends Transformer {
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbReadObjects op) {
+    public AntidoteResponse handle(AntidotePB.ApbReadObjects op) {
         try {
-            ApbCoder.encodeRequest(op, connection.getSocket().getOutputStream());
-            return ApbCoder.decodeResponse(connection.getSocket().getInputStream());
+            ApbCoder.encodeRequest(op, socket.getOutputStream());
+            return ApbCoder.decodeResponse(socket.getInputStream());
         } catch (IOException e) {
             throw new AntidoteSocketException(e);
         }
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbUpdateObjects op) {
+    public AntidoteResponse handle(AntidotePB.ApbUpdateObjects op) {
         try {
-            ApbCoder.encodeRequest(op, connection.getSocket().getOutputStream());
-            return ApbCoder.decodeResponse(connection.getSocket().getInputStream());
+            ApbCoder.encodeRequest(op, socket.getOutputStream());
+            return ApbCoder.decodeResponse(socket.getInputStream());
         } catch (IOException e) {
             throw new AntidoteSocketException(e);
         }
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbStartTransaction op) {
+    public AntidoteResponse handle(AntidotePB.ApbStartTransaction op) {
         try {
-            ApbCoder.encodeRequest(op, connection.getSocket().getOutputStream());
-            return ApbCoder.decodeResponse(connection.getSocket().getInputStream());
+            ApbCoder.encodeRequest(op, socket.getOutputStream());
+            return ApbCoder.decodeResponse(socket.getInputStream());
         } catch (IOException e) {
             throw new AntidoteSocketException(e);
         }
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbAbortTransaction op) {
+    public AntidoteResponse handle(AntidotePB.ApbAbortTransaction op) {
         try {
-            ApbCoder.encodeRequest(op, connection.getSocket().getOutputStream());
+            ApbCoder.encodeRequest(op, socket.getOutputStream());
             // no response expected
             return null;
         } catch (IOException e) {
@@ -60,30 +65,30 @@ class SocketSender extends Transformer {
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbCommitTransaction op) {
+    public AntidoteResponse handle(AntidotePB.ApbCommitTransaction op) {
         try {
-            ApbCoder.encodeRequest(op, connection.getSocket().getOutputStream());
-            return ApbCoder.decodeResponse(connection.getSocket().getInputStream());
+            ApbCoder.encodeRequest(op, socket.getOutputStream());
+            return ApbCoder.decodeResponse(socket.getInputStream());
         } catch (IOException e) {
             throw new AntidoteSocketException(e);
         }
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbStaticReadObjects op) {
+    public AntidoteResponse handle(AntidotePB.ApbStaticReadObjects op) {
         try {
-            ApbCoder.encodeRequest(op, connection.getSocket().getOutputStream());
-            return ApbCoder.decodeResponse(connection.getSocket().getInputStream());
+            ApbCoder.encodeRequest(op, socket.getOutputStream());
+            return ApbCoder.decodeResponse(socket.getInputStream());
         } catch (IOException e) {
             throw new AntidoteSocketException(e);
         }
     }
 
     @Override
-    public AntidoteResponse handle(Connection connection, AntidotePB.ApbStaticUpdateObjects op) {
+    public AntidoteResponse handle(AntidotePB.ApbStaticUpdateObjects op) {
         try {
-            ApbCoder.encodeRequest(op, connection.getSocket().getOutputStream());
-            return ApbCoder.decodeResponse(connection.getSocket().getInputStream());
+            ApbCoder.encodeRequest(op, socket.getOutputStream());
+            return ApbCoder.decodeResponse(socket.getInputStream());
         } catch (IOException e) {
             throw new AntidoteSocketException(e);
         }

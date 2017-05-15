@@ -1,10 +1,10 @@
 package eu.antidotedb.client;
 
+import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.ApbSetUpdate;
 import eu.antidotedb.antidotepb.AntidotePB.ApbUpdateOperation;
 import eu.antidotedb.antidotepb.AntidotePB.CRDT_type;
-import com.google.protobuf.ByteString;
 
 import java.util.Collection;
 import java.util.Collections;

@@ -1,7 +1,7 @@
 package eu.antidotedb.client;
 
-import eu.antidotedb.antidotepb.AntidotePB;
 import com.google.protobuf.ByteString;
+import eu.antidotedb.antidotepb.AntidotePB;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,7 +43,7 @@ public class CrdtMap<K, V extends AntidoteCRDT> extends AntidoteCRDT {
             K keyValue = ref.keyCoder().decode(keyBytes);
             V valueCrdt = data.get(keyValue);
             if (valueCrdt == null) {
-                // create a new entry
+                // newTransformer a new entry
                 valueCrdt = valueCreator.create(ref, keyValue);
                 data.put(keyValue, valueCrdt);
             } else {

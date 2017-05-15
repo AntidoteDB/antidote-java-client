@@ -1,16 +1,20 @@
 package eu.antidotedb.client.test;
 
 import eu.antidotedb.client.AntidoteClient;
+import eu.antidotedb.client.AntidoteConfigManager;
 import eu.antidotedb.client.Bucket;
-import eu.antidotedb.client.PoolManager;
 import eu.antidotedb.client.transformer.CountingTransformer;
 import eu.antidotedb.client.transformer.LogTransformer;
+import eu.antidotedb.client.transformer.TransformerFactory;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- *
+ * hint: before running the test start Antidote. For example with docker:
+ * docker run --rm -it -p "8087:8087" mweber/antidotedb
  */
 public class AbstractAntidoteTest {
     final static boolean debugLog = false;
@@ -20,13 +24,18 @@ public class AbstractAntidoteTest {
     final String bucketKey;
 
     public AbstractAntidoteTest() {
-        PoolManager antidotePoolManager = new PoolManager(20, 5);
-        antidoteClient = new AntidoteClient(antidotePoolManager);
-        // uncomment line to add logging:
+        List<TransformerFactory> transformers = new ArrayList<>();
+        transformers.add(messageCounter = new CountingTransformer());
         if (debugLog) {
-            antidoteClient.addTransformer(new LogTransformer());
+            transformers.add(LogTransformer::new);
         }
-        antidoteClient.addTransformer(messageCounter = new CountingTransformer());
+
+        // load host config from xml file ...
+        AntidoteConfigManager antidoteConfigManager = new AntidoteConfigManager();
+
+
+        antidoteClient = new AntidoteClient(transformers, antidoteConfigManager.getConfigHosts());
+
         bucketKey = nextSessionId();
         bucket = Bucket.create(bucketKey);
     }

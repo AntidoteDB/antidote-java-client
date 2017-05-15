@@ -10,7 +10,7 @@ import static org.junit.Assert.assertEquals;
 /**
  *
  */
-public class InteractiveTxTest  extends AbstractAntidoteTest{
+public class InteractiveTxTest extends AbstractAntidoteTest {
 
     @Test
     public void testEmptyTx() {

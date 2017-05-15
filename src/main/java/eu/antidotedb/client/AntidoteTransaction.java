@@ -1,12 +1,8 @@
 package eu.antidotedb.client;
 
 import eu.antidotedb.antidotepb.AntidotePB;
-import eu.antidotedb.antidotepb.AntidotePB.*;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
+import eu.antidotedb.antidotepb.AntidotePB.ApbUpdateOp;
 
-import java.io.Closeable;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

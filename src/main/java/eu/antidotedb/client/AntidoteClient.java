@@ -1,11 +1,13 @@
 package eu.antidotedb.client;
 
-import eu.antidotedb.antidotepb.AntidotePB.*;
+import eu.antidotedb.antidotepb.AntidotePB.ApbCommitResp;
 import eu.antidotedb.client.messages.AntidoteRequest;
 import eu.antidotedb.client.messages.AntidoteResponse;
-import eu.antidotedb.client.transformer.Transformer;
+import eu.antidotedb.client.transformer.TransformerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,15 +18,48 @@ public final class AntidoteClient {
 
     private PoolManager poolManager;
 
-    private Transformer downstream = new SocketSender();
 
+    /**
+     * Initializes an AntidoteClient with the given hosts.
+     *
+     * @param hosts The Antidote hosts (ip and port)
+     */
+    public AntidoteClient(Host... hosts) {
+        this(Collections.emptyList(), hosts);
+    }
 
-    public AntidoteClient(Host ... hosts) {
-        this.poolManager = new PoolManager();
+    /**
+     * Initializes an AntidoteClient with the given hosts.
+     *
+     * @param hosts The Antidote hosts (ip and port)
+     */
+    public AntidoteClient(List<Host> hosts) {
+        this(Collections.emptyList(), hosts);
+    }
+
+    /**
+     * Initializes an AntidoteClient.
+     *
+     * @param transformerFactories transformers for factories (the last transformer will be at the top of the stack, so applied first)
+     * @param hosts                The Antidote hosts (ip and port)
+     */
+    public AntidoteClient(List<TransformerFactory> transformerFactories, Host... hosts) {
+        this(transformerFactories, Arrays.asList(hosts));
+    }
+
+    /**
+     * Initializes an AntidoteClient.
+     *
+     * @param transformerFactories transformers for factories (the last transformer will be at the top of the stack, so applied first)
+     * @param hosts                The Antidote hosts (ip and port)
+     */
+    public AntidoteClient(List<TransformerFactory> transformerFactories, List<Host> hosts) {
+        this.poolManager = new PoolManager(transformerFactories);
         for (Host host : hosts) {
             poolManager.addHost(host);
         }
     }
+
 
     /**
      * Instantiates a new antidote client.
@@ -33,16 +68,6 @@ public final class AntidoteClient {
      */
     public AntidoteClient(PoolManager poolManager) {
         this.poolManager = poolManager;
-    }
-
-    /**
-     * Adds a transformer on top of the stack of transformers of this connection.
-     *
-     * @param transformer the new transformer to be added
-     */
-    public void addTransformer(Transformer transformer) {
-        transformer.connect(this.downstream);
-        this.downstream = transformer;
     }
 
     /**
@@ -69,7 +94,7 @@ public final class AntidoteClient {
      */
     <R> R sendMessage(AntidoteRequest<R> requestMessage, Connection connection) {
         AntidoteResponse.Handler<R> responseExtractor = requestMessage.readResponseExtractor();
-        AntidoteResponse response = requestMessage.accept(downstream.toHandler(connection));
+        AntidoteResponse response = requestMessage.accept(connection.transformer());
         if (responseExtractor == null) {
             return null;
         }
@@ -90,7 +115,6 @@ public final class AntidoteClient {
     /**
      * Creates a static transaction.
      * Static transactions can be used to execute a set of updates atomically.
-     *
      */
     public AntidoteStaticTransaction createStaticTransaction() {
         return new AntidoteStaticTransaction(this);

@@ -12,7 +12,7 @@ import eu.antidotedb.antidotepb.AntidotePB;
  */
 public abstract class AntidoteResponse extends AntidoteMessage {
     /**
-     * A handler for all possible cases of Antidote responses.
+     * A transformer for all possible cases of Antidote responses.
      * <p>
      * Uses double-dispatch to choose the correct implementation.
      *
@@ -86,11 +86,11 @@ public abstract class AntidoteResponse extends AntidoteMessage {
     }
 
     /**
-     * Handle the response using the given response handler.
+     * Handle the response using the given response transformer.
      *
      * @param handler the implementation of the handling methods
-     * @param <V>     the result type of the handler methods
-     * @return the result of the matching handler method
+     * @param <V>     the result type of the transformer methods
+     * @return the result of the matching transformer method
      */
     public abstract <V> V accept(Handler<V> handler);
 
@@ -98,7 +98,7 @@ public abstract class AntidoteResponse extends AntidoteMessage {
         private final AntidotePB.ApbErrorResp op;
 
         /**
-         * A response handler used to extract the encapsulated Protocol Buffer message
+         * A response transformer used to extract the encapsulated Protocol Buffer message
          */
         public static class Extractor implements Handler<AntidotePB.ApbErrorResp> {
 
@@ -130,7 +130,7 @@ public abstract class AntidoteResponse extends AntidoteMessage {
         private final AntidotePB.ApbOperationResp op;
 
         /**
-         * A response handler used to extract the encapsulated Protocol Buffer message
+         * A response transformer used to extract the encapsulated Protocol Buffer message
          */
         public static class Extractor implements Handler<AntidotePB.ApbOperationResp> {
 
@@ -163,7 +163,7 @@ public abstract class AntidoteResponse extends AntidoteMessage {
         private final AntidotePB.ApbStartTransactionResp op;
 
         /**
-         * A response handler used to extract the encapsulated Protocol Buffer message
+         * A response transformer used to extract the encapsulated Protocol Buffer message
          */
         public static class Extractor implements Handler<AntidotePB.ApbStartTransactionResp> {
 
@@ -196,7 +196,7 @@ public abstract class AntidoteResponse extends AntidoteMessage {
         private final AntidotePB.ApbReadObjectsResp op;
 
         /**
-         * A response handler used to extract the encapsulated Protocol Buffer message
+         * A response transformer used to extract the encapsulated Protocol Buffer message
          */
         public static class Extractor implements Handler<AntidotePB.ApbReadObjectsResp> {
 
@@ -229,7 +229,7 @@ public abstract class AntidoteResponse extends AntidoteMessage {
         private final AntidotePB.ApbCommitResp op;
 
         /**
-         * A response handler used to extract the encapsulated Protocol Buffer message
+         * A response transformer used to extract the encapsulated Protocol Buffer message
          */
         public static class Extractor implements Handler<AntidotePB.ApbCommitResp> {
 
@@ -262,7 +262,7 @@ public abstract class AntidoteResponse extends AntidoteMessage {
         private final AntidotePB.ApbStaticReadObjectsResp op;
 
         /**
-         * A response handler used to extract the encapsulated Protocol Buffer message
+         * A response transformer used to extract the encapsulated Protocol Buffer message
          */
         public static class Extractor implements Handler<AntidotePB.ApbStaticReadObjectsResp> {
 

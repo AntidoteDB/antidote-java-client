@@ -1,7 +1,6 @@
 package eu.antidotedb.client;
 
 import eu.antidotedb.antidotepb.AntidotePB;
-import com.google.protobuf.ByteString;
 
 public interface CrdtCreator<V extends AntidoteCRDT> {
 

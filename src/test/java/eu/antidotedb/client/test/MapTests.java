@@ -72,7 +72,6 @@ public class MapTests extends AbstractAntidoteTest {
             testmap.pull(antidoteClient.noTransaction());
 
 
-
             assertEquals(set("1", "2"), testmap.get("a").getValues());
             assertEquals(set("3"), testmap.get("b").getValues());
         }
@@ -82,7 +81,7 @@ public class MapTests extends AbstractAntidoteTest {
 
     }
 
-    private <T> Set<T> set(T...ts) {
+    private <T> Set<T> set(T... ts) {
         return new LinkedHashSet<>(Arrays.asList(ts));
     }
 }

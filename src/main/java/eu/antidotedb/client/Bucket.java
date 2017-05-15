@@ -1,8 +1,8 @@
 package eu.antidotedb.client;
 
+import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.ApbReadObjectResp;
-import com.google.protobuf.ByteString;
 
 public class Bucket<Key> implements CrdtContainer<Key> {
     private final ByteString name;

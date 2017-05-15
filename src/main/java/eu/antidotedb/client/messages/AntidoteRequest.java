@@ -12,7 +12,7 @@ import eu.antidotedb.antidotepb.AntidotePB;
  */
 public abstract class AntidoteRequest<Response> extends AntidoteMessage {
     /**
-     * A handler for all possible cases of Antidote requests.
+     * A transformer for all possible cases of Antidote requests.
      * <p>
      * Uses double-dispatch to choose the correct implementation.
      *
@@ -95,11 +95,11 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
     }
 
     /**
-     * Handle the request using the given request handler.
+     * Handle the request using the given request transformer.
      *
      * @param handler the implementation of the handling methods
-     * @param <V>     the result type of the handler methods
-     * @return the result of the matching handler method
+     * @param <V>     the result type of the transformer methods
+     * @return the result of the matching transformer method
      */
     public abstract <V> V accept(Handler<V> handler);
 

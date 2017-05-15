@@ -1,7 +1,9 @@
 package eu.antidotedb.client;
 
-import eu.antidotedb.antidotepb.AntidotePB;
-import eu.antidotedb.antidotepb.AntidotePB.*;
+import eu.antidotedb.antidotepb.AntidotePB.ApbCommitResp;
+import eu.antidotedb.antidotepb.AntidotePB.ApbStartTransaction;
+import eu.antidotedb.antidotepb.AntidotePB.ApbStaticUpdateObjects;
+import eu.antidotedb.antidotepb.AntidotePB.ApbUpdateOp;
 import eu.antidotedb.client.InteractiveTransaction.TransactionStatus;
 import eu.antidotedb.client.messages.AntidoteRequest;
 

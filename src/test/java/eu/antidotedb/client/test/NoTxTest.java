@@ -1,6 +1,5 @@
 package eu.antidotedb.client.test;
 
-import eu.antidotedb.client.InteractiveTransaction;
 import eu.antidotedb.client.NoTransaction;
 import eu.antidotedb.client.RegisterRef;
 import eu.antidotedb.client.ValueCoder;

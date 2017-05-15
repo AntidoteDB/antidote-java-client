@@ -1,8 +1,8 @@
 package eu.antidotedb.client;
 
+import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.CRDT_type;
-import com.google.protobuf.ByteString;
 
 /**
  * The Class LowLevelObject.
@@ -70,7 +70,6 @@ public abstract class ObjectRef<Value> {
     BatchReadResult<AntidotePB.ApbReadObjectResp> readValue(BatchRead tx) {
         return container.readBatch(tx, type, key);
     }
-
 
 
     @Override

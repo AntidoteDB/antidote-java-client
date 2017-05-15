@@ -5,7 +5,6 @@ import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.client.messages.AntidoteRequest;
 import eu.antidotedb.client.messages.AntidoteResponse;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -72,7 +71,7 @@ public class ApbCoder {
         buffer.order(ByteOrder.BIG_ENDIAN);
         int size = buffer.getInt();
         int msgCode = stream.read();
-        byte[] data = new byte[size-1];
+        byte[] data = new byte[size - 1];
         stream.read(data);
 //        DataInputStream dataInputStream = new DataInputStream(stream);
 //        int size = dataInputStream.readInt();
