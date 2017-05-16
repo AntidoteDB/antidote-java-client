@@ -3,8 +3,8 @@ package eu.antidotedb.client;
 import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB.*;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * The Class LowLevelMap.
@@ -90,6 +90,18 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
         MapReadResult(List<ApbMapEntry> entriesList, ValueCoder<Key> keyCoder) {
             entries = entriesList;
             this.keyCoder = keyCoder;
+        }
+
+        public Set<Key> keySet() {
+            return entries.stream().map(e -> keyCoder.decode(e.getKey().getKey())).collect(Collectors.toSet());
+        }
+
+        public Set<ApbMapKey> mapKeySet() {
+            return entries.stream().map(e -> e.getKey()).collect(Collectors.toSet());
+        }
+
+        public Collection<ApbMapEntry> entries() {
+            return Collections.unmodifiableCollection(entries);
         }
 
         public ApbReadObjectResp getRaw(CRDT_type type, Key key) {
