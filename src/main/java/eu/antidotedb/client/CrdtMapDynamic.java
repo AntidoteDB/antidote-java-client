@@ -157,6 +157,10 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
         return get(key, CrdtMapDynamic.creator_aw(keyCoder));
     }
 
+    public <K2, V extends AntidoteCRDT> CrdtMap<K2, V> map_aw(K key, ValueCoder<K2> keyCoder, CrdtCreator<V> crdtCreator) {
+        return get(key, CrdtMap.creator_aw(keyCoder, crdtCreator));
+    }
+
     public CrdtMapDynamic<K> map_g(K key) {
         return get(key, creatorGrowOnly(ref.keyCoder()));
     }
@@ -166,12 +170,20 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
     }
 
 
+    public <K2, V extends AntidoteCRDT> CrdtMap<K2, V> map_g(K key, ValueCoder<K2> keyCoder, CrdtCreator<V> crdtCreator) {
+        return get(key, CrdtMap.creator_g(keyCoder, crdtCreator));
+    }
+
     public CrdtMapDynamic<K> map_rr(K key) {
         return get(key, creator_rr(ref.keyCoder()));
     }
 
     public <K2> CrdtMapDynamic<K2> map_rr(K key, ValueCoder<K2> keyCoder) {
         return get(key, creator_rr(keyCoder));
+    }
+
+    public <K2, V extends AntidoteCRDT> CrdtMap<K2, V> map_rr(K key, ValueCoder<K2> keyCoder, CrdtCreator<V> crdtCreator) {
+        return get(key, CrdtMap.creator_rr(keyCoder, crdtCreator));
     }
 
 

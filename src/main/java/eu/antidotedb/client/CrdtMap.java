@@ -121,4 +121,64 @@ public class CrdtMap<K, V extends AntidoteCRDT> extends AntidoteCRDT {
     }
 
 
+    public static <K, V extends AntidoteCRDT> CrdtCreator<CrdtMap<K, V>> creator_aw(ValueCoder<K> keyCoder, CrdtCreator<V> crdtCreator) {
+        return new CrdtCreator<CrdtMap<K, V>>() {
+            @Override
+            public AntidotePB.CRDT_type type() {
+                return AntidotePB.CRDT_type.AWMAP;
+            }
+
+            @Override
+            public <K1> CrdtMap<K, V> create(CrdtContainer<K1> c, K1 key) {
+                return c.map_aw(key, keyCoder).toMutable(crdtCreator);
+            }
+
+            @Override
+            public CrdtMap<K, V> cast(AntidoteCRDT value) {
+                //noinspection unchecked
+                return ((CrdtMap<K, V>) value);
+            }
+        };
+    }
+
+    public static <K, V extends AntidoteCRDT> CrdtCreator<CrdtMap<K, V>> creator_g(ValueCoder<K> keyCoder, CrdtCreator<V> crdtCreator) {
+        return new CrdtCreator<CrdtMap<K, V>>() {
+            @Override
+            public AntidotePB.CRDT_type type() {
+                return AntidotePB.CRDT_type.GMAP;
+            }
+
+            @Override
+            public <K1> CrdtMap<K, V> create(CrdtContainer<K1> c, K1 key) {
+                return c.map_g(key, keyCoder).toMutable(crdtCreator);
+            }
+
+            @Override
+            public CrdtMap<K, V> cast(AntidoteCRDT value) {
+                //noinspection unchecked
+                return ((CrdtMap<K, V>) value);
+            }
+        };
+    }
+
+    public static <K, V extends AntidoteCRDT> CrdtCreator<CrdtMap<K, V>> creator_rr(ValueCoder<K> keyCoder, CrdtCreator<V> crdtCreator) {
+        return new CrdtCreator<CrdtMap<K, V>>() {
+            @Override
+            public AntidotePB.CRDT_type type() {
+                return AntidotePB.CRDT_type.RRMAP;
+            }
+
+            @Override
+            public <K1> CrdtMap<K, V> create(CrdtContainer<K1> c, K1 key) {
+                return c.map_rr(key, keyCoder).toMutable(crdtCreator);
+            }
+
+            @Override
+            public CrdtMap<K, V> cast(AntidoteCRDT value) {
+                //noinspection unchecked
+                return ((CrdtMap<K, V>) value);
+            }
+        };
+    }
+
 }
