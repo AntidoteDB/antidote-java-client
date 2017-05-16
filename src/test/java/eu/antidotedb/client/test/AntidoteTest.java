@@ -213,23 +213,23 @@ public class AntidoteTest extends AbstractAntidoteTest {
         antidoteClient.pull(antidoteClient.noTransaction(), Arrays.asList(awMap, gMap));
 
 
-        Assert.assertEquals(5, awMap.getCounterEntry("testCounter").getValue());
-        Assert.assertEquals(8, awMap.getIntegerEntry("testInteger").getValue());
-        Assert.assertThat(awMap.getORSetEntry("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
-        Assert.assertThat(awMap.getRWSetEntry("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
-        Assert.assertEquals("Hi", awMap.getLWWRegisterEntry("testRegister", ValueCoder.utf8String).getValue());
-        Assert.assertThat(awMap.getMVRegisterEntry("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
-        Assert.assertEquals(5, awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue());
-        Assert.assertEquals(5, awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue());
+        Assert.assertEquals(5, awMap.counter("testCounter").getValue());
+        Assert.assertEquals(8, awMap.integer("testInteger").getValue());
+        Assert.assertThat(awMap.set("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
+        Assert.assertThat(awMap.set_RemoveWins("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
+        Assert.assertEquals("Hi", awMap.register("testRegister", ValueCoder.utf8String).getValue());
+        Assert.assertThat(awMap.multiValueRegister("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
+        Assert.assertEquals(5, awMap.map_aw("testAWMap").counter("testCounter").getValue());
+        Assert.assertEquals(5, awMap.map_g("testGMap").counter("testCounter").getValue());
 
-        Assert.assertEquals(5, gMap.getCounterEntry("testCounter").getValue());
-        Assert.assertEquals(8, gMap.getIntegerEntry("testInteger").getValue());
-        Assert.assertThat(gMap.getORSetEntry("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
-        Assert.assertThat(gMap.getRWSetEntry("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
-        Assert.assertEquals("Hi", gMap.getLWWRegisterEntry("testRegister", ValueCoder.utf8String).getValue());
-        Assert.assertThat(gMap.getMVRegisterEntry("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
-        Assert.assertEquals(5, gMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue());
-        Assert.assertEquals(5, gMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue());
+        Assert.assertEquals(5, gMap.counter("testCounter").getValue());
+        Assert.assertEquals(8, gMap.integer("testInteger").getValue());
+        Assert.assertThat(gMap.set("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
+        Assert.assertThat(gMap.set_RemoveWins("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
+        Assert.assertEquals("Hi", gMap.register("testRegister", ValueCoder.utf8String).getValue());
+        Assert.assertThat(gMap.multiValueRegister("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
+        Assert.assertEquals(5, gMap.map_aw("testAWMap").counter("testCounter").getValue());
+        Assert.assertEquals(5, gMap.map_g("testGMap").counter("testCounter").getValue());
 
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
 
@@ -258,14 +258,14 @@ public class AntidoteTest extends AbstractAntidoteTest {
 
         antidoteClient.pull(antidoteClient.noTransaction(), Arrays.asList(awMap));
 
-        Assert.assertEquals(5, awMap.getCounterEntry("testCounter").getValue());
-        Assert.assertEquals(8, awMap.getIntegerEntry("testInteger").getValue());
-        Assert.assertThat(awMap.getORSetEntry("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
-        Assert.assertThat(awMap.getRWSetEntry("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
-        Assert.assertEquals("Hi", awMap.getLWWRegisterEntry("testRegister", ValueCoder.utf8String).getValue());
-        Assert.assertThat(awMap.getMVRegisterEntry("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
-        Assert.assertEquals(5, awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue());
-        Assert.assertEquals(5, awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue());
+        Assert.assertEquals(5, awMap.counter("testCounter").getValue());
+        Assert.assertEquals(8, awMap.integer("testInteger").getValue());
+        Assert.assertThat(awMap.set("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
+        Assert.assertThat(awMap.set_RemoveWins("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
+        Assert.assertEquals("Hi", awMap.register("testRegister", ValueCoder.utf8String).getValue());
+        Assert.assertThat(awMap.multiValueRegister("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
+        Assert.assertEquals(5, awMap.map_aw("testAWMap").counter("testCounter").getValue());
+        Assert.assertEquals(5, awMap.map_g("testGMap").counter("testCounter").getValue());
 
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
 
@@ -295,14 +295,14 @@ public class AntidoteTest extends AbstractAntidoteTest {
 
         antidoteClient.pull(antidoteClient.noTransaction(), Collections.singletonList(awMap));
 
-        Assert.assertEquals(10, awMap.getCounterEntry("testCounter").getValue());
-        Assert.assertEquals(10, awMap.getIntegerEntry("testInteger").getValue());
-        Assert.assertThat(awMap.getORSetEntry("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.not(CoreMatchers.hasItems("Hi", "Hi2")));
-        Assert.assertThat(awMap.getRWSetEntry("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.not(CoreMatchers.hasItems("Hi", "Hi2")));
-        Assert.assertEquals("Hi2", awMap.getLWWRegisterEntry("testRegister", ValueCoder.utf8String).getValue());
-        Assert.assertThat(awMap.getMVRegisterEntry("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi2"));
-        Assert.assertEquals(10, awMap.getAWMapEntry("testAWMap").getCounterEntry("testCounter").getValue());
-        Assert.assertEquals(10, awMap.getGMapEntry("testGMap").getCounterEntry("testCounter").getValue());
+        Assert.assertEquals(10, awMap.counter("testCounter").getValue());
+        Assert.assertEquals(10, awMap.integer("testInteger").getValue());
+        Assert.assertThat(awMap.set("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.not(CoreMatchers.hasItems("Hi", "Hi2")));
+        Assert.assertThat(awMap.set_RemoveWins("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.not(CoreMatchers.hasItems("Hi", "Hi2")));
+        Assert.assertEquals("Hi2", awMap.register("testRegister", ValueCoder.utf8String).getValue());
+        Assert.assertThat(awMap.multiValueRegister("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi2"));
+        Assert.assertEquals(10, awMap.map_aw("testAWMap").counter("testCounter").getValue());
+        Assert.assertEquals(10, awMap.map_g("testGMap").counter("testCounter").getValue());
 
     }
 /*

@@ -24,6 +24,24 @@ public final class CrdtCounter extends AntidoteCRDT {
         }
     };
 
+    private static final CrdtCreator<CrdtCounter> CREATOR_FAT = new CrdtCreator<CrdtCounter>() {
+            @Override
+            public AntidotePB.CRDT_type type() {
+                return AntidotePB.CRDT_type.FATCOUNTER;
+            }
+
+            @Override
+            public <K> CrdtCounter create(CrdtContainer<K> c, K key) {
+                return c.counter(key).toMutable();
+            }
+
+            @Override
+            public CrdtCounter cast(AntidoteCRDT value) {
+                return (CrdtCounter) value;
+            }
+        };
+
+
 
     /**
      * The value of the counter.
@@ -84,4 +102,8 @@ public final class CrdtCounter extends AntidoteCRDT {
     public static CrdtCreator<CrdtCounter> creator() {
         return CREATOR;
     }
+
+    public static CrdtCreator<CrdtCounter> creator_fatCounter() {
+            return CREATOR_FAT;
+        }
 }
