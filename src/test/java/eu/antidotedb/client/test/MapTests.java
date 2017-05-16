@@ -3,9 +3,7 @@ package eu.antidotedb.client.test;
 import eu.antidotedb.client.*;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -79,6 +77,29 @@ public class MapTests extends AbstractAntidoteTest {
         assertEquals(readCount + 1, messageCounter.getStaticReadsCounter());
         assertEquals(updateCount + 1, messageCounter.getStaticUpdatesCounter());
 
+    }
+
+    @Test
+    public void testMapResult() {
+        MapRef<String> map = bucket.map_rr("blubmap");
+        AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
+        map.integer("x").set(tx, 1);
+        map.integer("y").set(tx, 2);
+        map.integer("z").set(tx, 3);
+        tx.commitTransaction();
+
+        MapRef.MapReadResult<String> readResult = map.read(antidoteClient.noTransaction());
+
+        assertEquals(set("x", "y", "z"), readResult.keySet());
+
+        Map<String, Long> result = readResult.asJavaMap(map.integer("example"));
+
+        Map<String, Long> expected = new HashMap<>();
+        expected.put("x", 1L);
+        expected.put("y", 2L);
+        expected.put("z", 3L);
+
+        assertEquals(expected, result);
     }
 
     private <T> Set<T> set(T... ts) {

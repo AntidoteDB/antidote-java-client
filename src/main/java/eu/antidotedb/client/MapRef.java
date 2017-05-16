@@ -4,6 +4,8 @@ import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB.*;
 
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -92,17 +94,46 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
             this.keyCoder = keyCoder;
         }
 
+        /**
+         * Returns the set of keys contained in this map (discarding CRDT types in the keys)
+         *
+         */
         public Set<Key> keySet() {
             return entries.stream().map(e -> keyCoder.decode(e.getKey().getKey())).collect(Collectors.toSet());
         }
 
+        /**
+         * Returns the set of keys contained in the map (CRDT type + raw ByteString)
+         */
         public Set<ApbMapKey> mapKeySet() {
-            return entries.stream().map(e -> e.getKey()).collect(Collectors.toSet());
+            return entries.stream().map(ApbMapEntry::getKey).collect(Collectors.toSet());
         }
 
+        /**
+         * Returns an unmodifiable Collection of the raw entries in this map.
+         */
         public Collection<ApbMapEntry> entries() {
             return Collections.unmodifiableCollection(entries);
         }
+
+        /**
+         * Converts this MapReadResult to a map.
+         * Assumes that the map only contains entries with the same value type.
+         *
+         * @param nested an ObjectRef which acts as an example for all values in the.
+         * @param <Value> the type of values in the map
+         * @return the MapReadResult represented as a Java Map
+         */
+        public <Value> Map<Key, Value> asJavaMap(ObjectRef<Value> nested) {
+            LinkedHashMap<Key, Value> res = new LinkedHashMap<>();
+            for (ApbMapEntry entry : entries) {
+                Key key = keyCoder.decode(entry.getKey().getKey());
+                Value val = nested.readResponseToValue(entry.getValue());
+                res.put(key, val);
+            }
+            return res;
+        }
+
 
         public ApbReadObjectResp getRaw(CRDT_type type, Key key) {
             return getRawFromByteString(type, keyCoder.encode(key));
