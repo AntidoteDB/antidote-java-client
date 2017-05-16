@@ -14,22 +14,22 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
     /**
      * The explicit connection object.
      */
-    private Connection connection;
+    protected Connection connection;
 
     /**
      * The antidote client.
      */
-    private final AntidoteClient antidoteClient;
+    protected final AntidoteClient antidoteClient;
 
     /**
      * The transaction status.
      */
-    private TransactionStatus transactionStatus;
+    protected TransactionStatus transactionStatus;
 
     /**
      * The descriptor.
      */
-    private ByteString descriptor;
+    protected ByteString descriptor;
 
 
     /**

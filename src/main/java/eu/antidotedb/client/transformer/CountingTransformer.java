@@ -1,6 +1,7 @@
 package eu.antidotedb.client.transformer;
 
 import eu.antidotedb.antidotepb.AntidotePB;
+import eu.antidotedb.client.Connection;
 import eu.antidotedb.client.messages.AntidoteResponse;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,7 +48,7 @@ public class CountingTransformer implements TransformerFactory {
     }
 
     @Override
-    public Transformer newTransformer(Transformer downstream) {
+    public Transformer newTransformer(Transformer downstream, Connection connection) {
         return new TransformerWithDownstream(downstream) {
 
             @Override

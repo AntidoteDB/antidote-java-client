@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * The Class AntidoteClient.
  */
-public final class AntidoteClient {
+public class AntidoteClient {
 
     private PoolManager poolManager;
 
@@ -54,6 +54,10 @@ public final class AntidoteClient {
      * @param hosts                The Antidote hosts (ip and port)
      */
     public AntidoteClient(List<TransformerFactory> transformerFactories, List<Host> hosts) {
+        init(transformerFactories, hosts);
+    }
+
+    protected void init(List<TransformerFactory> transformerFactories, List<Host> hosts) {
         this.poolManager = new PoolManager(transformerFactories);
         for (Host host : hosts) {
             poolManager.addHost(host);
@@ -158,9 +162,12 @@ public final class AntidoteClient {
             results.add(res);
         }
         batchRead.commit(tx);
-        return results.stream()
-                .map(BatchReadResult::get)
-                .collect(Collectors.toList());
+        List<T> list = new ArrayList<>();
+        for (BatchReadResult<? extends T> result : results) {
+            T t = result.get();
+            list.add(t);
+        }
+        return list;
     }
 
     /**

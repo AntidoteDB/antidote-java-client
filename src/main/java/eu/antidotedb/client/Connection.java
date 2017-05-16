@@ -38,7 +38,7 @@ public class Connection implements AutoCloseable {
         socket = s;
         transformer = new SocketSender(s);
         for (TransformerFactory transformerFactory : transformerFactories) {
-            transformer = transformerFactory.newTransformer(transformer);
+            transformer = transformerFactory.newTransformer(transformer, this);
         }
     }
 

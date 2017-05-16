@@ -27,7 +27,7 @@ public class AbstractAntidoteTest {
         List<TransformerFactory> transformers = new ArrayList<>();
         transformers.add(messageCounter = new CountingTransformer());
         if (debugLog) {
-            transformers.add(LogTransformer::new);
+            transformers.add(LogTransformer.factory);
         }
 
         // load host config from xml file ...
