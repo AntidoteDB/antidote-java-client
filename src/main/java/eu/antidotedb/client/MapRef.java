@@ -4,8 +4,6 @@ import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB.*;
 
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -68,7 +66,8 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
         removeKeys(tx, Arrays.asList(key));
     }
 
-    public void removeKeys(AntidoteTransaction tx, List<ApbMapKey> keys) {
+
+    public void removeKeys(AntidoteTransaction tx, Iterable<ApbMapKey> keys) {
         ApbMapUpdate.Builder mapUpdate = ApbMapUpdate.newBuilder();
         mapUpdate.addAllRemovedKeys(keys);
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
@@ -96,7 +95,6 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
 
         /**
          * Returns the set of keys contained in this map (discarding CRDT types in the keys)
-         *
          */
         public Set<Key> keySet() {
             return entries.stream().map(e -> keyCoder.decode(e.getKey().getKey())).collect(Collectors.toSet());
@@ -120,7 +118,7 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
          * Converts this MapReadResult to a map.
          * Assumes that the map only contains entries with the same value type.
          *
-         * @param nested an ObjectRef which acts as an example for all values in the.
+         * @param nested  an ObjectRef which acts as an example for all values in the.
          * @param <Value> the type of values in the map
          * @return the MapReadResult represented as a Java Map
          */
