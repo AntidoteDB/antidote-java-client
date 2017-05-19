@@ -31,6 +31,24 @@ public class MapTests extends AbstractAntidoteTest {
     }
 
     @Test
+    public void testRefRemoveKey() {
+        MapRef<String> testmap = bucket.map_aw("testmap2");
+
+        AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
+        testmap.counter("a").increment(tx, 5);
+        testmap.register("b", ValueCoder.utf8String).set(tx, "Hello");
+        tx.commitTransaction();
+
+        testmap.removeKey(antidoteClient.noTransaction(), MapKey.register("b"));
+
+        MapRef.MapReadResult<String> res = testmap.read(antidoteClient.noTransaction());
+        assertEquals(set("a"), res.keySet());
+        assertEquals(5, res.counter("a"));
+        assertEquals(null, res.register("b", ValueCoder.utf8String));
+
+    }
+
+    @Test
     public void nestedBatchRead() {
         MapRef<String> testmap = bucket.map_aw("nestedBatchRead");
         CounterRef a = testmap.counter("a");
@@ -105,7 +123,7 @@ public class MapTests extends AbstractAntidoteTest {
     }
 
     @Test
-    @Ignore // reset not ye implemented on Antidote site
+    @Ignore // reset not yet implemented on Antidote site
     public void resetTest() {
         MapRef<String> map = bucket.map_rr("aha");
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();

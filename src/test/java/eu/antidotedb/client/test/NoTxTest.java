@@ -21,4 +21,10 @@ public class NoTxTest extends AbstractAntidoteTest {
         reg.set(tx, "xyz");
         assertEquals("xyz", reg.read(tx));
     }
+
+    @Test
+    public void defaultValue() {
+        RegisterRef<String> reg = bucket.register("empty", ValueCoder.utf8String);
+        assertEquals("", reg.read(antidoteClient.noTransaction()));
+    }
 }

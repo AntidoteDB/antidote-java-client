@@ -48,4 +48,49 @@ public class MapKey<K> {
                 .setType(type)
                 .build();
     }
+
+
+    public static <Key> MapKey<Key> counter(Key key) {
+        return new MapKey<>(AntidotePB.CRDT_type.COUNTER, key);
+    }
+
+    public static <Key> MapKey<Key> fatCounter(Key key) {
+        return new MapKey<>(AntidotePB.CRDT_type.FATCOUNTER, key);
+    }
+
+    public static <Key> MapKey<Key> integer(Key key) {
+        return new MapKey<>(AntidotePB.CRDT_type.INTEGER, key);
+    }
+
+
+    public static <Key> MapKey<Key> register(Key key) {
+        return new MapKey<>(AntidotePB.CRDT_type.LWWREG, key);
+    }
+
+
+    public static <Key> MapKey<Key> multiValueRegister(Key key) {
+        return new MapKey<>(AntidotePB.CRDT_type.MVREG, key);
+    }
+
+    public static <Key> MapKey<Key> set(Key key) {
+        return new MapKey<>(AntidotePB.CRDT_type.ORSET, key);
+    }
+
+    public static <Key> MapKey<Key> set_removeWins(Key key) {
+        return new MapKey<>(AntidotePB.CRDT_type.RWSET, key);
+    }
+
+    public static <Key> MapKey<Key> map_aw(Key key) {
+        return new MapKey<>(AntidotePB.CRDT_type.AWMAP, key);
+    }
+
+    public static <Key> MapKey<Key> map_rr(Key key) {
+        return new MapKey<>(AntidotePB.CRDT_type.RRMAP, key);
+    }
+
+    public static <Key> MapKey<Key> map_g(Key key) {
+        return new MapKey<>(AntidotePB.CRDT_type.GMAP, key);
+    }
+
+
 }

@@ -175,6 +175,14 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
             return getRawFromByteString(type, keyCoder.encode(key));
         }
 
+        public <Value> Optional<Value> get(MapKey<Key> key, ResponseDecoder<Value> value) {
+            ApbReadObjectResp resp = getRaw(key.getType(), key.getKey());
+            if (resp == null) {
+                return Optional.empty();
+            }
+            return Optional.of(value.readResponseToValue(resp));
+        }
+
         public ApbReadObjectResp getRawFromByteString(CRDT_type type, ByteString key) {
             for (ApbMapEntry entry : entries) {
                 if (entry.getKey().getType().equals(type)
@@ -186,47 +194,50 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
         }
 
         public int counter(Key key) {
-            return getRaw(CRDT_type.COUNTER, key).getCounter().getValue();
+            return get(MapKey.counter(key), ResponseDecoder.counter()).orElse(0);
         }
 
         public int fatCounter(Key key) {
-            return getRaw(CRDT_type.FATCOUNTER, key).getCounter().getValue();
+            return get(MapKey.fatCounter(key), ResponseDecoder.counter()).orElse(0);
         }
 
         public long integer(Key key) {
-            return getRaw(CRDT_type.INTEGER, key).getInt().getValue();
+            return get(MapKey.integer(key), ResponseDecoder.integer()).orElse(0L);
         }
 
         public <T> T register(Key key, ValueCoder<T> format) {
-            return format.decode(getRaw(CRDT_type.LWWREG, key).getReg().getValue());
+            return get(MapKey.register(key), ResponseDecoder.register(format)).orElse(null);
         }
 
         public <T> List<T> multiValueRegister(Key key, ValueCoder<T> format) {
-            return format.decodeList(getRaw(CRDT_type.MVREG, key).getMvreg().getValuesList());
+            return get(MapKey.multiValueRegister(key), ResponseDecoder.multiValueRegister(format))
+                    .orElse(Collections.emptyList());
         }
 
 
         public <T> List<T> set(Key key, ValueCoder<T> format) {
-            return format.decodeList(getRaw(CRDT_type.ORSET, key).getSet().getValueList());
+            return get(MapKey.set(key), ResponseDecoder.set(format))
+                    .orElse(Collections.emptyList());
         }
 
         public <T> List<T> set_removeWins(Key key, ValueCoder<T> format) {
-            return format.decodeList(getRaw(CRDT_type.RWSET, key).getSet().getValueList());
+            return get(MapKey.set_removeWins(key), ResponseDecoder.set(format))
+                    .orElse(Collections.emptyList());
         }
 
         public <K> MapReadResult<K> map_aw(Key key, ValueCoder<K> keyCoder) {
-            List<ApbMapEntry> entries = getRaw(CRDT_type.AWMAP, key).getMap().getEntriesList();
-            return new MapReadResult<>(entries, keyCoder);
+            return get(MapKey.map_aw(key), ResponseDecoder.map(keyCoder))
+                    .orElseGet(() -> new MapReadResult<>(Collections.emptyList(), keyCoder));
         }
 
         public <K> MapReadResult<K> map_rr(Key key, ValueCoder<K> keyCoder) {
-            List<ApbMapEntry> entries = getRaw(CRDT_type.RRMAP, key).getMap().getEntriesList();
-            return new MapReadResult<>(entries, keyCoder);
+            return get(MapKey.map_rr(key), ResponseDecoder.map(keyCoder))
+                    .orElseGet(() -> new MapReadResult<>(Collections.emptyList(), keyCoder));
         }
 
         public <K> MapReadResult<K> map_g(Key key, ValueCoder<K> keyCoder) {
-            List<ApbMapEntry> entries = getRaw(CRDT_type.GMAP, key).getMap().getEntriesList();
-            return new MapReadResult<>(entries, keyCoder);
+            return get(MapKey.map_g(key), ResponseDecoder.map(keyCoder))
+                    .orElseGet(() -> new MapReadResult<>(Collections.emptyList(), keyCoder));
         }
 
     }
