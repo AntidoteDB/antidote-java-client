@@ -5,6 +5,8 @@ import eu.antidotedb.antidotepb.AntidotePB.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * The Class LowLevelMap.
@@ -58,16 +60,39 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
         return keyCoder;
     }
 
+    /**
+     * Removes a key from the map
+     */
     public void removeKey(AntidoteTransaction tx, CRDT_type type, ByteString key) {
         removeKey(tx, ApbMapKey.newBuilder().setType(type).setKey(key).build());
     }
 
+    /**
+     * Removes a key from the map
+     */
     public void removeKey(AntidoteTransaction tx, ApbMapKey key) {
+        removeApbKeys(tx, Arrays.asList(key));
+    }
+
+    /**
+     * Removes a key from the map
+     */
+    public void removeKey(AntidoteTransaction tx, MapKey<Key> key) {
         removeKeys(tx, Arrays.asList(key));
     }
 
+    /**
+     * Removes several keys from the map
+     */
+    public void removeKeys(AntidoteTransaction tx, Iterable<MapKey<Key>> keys) {
+        Stream<ApbMapKey> collect = StreamSupport.stream(keys.spliterator(), false).map(k -> k.toApb(keyCoder));
+        removeApbKeys(tx, collect::iterator);
+    }
 
-    public void removeKeys(AntidoteTransaction tx, Iterable<ApbMapKey> keys) {
+    /**
+     * Removes several keys from the map
+     */
+    public void removeApbKeys(AntidoteTransaction tx, Iterable<ApbMapKey> keys) {
         ApbMapUpdate.Builder mapUpdate = ApbMapUpdate.newBuilder();
         mapUpdate.addAllRemovedKeys(keys);
         ApbUpdateOperation.Builder updateOperation = ApbUpdateOperation.newBuilder();
@@ -101,9 +126,22 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
         }
 
         /**
+         * Returns the set of keys contained in the map
+         */
+        public Set<MapKey<Key>> mapKeySet() {
+            return entries.stream()
+                    .map(e -> {
+                        CRDT_type t = e.getKey().getType();
+                        Key k = keyCoder.decode(e.getKey().getKey());
+                        return new MapKey<>(t, k);
+                    })
+                    .collect(Collectors.toSet());
+        }
+
+        /**
          * Returns the set of keys contained in the map (CRDT type + raw ByteString)
          */
-        public Set<ApbMapKey> mapKeySet() {
+        public Set<ApbMapKey> mapKeySetRaw() {
             return entries.stream().map(ApbMapEntry::getKey).collect(Collectors.toSet());
         }
 
@@ -122,7 +160,7 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
          * @param <Value> the type of values in the map
          * @return the MapReadResult represented as a Java Map
          */
-        public <Value> Map<Key, Value> asJavaMap(ObjectRef<Value> nested) {
+        public <Value> Map<Key, Value> asJavaMap(ResponseDecoder<Value> nested) {
             LinkedHashMap<Key, Value> res = new LinkedHashMap<>();
             for (ApbMapEntry entry : entries) {
                 Key key = keyCoder.decode(entry.getKey().getKey());

@@ -2,12 +2,13 @@ package eu.antidotedb.client;
 
 import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB;
+import eu.antidotedb.antidotepb.AntidotePB.ApbUpdateOperation;
 import eu.antidotedb.antidotepb.AntidotePB.CRDT_type;
 
 /**
  * The Class LowLevelObject.
  */
-public abstract class ObjectRef<Value> {
+public abstract class ObjectRef<Value> extends ResponseDecoder<Value> {
     private final CrdtContainer<?> container;
 
     private final ByteString key;
@@ -46,6 +47,15 @@ public abstract class ObjectRef<Value> {
         return container;
     }
 
+    /**
+     * Resets the value of this object
+     */
+    public void reset(AntidoteTransaction tx) {
+        ApbUpdateOperation.Builder resetOp = ApbUpdateOperation.newBuilder();
+        resetOp.setResetop(AntidotePB.ApbCrdtReset.newBuilder().build());
+        getContainer().update(tx, getType(), getKey(), resetOp);
+    }
+
 
     /**
      * Reads the current value of this object from the database
@@ -59,8 +69,6 @@ public abstract class ObjectRef<Value> {
         BatchReadResult<AntidotePB.ApbReadObjectResp> resp = getContainer().readBatch(tx, getType(), getKey());
         return resp.map(this::readResponseToValue);
     }
-
-    abstract Value readResponseToValue(AntidotePB.ApbReadObjectResp resp);
 
 
     AntidotePB.ApbReadObjectResp readValue(TransactionWithReads tx) {

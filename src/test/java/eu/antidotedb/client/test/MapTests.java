@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the mutable CRDT types
@@ -92,7 +93,7 @@ public class MapTests extends AbstractAntidoteTest {
 
         assertEquals(set("x", "y", "z"), readResult.keySet());
 
-        Map<String, Long> result = readResult.asJavaMap(map.integer("example"));
+        Map<String, Long> result = readResult.asJavaMap(ResponseDecoder.integer());
 
         Map<String, Long> expected = new HashMap<>();
         expected.put("x", 1L);
@@ -100,6 +101,27 @@ public class MapTests extends AbstractAntidoteTest {
         expected.put("z", 3L);
 
         assertEquals(expected, result);
+    }
+
+    @Test
+    public void resetTest() {
+        MapRef<String> map = bucket.map_rr("aha");
+        AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
+        map.set("x").addAll(tx, Arrays.asList("1", "2", "3"));
+        map.set("y").addAll(tx, Arrays.asList("4", "5"));
+        tx.commitTransaction();
+
+        Map<String, List<String>> res1 = map.read(antidoteClient.noTransaction()).asJavaMap(ResponseDecoder.set());
+        Map<String, List<String>> expected = new HashMap<>();
+        expected.put("x", Arrays.asList("1", "2", "3"));
+        expected.put("y", Arrays.asList("4", "5"));
+        assertEquals(expected, res1);
+
+        map.reset(antidoteClient.noTransaction());
+        Map<String, List<String>> res2 = map.read(antidoteClient.noTransaction()).asJavaMap(ResponseDecoder.set());
+        assertTrue(res2.isEmpty());
+
+
     }
 
     private <T> Set<T> set(T... ts) {
