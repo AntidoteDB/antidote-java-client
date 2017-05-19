@@ -67,10 +67,7 @@ public class CrdtMapDynamic<K> extends AntidoteCRDT {
                 ((AntidoteCRDT) v).push(tempTx);
             }
         }
-        List<AntidotePB.ApbMapKey> removedApbKeys = removedKeys.stream()
-                .map(key -> key.toApb(ref.keyCoder()))
-                .collect(Collectors.toList());
-        ref.removeKeys(tempTx, removedApbKeys);
+        ref.removeKeys(tempTx, removedKeys);
         removedKeys.clear();
         tx.performUpdates(tempTx.getTransactionUpdateList());
     }

@@ -1,6 +1,7 @@
 package eu.antidotedb.client.test;
 
 import eu.antidotedb.client.*;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -104,6 +105,7 @@ public class MapTests extends AbstractAntidoteTest {
     }
 
     @Test
+    @Ignore // reset not ye implemented on Antidote site
     public void resetTest() {
         MapRef<String> map = bucket.map_rr("aha");
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();

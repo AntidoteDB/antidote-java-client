@@ -75,7 +75,7 @@ public class CrdtMap<K, V extends AntidoteCRDT> extends AntidoteCRDT {
                         .build())
                 .collect(Collectors.toList());
         if (!removedKeys.isEmpty()) {
-            ref.removeKeys(tempTx, removedApbKeys);
+            ref.removeApbKeys(tempTx, removedApbKeys);
             removedKeys.clear();
         }
         tx.performUpdates(tempTx.getTransactionUpdateList());
