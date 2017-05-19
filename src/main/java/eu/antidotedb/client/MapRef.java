@@ -28,7 +28,7 @@ public class MapRef<Key> extends ObjectRef<MapRef.MapReadResult<Key>> implements
 
     @Override
     MapReadResult<Key> readResponseToValue(ApbReadObjectResp resp) {
-        return new MapReadResult<>(resp.getMap().getEntriesList(), keyCoder);
+        return ResponseDecoder.map(keyCoder).readResponseToValue(resp);
     }
 
     @Override

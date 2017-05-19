@@ -26,8 +26,7 @@ public final class MVRegisterRef<T> extends ObjectRef<List<T>> {
 
     @Override
     List<T> readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
-        ApbGetMVRegResp response = resp.getMvreg();
-        return format.decodeList(response.getValuesList());
+        return ResponseDecoder.multiValueRegister(format).readResponseToValue(resp);
     }
 
 

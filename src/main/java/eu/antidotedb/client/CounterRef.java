@@ -35,7 +35,7 @@ public final class CounterRef extends ObjectRef<Integer> {
 
     @Override
     Integer readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
-        return resp.getCounter().getValue();
+        return ResponseDecoder.counter().readResponseToValue(resp);
     }
 
 

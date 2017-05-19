@@ -41,7 +41,7 @@ public final class IntegerRef extends ObjectRef<Long> {
 
     @Override
     Long readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
-        return resp.getInt().getValue();
+        return ResponseDecoder.integer().readResponseToValue(resp);
     }
 
 

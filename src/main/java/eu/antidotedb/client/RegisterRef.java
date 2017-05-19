@@ -21,7 +21,7 @@ public class RegisterRef<T> extends ObjectRef<T> {
 
     @Override
     T readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
-        return format.decode(resp.getReg().getValue());
+        return ResponseDecoder.register(format).readResponseToValue(resp);
     }
 
 

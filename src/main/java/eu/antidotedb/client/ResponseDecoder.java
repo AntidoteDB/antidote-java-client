@@ -2,6 +2,7 @@ package eu.antidotedb.client;
 
 import eu.antidotedb.antidotepb.AntidotePB;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -9,12 +10,17 @@ import java.util.List;
  */
 public abstract class ResponseDecoder<Value> {
     abstract Value readResponseToValue(AntidotePB.ApbReadObjectResp resp);
-    
-    
+
+
     public static ResponseDecoder<Integer> counter() {
         return new ResponseDecoder<Integer>() {
             @Override
             Integer readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+                if (resp == null) {
+                    return 0;
+                } else if (resp.getCounter() == null) {
+                    throw new AntidoteException("Invalid response " + resp);
+                }
                 return resp.getCounter().getValue();
             }
         };
@@ -25,6 +31,11 @@ public abstract class ResponseDecoder<Value> {
         return new ResponseDecoder<Long>() {
             @Override
             Long readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+                if (resp == null) {
+                    return 0L;
+                } else if (resp.getInt() == null) {
+                    throw new AntidoteException("Invalid response " + resp);
+                }
                 return resp.getInt().getValue();
             }
         };
@@ -34,6 +45,11 @@ public abstract class ResponseDecoder<Value> {
         return new ResponseDecoder<T>() {
             @Override
             T readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+                if (resp == null) {
+                    return null;
+                } else if (resp.getReg() == null) {
+                    throw new AntidoteException("Invalid response " + resp);
+                }
                 return format.decode(resp.getReg().getValue());
             }
         };
@@ -47,6 +63,11 @@ public abstract class ResponseDecoder<Value> {
         return new ResponseDecoder<List<T>>() {
             @Override
             List<T> readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+                if (resp == null) {
+                    return Collections.emptyList();
+                } else if (resp.getMvreg() == null) {
+                    throw new AntidoteException("Invalid response " + resp);
+                }
                 return format.decodeList(resp.getMvreg().getValuesList());
             }
         };
@@ -60,6 +81,11 @@ public abstract class ResponseDecoder<Value> {
         return new ResponseDecoder<List<T>>() {
             @Override
             List<T> readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+                if (resp == null) {
+                    return Collections.emptyList();
+                } else if (resp.getSet() == null) {
+                    throw new AntidoteException("Invalid response " + resp);
+                }
                 return format.decodeList(resp.getSet().getValueList());
             }
         };
@@ -74,6 +100,11 @@ public abstract class ResponseDecoder<Value> {
         return new ResponseDecoder<MapRef.MapReadResult<K>>() {
             @Override
             MapRef.MapReadResult<K> readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+                if (resp == null) {
+                    return new MapRef.MapReadResult<>(Collections.emptyList(), keyCoder);
+                } else if (resp.getCounter() == null) {
+                    throw new AntidoteException("Invalid response " + resp);
+                }
                 return new MapRef.MapReadResult<>(resp.getMap().getEntriesList(), keyCoder);
             }
         };

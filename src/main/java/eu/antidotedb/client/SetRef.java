@@ -24,8 +24,7 @@ public class SetRef<T> extends ObjectRef<List<T>> {
 
     @Override
     List<T> readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
-        AntidotePB.ApbGetSetResp set = resp.getSet();
-        return format.decodeList(set.getValueList());
+        return ResponseDecoder.set(format).readResponseToValue(resp);
     }
 
     public final void add(AntidoteTransaction tx, T element) {

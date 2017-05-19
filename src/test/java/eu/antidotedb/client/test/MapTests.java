@@ -49,6 +49,16 @@ public class MapTests extends AbstractAntidoteTest {
     }
 
     @Test
+    public void nonexistingKey() {
+        List<String> res1 = bucket.set("doesnotexist").read(antidoteClient.noTransaction());
+        assertEquals(Collections.emptyList(), res1);
+
+        List<String> res2 = bucket.map_g("doesnotexist2").set("S").read(antidoteClient.noTransaction());
+        assertEquals(Collections.emptyList(), res2);
+
+    }
+
+    @Test
     public void nestedBatchRead() {
         MapRef<String> testmap = bucket.map_aw("nestedBatchRead");
         CounterRef a = testmap.counter("a");
