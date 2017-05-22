@@ -19,16 +19,16 @@ import static eu.antidotedb.client.MessageCodes.*;
 public class ApbCoder {
     public static AntidoteRequest<?> decodeRequest(InputStream stream) throws IOException {
         byte[] sizeRaw = new byte[4];
-        int numRead = stream.read(sizeRaw);
-        if (numRead == -1) {
-            throw new IOException("End of stream");
-        }
+        readFully(stream, sizeRaw);
         ByteBuffer buffer = ByteBuffer.wrap(sizeRaw);
         buffer.order(ByteOrder.BIG_ENDIAN);
         int size = buffer.getInt();
         int msgCode = stream.read();
+        if (msgCode == -1) {
+            throw new IOException("End of input while message code expected");
+        }
         byte[] data = new byte[size - 1];
-        stream.read(data);
+        readFully(stream, data);
 //        DataInputStream dataInputStream = new DataInputStream(stream);
 //        int size = dataInputStream.readInt();
 //        int msgCode = dataInputStream.readByte();
@@ -63,16 +63,16 @@ public class ApbCoder {
 
     public static AntidoteResponse decodeResponse(InputStream stream) throws IOException {
         byte[] sizeRaw = new byte[4];
-        int numRead = stream.read(sizeRaw);
-        if (numRead == -1) {
-            throw new IOException("End of stream");
-        }
+        readFully(stream, sizeRaw);
         ByteBuffer buffer = ByteBuffer.wrap(sizeRaw);
         buffer.order(ByteOrder.BIG_ENDIAN);
         int size = buffer.getInt();
         int msgCode = stream.read();
+        if (msgCode == -1) {
+            throw new IOException("End of input while message code expected");
+        }
         byte[] data = new byte[size - 1];
-        stream.read(data);
+        readFully(stream, data);
 //        DataInputStream dataInputStream = new DataInputStream(stream);
 //        int size = dataInputStream.readInt();
 //        int msgCode = dataInputStream.readByte();
@@ -100,6 +100,17 @@ public class ApbCoder {
                 return AntidoteResponse.of(apbStaticReadObjectsResp);
             default:
                 throw new RuntimeException("Unexpected message code: " + msgCode);
+        }
+    }
+
+    private static void readFully(InputStream stream, byte[] data) throws IOException {
+        int offset = 0;
+        while(offset<data.length) {
+            int bytesRead = stream.read(data, offset, data.length-offset);
+            if (bytesRead == -1) {
+                throw new IOException("End of input while data expected");
+            }
+            offset += bytesRead;
         }
     }
 
