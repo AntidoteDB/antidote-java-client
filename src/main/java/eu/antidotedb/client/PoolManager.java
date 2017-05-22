@@ -61,19 +61,26 @@ public class PoolManager {
     private void unhealthyHostRecovery() {
         ScheduledExecutorService executor =
                 Executors.newSingleThreadScheduledExecutor();
-        Runnable periodicTask = new Runnable() {
-            public void run() {
-                // Scheduled Task
-                for (ConnectionPool p : pools) {
-                    if (p.checkHealth(p)) {
-                        //make it healthy
-                        p.setHealthy(true);
-                    }
-                }
-            }
 
-        };
-        executor.scheduleAtFixedRate(periodicTask, 0, CHECK_INTERVAL, TimeUnit.MINUTES);
+        Thread t = new Thread(() -> {
+            try {
+                //noinspection InfiniteLoopStatement
+                while (true) {
+                    // Scheduled Task
+                    for (ConnectionPool p : pools) {
+                        if (p.checkHealth(p)) {
+                            //make it healthy
+                            p.setHealthy(true);
+                        }
+                    }
+                    TimeUnit.MINUTES.sleep(CHECK_INTERVAL);
+                }
+            } catch (InterruptedException e) {
+                // done
+            }
+        });
+        t.setDaemon(true);
+        t.start();
     }
 
     /**
