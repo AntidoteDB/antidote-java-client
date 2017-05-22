@@ -154,9 +154,9 @@ public class AntidoteClient {
     /**
      * Reads the values of a list of objects in one batch read
      */
-    public <T> List<T> readObjects(TransactionWithReads tx, List<ObjectRef<? extends T>> objectRefs) {
+    public <T> List<T> readObjects(TransactionWithReads tx, Iterable<? extends ObjectRef<? extends T>> objectRefs) {
         BatchRead batchRead = newBatchRead();
-        List<BatchReadResult<? extends T>> results = new ArrayList<>(objectRefs.size());
+        List<BatchReadResult<? extends T>> results = new ArrayList<>();
         for (ObjectRef<? extends T> objectRef : objectRefs) {
             BatchReadResult<? extends T> res = objectRef.read(batchRead);
             results.add(res);
