@@ -57,8 +57,7 @@ class SocketSender implements Transformer {
     public AntidoteResponse handle(AntidotePB.ApbAbortTransaction op) {
         try {
             ApbCoder.encodeRequest(op, socket.getOutputStream());
-            // no response expected
-            return null;
+            return ApbCoder.decodeResponse(socket.getInputStream());
         } catch (IOException e) {
             throw new AntidoteSocketException(e);
         }

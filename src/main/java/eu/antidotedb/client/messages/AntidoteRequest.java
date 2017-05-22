@@ -210,7 +210,7 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
         }
     }
 
-    public static class MsgAbortTransaction extends AntidoteRequest<Void> {
+    public static class MsgAbortTransaction extends AntidoteRequest<AntidotePB.ApbOperationResp> {
         private AntidotePB.ApbAbortTransaction op;
 
         public static class Extractor implements Handler<AntidotePB.ApbAbortTransaction> {
@@ -232,8 +232,8 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
         }
 
         @Override
-        public AntidoteResponse.Handler<Void> readResponseExtractor() {
-            return null;
+        public AntidoteResponse.Handler<AntidotePB.ApbOperationResp> readResponseExtractor() {
+            return new AntidoteResponse.MsgOperationResp.Extractor();
         }
 
         @Override
