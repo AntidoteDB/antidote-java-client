@@ -32,4 +32,21 @@ public class InteractiveTxTest extends AbstractAntidoteTest {
             tx.commitTransaction();
         }
     }
+
+
+    @Test
+    public void testMany() {
+        RegisterRef<String> reg = bucket.register("testInteractiveTx_reg1", ValueCoder.utf8String);
+        for (int i = 0; i < 100; i++) {
+            try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+                reg.set(tx, "" + i);
+                tx.commitTransaction();
+            }
+        }
+
+        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+            assertEquals("99", reg.read(tx));
+            tx.commitTransaction();
+        }
+    }
 }

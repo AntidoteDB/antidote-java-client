@@ -91,6 +91,7 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
 
         CommitInfo res = antidoteClient.completeTransaction(commitResponse);
         this.transactionStatus = TransactionStatus.COMMITTED;
+        close();
         return res;
     }
 
@@ -107,6 +108,7 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         AntidotePB.ApbAbortTransaction abortTransactionMessage = abortTransaction.build();
         getClient().sendMessage(AntidoteRequest.of(abortTransactionMessage), connection);
         this.transactionStatus = TransactionStatus.ABORTED;
+        close();
     }
 
     /**
@@ -210,6 +212,12 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
      * Close the transaction.
      */
     public void close() {
-        this.transactionStatus = TransactionStatus.CLOSED;
+        if (transactionStatus == TransactionStatus.STARTED) {
+            abortTransaction();
+        }
+        if (transactionStatus != TransactionStatus.CLOSED) {
+            this.transactionStatus = TransactionStatus.CLOSED;
+            connection.close();
+        }
     }
 }
