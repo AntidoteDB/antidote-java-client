@@ -194,7 +194,6 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         readObject.setTransactionDescriptor(descriptor);
 
         AntidotePB.ApbReadObjects readObjectsMessage = readObject.build();
-        Connection connection = antidoteClient.getPoolManager().getConnection();
         AntidoteRequest.MsgReadObjects request = AntidoteRequest.of(readObjectsMessage);
         AntidotePB.ApbReadObjectsResp readResponse = antidoteClient.sendMessage(request, connection);
         int i = 0;

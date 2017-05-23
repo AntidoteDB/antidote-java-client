@@ -1,8 +1,6 @@
 package eu.antidotedb.client.test;
 
-import eu.antidotedb.client.InteractiveTransaction;
-import eu.antidotedb.client.RegisterRef;
-import eu.antidotedb.client.ValueCoder;
+import eu.antidotedb.client.*;
 import org.junit.Test;
 
 import java.util.stream.IntStream;
@@ -62,5 +60,26 @@ public class InteractiveTxTest extends AbstractAntidoteTest {
             assertEquals("99", reg.read(tx));
             tx.commitTransaction();
         }
+    }
+
+    @Test
+    public void testManyBatch() {
+        RegisterRef<String> reg1 = bucket.register("manyBatch_reg1", ValueCoder.utf8String);
+        RegisterRef<String> reg2 = bucket.register("manyBatch_reg2", ValueCoder.utf8String);
+
+        AntidoteStaticTransaction stx = antidoteClient.createStaticTransaction();
+        reg1.set(stx, "a");
+        reg2.set(stx, "b");
+        stx.commitTransaction();
+
+        IntStream.range(0, 100).forEach(i -> {
+            try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+                BatchRead br = antidoteClient.newBatchRead();
+                BatchReadResult<String> v1 = reg1.read(br);
+                BatchReadResult<String> v2 = reg2.read(br);
+                br.commit(tx);
+                tx.commitTransaction();
+            }
+        });
     }
 }
