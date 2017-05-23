@@ -4,6 +4,7 @@ version '0.0.4'
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'signing'
+apply plugin: 'com.bmuschko.nexus'
 
 // requires 'protoc' to be installed locally
 apply plugin: 'com.google.protobuf'
@@ -63,8 +64,8 @@ clean {
  *          signing.password=********
  *          signing.secretKeyRingFile=/path/to/gnupg/secring.gpg
  *
- *          ossrhUsername=pzeller
- *          ossrhPassword=***********
+ *          nexusUsername=pzeller
+ *          nexusPassword=***********
  *
  *
  * 1. Run ./gradlew uploadArchives
@@ -75,71 +76,47 @@ clean {
  *
  */
 
-
-task javadocJar(type: Jar) {
-    classifier = 'javadoc'
-    from javadoc
-}
-
-task sourcesJar(type: Jar) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-artifacts {
-    archives javadocJar, sourcesJar
-}
-
-def isReleaseBuild() {
-    return version.contains("SNAPSHOT") == false
-}
-
-signing {
-    required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
-    sign configurations.archives
-}
-
-uploadArchives {
+buildscript {
     repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
+    }
+}
 
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: ossrhUsername, password: ossrhPassword)
+modifyPom {
+    project {
+        name 'Java Antidote Client'
+        packaging 'jar'
+        // optionally artifactId can be defined here
+        description 'A client to use the Antidote database from Java.'
+        url 'https://github.com/SyncFree/antidote-java-client/'
+
+        scm {
+            connection 'scm:https://github.com/SyncFree/antidote-java-client'
+            developerConnection 'scm:https://github.com/SyncFree/antidote-java-client'
+            url 'https://github.com/SyncFree/antidote-java-client/'
+        }
+
+        licenses {
+            license {
+                name 'The Apache License, Version 2.0'
+                url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
             }
+        }
 
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                authentication(userName: ossrhUsername, password: ossrhPassword)
-            }
-
-            pom.project {
-                name 'Java Antidote Client'
-                packaging 'jar'
-                // optionally artifactId can be defined here
-                description 'A client to use the Antidote database from Java.'
-                url 'https://github.com/SyncFree/antidote-java-client/'
-
-                scm {
-                    connection 'scm:https://github.com/SyncFree/antidote-java-client'
-                    developerConnection 'scm:https://github.com/SyncFree/antidote-java-client'
-                    url 'https://github.com/SyncFree/antidote-java-client/'
-                }
-
-                licenses {
-                    license {
-                        name 'The Apache License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-
-                developers {
-                    developer {
-                        id 'pzeller'
-                        name 'Peter Zeller'
-                        email 'p_zeller@cs.uni-kl.de'
-                    }
-                }
+        developers {
+            developer {
+                id 'pzeller'
+                name 'Peter Zeller'
+                email 'p_zeller@cs.uni-kl.de'
             }
         }
     }
+}
+
+extraArchive {
+    sources = true
+    javadoc = true
 }
