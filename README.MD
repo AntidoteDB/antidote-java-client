@@ -14,7 +14,10 @@ We will provide documentation and Maven artifacts once the library is ready to b
 
 # Documentation
 
-Documentation is available on [JavaDoc.io](https://www.javadoc.io/doc/eu.antidotedb/antidote-java-client/).
+[![Javadocs](https://www.javadoc.io/badge/eu.antidotedb/antidote-java-client.svg)](https://www.javadoc.io/doc/eu.antidotedb/antidote-java-client)
+
+Documentation is available via javadoc, browsable online via [JavaDoc.io](https://www.javadoc.io/doc/eu.antidotedb/antidote-java-client/).
+The overview page contains a short tutorial.
 
 # Development / Contributing
 
