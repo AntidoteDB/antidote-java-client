@@ -9,10 +9,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * The Class AntidoteClient.
+ * An AntidoteClient manages the connection to one or more Antidote servers.
+ * <p>
+ * It is the main entry point for working with the client, in particular it is the source of transactions.
+ * Every operation has to be executed in the context of a transaction.
+ * See: {@link #startTransaction()}, {@link #createStaticTransaction()}, {@link #noTransaction()}, and {@link #newBatchRead()}.
+ * <p>
+ * Moreover there is {@link #readObjects(TransactionWithReads, Iterable)} to read several objects at once
+ * and {@link #pull(TransactionWithReads, Iterable)} to update several mutable {@link AntidoteCRDT} objects at once.
  */
 public class AntidoteClient {
 
@@ -57,6 +63,9 @@ public class AntidoteClient {
         init(transformerFactories, hosts);
     }
 
+    /**
+     * initializes the client. Called by every constructor except for {@link #AntidoteClient(PoolManager)}.
+     */
     protected void init(List<TransformerFactory> transformerFactories, List<Host> hosts) {
         this.poolManager = new PoolManager(transformerFactories);
         for (Host host : hosts) {
@@ -111,6 +120,17 @@ public class AntidoteClient {
     /**
      * Starts an interactive transactions.
      * Interactive transactions allow to mix several reads and writes in a single atomic unit.
+     * <p>
+     * Since an interactive transaction uses database resources, you should ensure that the transaction is closed in any case.
+     * The recommended pattern is to use a try-with-resource statement and commit the transaction at the end of it:
+     * <pre>
+     * {@code
+     * try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+     *     // updates and reads here
+     *     tx.commitTransaction();
+     * }
+     * }
+     * </pre>
      */
     public InteractiveTransaction startTransaction() {
         return new InteractiveTransaction(this);
@@ -125,6 +145,10 @@ public class AntidoteClient {
     }
 
 
+    /**
+     * Starts a new batch read, which allows to read several objects at once.
+     * The {@link BatchRead} can be committed using {@link BatchRead#commit} or {@link BatchRead#commit(TransactionWithReads)}.
+     */
     public BatchRead newBatchRead() {
         return new BatchRead(this);
     }

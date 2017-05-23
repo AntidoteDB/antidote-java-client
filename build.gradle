@@ -1,5 +1,5 @@
 group 'eu.antidotedb'
-version '0.0.4'
+version '0.0.5'
 
 apply plugin: 'java'
 apply plugin: 'maven'
@@ -37,6 +37,12 @@ protobuf {
         artifact = 'com.google.protobuf:protoc:3.0.0'
     }
 }
+
+javadoc {
+    options.overview = "src/main/java/overview.html"
+//    options.noNavBar = true
+}
+
 
 sourceSets {
     main {

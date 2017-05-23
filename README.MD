@@ -14,7 +14,7 @@ We will provide documentation and Maven artifacts once the library is ready to b
 
 # Documentation
 
-Documentation is available in the [manual.md](./manual.md).
+Documentation is available on [JavaDoc.io](https://www.javadoc.io/doc/eu.antidotedb/antidote-java-client/).
 
 # Development / Contributing
 

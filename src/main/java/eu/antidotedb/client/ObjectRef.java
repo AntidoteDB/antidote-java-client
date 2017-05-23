@@ -6,7 +6,18 @@ import eu.antidotedb.antidotepb.AntidotePB.ApbUpdateOperation;
 import eu.antidotedb.antidotepb.AntidotePB.CRDT_type;
 
 /**
- * The Class LowLevelObject.
+ * An ObjectRef is an immutable reference to an object stored in the database.
+ * The ObjectRef is independent from a specific connection, so it is possible to store ObjectRefs in constants.
+ * <p>
+ * ObjectRefs are typically created using the methods defined in {@link CrdtCreator}.
+ * The most important instance of {@link CrdtCreator} is a {@link Bucket}.
+ * <p>
+ * Each ObjectRef has a {@link #read(BatchRead)} and {@link #read(BatchRead)} method, which are used to retrieve the current value of the object from the database.
+ * The return type depends on the type parameter.
+ * <p>
+ * For performing operations each concrete subclass has type-specific methods.
+ *
+ * @param <Value> the type of the value stored in this object
  */
 public abstract class ObjectRef<Value> extends ResponseDecoder<Value> {
     private final CrdtContainer<?> container;
@@ -39,9 +50,7 @@ public abstract class ObjectRef<Value> extends ResponseDecoder<Value> {
 
 
     /**
-     * Gets the client.
-     *
-     * @return the client
+     * @return The container in which this object is stored
      */
     public CrdtContainer<?> getContainer() {
         return container;
@@ -59,12 +68,24 @@ public abstract class ObjectRef<Value> extends ResponseDecoder<Value> {
 
     /**
      * Reads the current value of this object from the database
+     *
+     * @param tx A context for executing the read in. See {@link AntidoteClient#startTransaction()} and {@link AntidoteClient#noTransaction()}.
      */
     public final Value read(TransactionWithReads tx) {
         AntidotePB.ApbReadObjectResp resp = getContainer().read(tx, getType(), getKey());
         return readResponseToValue(resp);
     }
 
+    /**
+     * Reads the current value of this object from the database in a batch read.
+     * The read-request is not executed immediately.
+     * Instead a {@link BatchReadResult} is returned, which is a kind of Future from which the value can be returned after all reads in the batch have been performed.
+     * <p>
+     * Also see: {@link AntidoteClient#readObjects(TransactionWithReads, Iterable)}, which is easier to use for reading a collection of ObjectRefs with similar Value.
+     *
+     * @param tx A batch read (see {@link AntidoteClient#newBatchRead()})
+     * @return A BatchReadResult which can be used to get the result later (see {@link BatchReadResult#get()})
+     */
     public final BatchReadResult<Value> read(BatchRead tx) {
         BatchReadResult<AntidotePB.ApbReadObjectResp> resp = getContainer().readBatch(tx, getType(), getKey());
         return resp.map(this::readResponseToValue);
