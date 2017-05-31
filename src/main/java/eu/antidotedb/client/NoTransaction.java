@@ -32,7 +32,7 @@ public class NoTransaction extends TransactionWithReads {
             updateMessage.addUpdates(updateInstruction);
         }
         AntidotePB.ApbCommitResp commitResponse =
-                client.sendMessageArbitraryConnection(AntidoteRequest.of(updateMessage.build()));
+                client.sendMessageArbitraryConnection(this, AntidoteRequest.of(updateMessage.build()));
         client.completeTransaction(commitResponse);
     }
 
@@ -48,7 +48,7 @@ public class NoTransaction extends TransactionWithReads {
         readMessage.setTransaction(startTransaction);
 
         AntidotePB.ApbStaticReadObjectsResp resp =
-                client.sendMessageArbitraryConnection(AntidoteRequest.of(readMessage.build()));
+                client.sendMessageArbitraryConnection(this, AntidoteRequest.of(readMessage.build()));
         client.completeTransaction(resp.getCommittime());
         return resp.getObjects();
     }
@@ -63,12 +63,18 @@ public class NoTransaction extends TransactionWithReads {
 
         AntidotePB.ApbStaticReadObjects readObjectsMessage = readObject.build();
         Connection connection = client.getPoolManager().getConnection();
-        AntidoteRequest.MsgStaticReadObjects request = AntidoteRequest.of(readObjectsMessage);
-        AntidotePB.ApbStaticReadObjectsResp readResponse = client.sendMessage(request, connection);
-        int i = 0;
-        for (AntidotePB.ApbReadObjectResp resp : readResponse.getObjects().getObjectsList()) {
-            requests.get(i).setResult(resp);
-            i++;
+        try {
+            onGetConnection(connection);
+            AntidoteRequest.MsgStaticReadObjects request = AntidoteRequest.of(readObjectsMessage);
+            AntidotePB.ApbStaticReadObjectsResp readResponse = client.sendMessage(request, connection);
+            int i = 0;
+            for (AntidotePB.ApbReadObjectResp resp : readResponse.getObjects().getObjectsList()) {
+                requests.get(i).setResult(resp);
+                i++;
+            }
+        } finally {
+            onReleaseConnection(connection);
+            connection.close();
         }
     }
 

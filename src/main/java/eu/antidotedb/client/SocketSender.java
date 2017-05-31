@@ -17,7 +17,7 @@ class SocketSender implements Transformer {
         socket = s;
     }
 
-    private class AntidoteSocketException extends AntidoteException {
+    public static class AntidoteSocketException extends AntidoteException {
         public AntidoteSocketException(IOException cause) {
             super(cause);
         }

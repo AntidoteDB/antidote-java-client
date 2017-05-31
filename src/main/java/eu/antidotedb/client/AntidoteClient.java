@@ -91,9 +91,14 @@ public class AntidoteClient {
      * @param requestMessage the update message
      * @return the response
      */
-    <R> R sendMessageArbitraryConnection(AntidoteRequest<R> requestMessage) {
-        try (Connection connection = getPoolManager().getConnection()) {
+    <R> R sendMessageArbitraryConnection(AntidoteTransaction tx, AntidoteRequest<R> requestMessage) {
+        Connection connection = getPoolManager().getConnection();
+        try {
+            tx.onGetConnection(connection);
             return sendMessage(requestMessage, connection);
+        } finally {
+            tx.onReleaseConnection(connection);
+            connection.close();
         }
     }
 

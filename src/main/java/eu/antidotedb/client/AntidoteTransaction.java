@@ -13,4 +13,18 @@ public abstract class AntidoteTransaction implements UpdateContext {
     abstract void performUpdate(AntidotePB.ApbUpdateOp.Builder updateInstruction);
 
     abstract void performUpdates(List<ApbUpdateOp.Builder> updateInstructions);
+
+    /**
+     * Called when a connection is acquired by the transaction
+     */
+    protected void onGetConnection(Connection connection) {
+        // do nothing
+    }
+
+    /**
+     * Called when a connection is released by the transaction
+     */
+    protected void onReleaseConnection(Connection connection) {
+        // do nothing
+    }
 }

@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * The Class AntidoteStaticTransaction.
  */
-public final class AntidoteStaticTransaction extends AntidoteTransaction {
+public class AntidoteStaticTransaction extends AntidoteTransaction {
 
     private AntidoteClient client;
 
@@ -39,7 +39,7 @@ public final class AntidoteStaticTransaction extends AntidoteTransaction {
         if (transactionStatus != TransactionStatus.STARTED) {
             throw new AntidoteException("Transaction already closed");
         }
-        ApbCommitResp commitResponse = client.sendMessageArbitraryConnection(AntidoteRequest.of(createUpdateStaticObject()));
+        ApbCommitResp commitResponse = client.sendMessageArbitraryConnection(this, AntidoteRequest.of(createUpdateStaticObject()));
         CommitInfo res = client.completeTransaction(commitResponse);
         transactionStatus = TransactionStatus.COMMITTED;
         return res;
