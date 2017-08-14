@@ -41,10 +41,12 @@ public class InteractiveTxTest extends AbstractAntidoteTest {
             reg.set(tx, "b");
             assertEquals("b", reg.read(tx));
             reg.set(tx, "c");
+            tx.performBufferedUpdates();
             reg.set(tx, "d");
+            reg.set(tx, "e");
             tx.commitTransaction();
         }
-        assertEquals("d", reg.read(antidoteClient.noTransaction()));
+        assertEquals("e", reg.read(antidoteClient.noTransaction()));
     }
 
     @Test

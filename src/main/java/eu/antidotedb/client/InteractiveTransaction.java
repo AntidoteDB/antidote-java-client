@@ -131,7 +131,11 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         updateInstructionBuffer.addAll(updateInstructions);
     }
 
-    private void performBufferedUpdates() {
+    /**
+     * Send all buffered updates to the database so that they are executed immediately.
+     * If this method is not called, updates will be executed before the next read-operation and on commit.
+     */
+    public void performBufferedUpdates() {
         if (updateInstructionBuffer.isEmpty()) {
             // nothing to do
             return;
