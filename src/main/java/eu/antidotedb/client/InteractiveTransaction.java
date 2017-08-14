@@ -6,6 +6,7 @@ import eu.antidotedb.antidotepb.AntidotePB.ApbStartTransaction;
 import eu.antidotedb.antidotepb.AntidotePB.ApbTxnProperties;
 import eu.antidotedb.client.messages.AntidoteRequest;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -30,6 +31,12 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
      * The descriptor.
      */
     protected ByteString descriptor;
+
+    /**
+     * A buffer of update instructions.
+     * Instructions are executed on commit or before a read-operation.
+     */
+    private List<AntidotePB.ApbUpdateOp.Builder> updateInstructionBuffer = new ArrayList<>();
 
 
     /**
@@ -77,6 +84,8 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
      * Commit transaction.
      */
     public CommitInfo commitTransaction() {
+        performBufferedUpdates();
+
         if (descriptor == null) {
             throw new AntidoteException("You need to start the transaction before committing it");
         }
@@ -112,46 +121,30 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         close();
     }
 
-    /**
-     * Update helper that has the generic part of the code.
-     *
-     * @param operation the operation
-     * @param name      the name
-     * @param bucket    the bucket
-     * @param type      the type
-     */
-    protected void updateHelper(AntidotePB.ApbUpdateOperation.Builder operation, String name, String bucket, AntidotePB.CRDT_type type) {
-        if (transactionStatus != TransactionStatus.STARTED) {
-            throw new AntidoteException("You need to start the transaction first");
-        }
-        AntidotePB.ApbBoundObject.Builder object = AntidotePB.ApbBoundObject.newBuilder(); // The object in the message to update
-        object.setKey(ByteString.copyFromUtf8(name));
-        object.setType(type);
-        object.setBucket(ByteString.copyFromUtf8(bucket));
-
-        AntidotePB.ApbUpdateOp.Builder updateInstruction = AntidotePB.ApbUpdateOp.newBuilder();
-        updateInstruction.setBoundobject(object);
-        updateInstruction.setOperation(operation);
-
-
-        performUpdate(updateInstruction);
-    }
-
     @Override
     void performUpdate(AntidotePB.ApbUpdateOp.Builder updateInstruction) {
-        performUpdates(Collections.singletonList(updateInstruction));
+        updateInstructionBuffer.add(updateInstruction);
     }
 
     @Override
     void performUpdates(List<AntidotePB.ApbUpdateOp.Builder> updateInstructions) {
+        updateInstructionBuffer.addAll(updateInstructions);
+    }
+
+    private void performBufferedUpdates() {
+        if (updateInstructionBuffer.isEmpty()) {
+            // nothing to do
+            return;
+        }
         if (getDescriptor() == null) {
             throw new AntidoteException("You need to start the transaction first");
         }
         AntidotePB.ApbUpdateObjects.Builder updateMessage = AntidotePB.ApbUpdateObjects.newBuilder();
         updateMessage.setTransactionDescriptor(getDescriptor());
-        for (AntidotePB.ApbUpdateOp.Builder updateInstruction : updateInstructions) {
+        for (AntidotePB.ApbUpdateOp.Builder updateInstruction : updateInstructionBuffer) {
             updateMessage.addUpdates(updateInstruction);
         }
+        updateInstructionBuffer.clear();
 
         AntidotePB.ApbUpdateObjects updateMessageObject = updateMessage.build();
         AntidotePB.ApbOperationResp resp = getClient().sendMessage(AntidoteRequest.of(updateMessageObject), connection);
@@ -166,6 +159,8 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
      * @return the apb read objects resp
      */
     protected AntidotePB.ApbReadObjectsResp readHelper(ByteString bucket, ByteString key, AntidotePB.CRDT_type type) {
+        performBufferedUpdates();
+
         // String name, String bucket, CRDT_type type
         if (getDescriptor() == null) {
             throw new AntidoteException("You need to start the transaction first");
@@ -188,6 +183,8 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
 
     @Override
     void batchReadHelper(List<BatchReadResultImpl> readRequests) {
+        performBufferedUpdates();
+
         AntidotePB.ApbReadObjects.Builder readObject = AntidotePB.ApbReadObjects.newBuilder();
         for (BatchReadResultImpl request : readRequests) {
             readObject.addBoundobjects(request.getObject());
