@@ -5,8 +5,6 @@ import eu.antidotedb.client.transformer.TransformerFactory;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -60,8 +58,6 @@ public class PoolManager {
      * Recover unhealthy pools.
      */
     private void unhealthyHostRecovery() {
-        ScheduledExecutorService executor =
-                Executors.newSingleThreadScheduledExecutor();
 
         Thread t = new Thread(() -> {
             try {

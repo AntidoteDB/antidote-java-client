@@ -4,7 +4,6 @@ import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.ApbReadObjectResp;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * A homogeneous map with values of type V

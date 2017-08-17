@@ -36,7 +36,7 @@ public class AntidoteConfigManager {
     }
 
     public boolean configExist() {
-        String cfgPath = System.getProperty("user.dir") + "/" + this.DEFAULT_FILE;
+        String cfgPath = System.getProperty("user.dir") + "/" + DEFAULT_FILE;
         return this.configFileExist(cfgPath);
     }
 
@@ -54,17 +54,17 @@ public class AntidoteConfigManager {
 
             Element host = doc.createElement("host");
             Element hostname = doc.createElement("hostname");
-            hostname.appendChild(doc.createTextNode(this.DEFAULT_HOST));
+            hostname.appendChild(doc.createTextNode(DEFAULT_HOST));
             host.appendChild(hostname);
 
             Element port = doc.createElement("port");
-            port.appendChild(doc.createTextNode(String.valueOf(this.DEFAULT_PORT)));
+            port.appendChild(doc.createTextNode(String.valueOf(DEFAULT_PORT)));
             host.appendChild(port);
 
             rootElement.appendChild(host);
             doc.appendChild(rootElement);
 
-            String cfgPath = System.getProperty("user.dir") + "/" + this.DEFAULT_FILE;
+            String cfgPath = System.getProperty("user.dir") + "/" + DEFAULT_FILE;
 
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();

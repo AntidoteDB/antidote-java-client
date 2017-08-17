@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * hint: before running the test start Antidote. For example with docker:
- * docker run --rm -p "8087:8087" mweber/antidotedb
+ * docker run --rm -p "8087:8087" antidotedb/antidote
  */
 public class AbstractAntidoteTest {
     final static boolean debugLog = false;
