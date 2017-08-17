@@ -5,6 +5,7 @@ import eu.antidotedb.client.messages.AntidoteRequest;
 import eu.antidotedb.client.messages.AntidoteResponse;
 import eu.antidotedb.client.transformer.TransformerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,47 +29,47 @@ public class AntidoteClient {
     /**
      * Initializes an AntidoteClient with the given hosts.
      *
-     * @param hosts The Antidote hosts (ip and port)
+     * @param inetAddrs The addresses of the Antidote hosts
      */
-    public AntidoteClient(Host... hosts) {
-        this(Collections.emptyList(), hosts);
+    public AntidoteClient(InetSocketAddress... inetAddrs) {
+        this(Collections.emptyList(), inetAddrs);
     }
 
     /**
      * Initializes an AntidoteClient with the given hosts.
      *
-     * @param hosts The Antidote hosts (ip and port)
+     * @param inetAddrs The addresses of the Antidote hosts
      */
-    public AntidoteClient(List<Host> hosts) {
-        this(Collections.emptyList(), hosts);
+    public AntidoteClient(List<InetSocketAddress> inetAddrs) {
+        this(Collections.emptyList(), inetAddrs);
     }
 
     /**
      * Initializes an AntidoteClient.
      *
      * @param transformerFactories transformers for factories (the last transformer will be at the top of the stack, so applied first)
-     * @param hosts                The Antidote hosts (ip and port)
+     * @param inetAddrs The addresses of the Antidote hosts
      */
-    public AntidoteClient(List<TransformerFactory> transformerFactories, Host... hosts) {
-        this(transformerFactories, Arrays.asList(hosts));
+    public AntidoteClient(List<TransformerFactory> transformerFactories, InetSocketAddress... inetAddrs) {
+        this(transformerFactories, Arrays.asList(inetAddrs));
     }
 
     /**
      * Initializes an AntidoteClient.
      *
      * @param transformerFactories transformers for factories (the last transformer will be at the top of the stack, so applied first)
-     * @param hosts                The Antidote hosts (ip and port)
+     * @param inetAddrs The addresses of the Antidote hosts
      */
-    public AntidoteClient(List<TransformerFactory> transformerFactories, List<Host> hosts) {
-        init(transformerFactories, hosts);
+    public AntidoteClient(List<TransformerFactory> transformerFactories, List<InetSocketAddress> inetAddrs) {
+        init(transformerFactories, inetAddrs);
     }
 
     /**
      * initializes the client. Called by every constructor except for {@link #AntidoteClient(PoolManager)}.
      */
-    protected void init(List<TransformerFactory> transformerFactories, List<Host> hosts) {
+    protected void init(List<TransformerFactory> transformerFactories, List<InetSocketAddress> inetAddrs) {
         this.poolManager = new PoolManager(transformerFactories);
-        for (Host host : hosts) {
+        for (InetSocketAddress host : inetAddrs) {
             poolManager.addHost(host);
         }
     }

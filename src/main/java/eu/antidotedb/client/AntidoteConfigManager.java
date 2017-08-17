@@ -16,6 +16,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -99,17 +100,17 @@ public class AntidoteConfigManager {
         return retVal;
     }
 
-    public List<Host> getConfigHosts() {
+    public List<InetSocketAddress> getConfigHosts() {
         String cfgPath = System.getProperty("user.dir") + "/" + DEFAULT_FILE;
         return getConfigHosts(cfgPath);
     }
 
-    public List<Host> getConfigHosts(String filepath) {
-        List<Host> list = new LinkedList<>();
+    public List<InetSocketAddress> getConfigHosts(String filepath) {
+        List<InetSocketAddress> list = new LinkedList<>();
         String cfgPath = filepath;
         if (!this.configFileExist(cfgPath)) {
             // No File Found, returning default values
-            list.add(new Host(DEFAULT_HOST, DEFAULT_PORT));
+            list.add(InetSocketAddress.createUnresolved(DEFAULT_HOST, DEFAULT_PORT));
             return list;
         }
         File config = new File(cfgPath);
@@ -133,7 +134,7 @@ public class AntidoteConfigManager {
                 String hostname = ele.getElementsByTagName("hostname").item(0).getTextContent();
                 String portSt = ele.getElementsByTagName("port").item(0).getTextContent();
                 int port = Integer.parseInt(portSt);
-                Host h = new Host(hostname, port);
+                InetSocketAddress h = new InetSocketAddress(hostname, port);
                 list.add(h);
             }
         }
