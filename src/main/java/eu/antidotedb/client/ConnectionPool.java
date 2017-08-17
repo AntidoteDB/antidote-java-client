@@ -43,9 +43,7 @@ public class ConnectionPool {
 
     private final int initialPoolSize;
 
-    private final String host;
-
-    private final int port;
+    private InetSocketAddress inetAddr;
 
     private volatile boolean healthy;
 
@@ -61,11 +59,10 @@ public class ConnectionPool {
      *
      * @param maxPoolSize          the max pool size
      * @param initialPoolSize      the initial pool size
-     * @param host                 the host
-     * @param port                 the port
+     * @param inetAddr             the IP Socket Address
      * @param transformerFactories
      */
-    public ConnectionPool(int maxPoolSize, int initialPoolSize, String host, int port, List<TransformerFactory> transformerFactories) {
+    public ConnectionPool(int maxPoolSize, int initialPoolSize, InetSocketAddress inetAddr, List<TransformerFactory> transformerFactories) {
         this.transformerFactories = transformerFactories;
 
         if ((initialPoolSize > maxPoolSize) || initialPoolSize < 1 || maxPoolSize < 1) {
@@ -75,8 +72,7 @@ public class ConnectionPool {
         // default max pool size to 10
         this.maxPoolSize = maxPoolSize;
         this.initialPoolSize = initialPoolSize;
-        this.host = host;
-        this.port = port;
+        this.inetAddr = inetAddr;
         this.pool = new ArrayBlockingQueue<>(maxPoolSize);
         this.healthy = true;
 
@@ -129,7 +125,7 @@ public class ConnectionPool {
             pool.offer(c);
             return true;
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Error opening connection to " + host + ":" + port, e);
+            logger.log(Level.WARNING, "Error opening connection to " + inetAddr.toString(), e);
             return false;
         }
     }
@@ -137,7 +133,7 @@ public class ConnectionPool {
     private Connection openConnection() throws IOException {
         Socket s = new Socket();
         s.setSoTimeout(DEFAULT_TIMEOUT);
-        s.connect(new InetSocketAddress(getHost(), getPort()), DEFAULT_TIMEOUT);
+        s.connect(inetAddr, DEFAULT_TIMEOUT);
         Connection c = new Connection(this, s, transformerFactories);
         connections.add(c);
         return c;
@@ -156,10 +152,10 @@ public class ConnectionPool {
             try {
                 return openConnection();
             } catch (IOException e) {
-                throw new AntidoteException("Could not open connection to " + host + ":" + port, e);
+                throw new AntidoteException("Could not open connection to " + inetAddr.toString(), e);
             }
         }
-        throw new AntidoteException("Could not get connection to " + host + ":" + port + " (too many connections)");
+        throw new AntidoteException("Could not get connection to " +  inetAddr.toString() + " (too many connections)");
     }
 
     /**
@@ -191,19 +187,11 @@ public class ConnectionPool {
     }
 
     /**
-     * The host.
+     * The IP Socket Address.
      */
-    public String getHost() {
-        return host;
+    public InetSocketAddress getInetSocketAddress() {
+        return inetAddr;
     }
-
-    /**
-     * The port.
-     */
-    public int getPort() {
-        return port;
-    }
-
 
     /**
      * Maximum number of connections that the pool can have.

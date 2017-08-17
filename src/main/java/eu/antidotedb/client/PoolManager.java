@@ -2,6 +2,7 @@ package eu.antidotedb.client;
 
 import eu.antidotedb.client.transformer.TransformerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -42,8 +43,8 @@ public class PoolManager {
      * @param initialPoolSize the initial pool size
      * @param h               Host to add into pool
      */
-    public void addHost(int maxPoolSize, int initialPoolSize, Host h) {
-        pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h.getHostname(), h.getPort(), transformerFactories));
+    public void addHost(int maxPoolSize, int initialPoolSize, InetSocketAddress h) {
+        pools.add(new ConnectionPool(maxPoolSize, initialPoolSize, h, transformerFactories));
     }
 
     /**
@@ -51,7 +52,7 @@ public class PoolManager {
      *
      * @param h Host to add into pool
      */
-    public void addHost(Host h) {
+    public void addHost(InetSocketAddress h) {
         addHost(DEFAULT_MAX_POOL_SIZE, DEFAULT_INITIAL_POOL_SIZE, h);
     }
 
@@ -106,7 +107,7 @@ public class PoolManager {
 
         }
         throw new AntidoteException("Cannot open connection to any host. " +
-                "(Configured hosts: " + pools.stream().map(p -> p.getHost() + ":" + p.getPort()).collect(Collectors.joining(", ")) + ")");
+                "(Configured hosts: " + pools.stream().map(p -> p.getInetSocketAddress().toString()).collect(Collectors.joining(", ")) + ")");
     }
 
 
