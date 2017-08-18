@@ -19,18 +19,18 @@ public class StaticTxTest extends AbstractAntidoteTest {
         int readCount = messageCounter.getStaticReadsCounter();
         int updateCount = messageCounter.getStaticUpdatesCounter();
 
-        RegisterRef<String> reg1 = bucket.register("staticReadWrite_reg1", ValueCoder.utf8String);
-        RegisterRef<String> reg2 = bucket.register("staticReadWrite_reg2", ValueCoder.utf8String);
+        RegisterKey<String> reg1 = Key.register("staticReadWrite_reg1", ValueCoder.utf8String);
+        RegisterKey<String> reg2 = Key.register("staticReadWrite_reg2", ValueCoder.utf8String);
 
         AntidoteStaticTransaction stx = antidoteClient.createStaticTransaction();
-        reg1.set(stx, "a");
-        reg2.set(stx, "b");
+        bucket.update(stx, reg1.assign("a"));
+        bucket.update(stx, reg2.assign("b"));
         stx.commitTransaction();
 
         BatchRead br = antidoteClient.newBatchRead();
-        BatchReadResult<String> v1 = reg1.read(br);
-        BatchReadResult<String> v2 = reg2.read(br);
-        br.commit();
+        BatchReadResult<String> v1 = bucket.read(br, reg1);
+        BatchReadResult<String> v2 = bucket.read(br, reg2);
+        br.commit(antidoteClient.noTransaction());
 
         assertEquals("a", v1.get());
         assertEquals("b", v2.get());
@@ -40,47 +40,19 @@ public class StaticTxTest extends AbstractAntidoteTest {
         assertEquals(updateCount + 1, messageCounter.getStaticUpdatesCounter());
     }
 
-
-    @Test
-    public void staticReadWrite2() {
-        // same as above, but using implicit commit
-
-        int readCount = messageCounter.getStaticReadsCounter();
-        int updateCount = messageCounter.getStaticUpdatesCounter();
-
-        RegisterRef<String> reg1 = bucket.register("staticReadWrite_reg1", ValueCoder.utf8String);
-        RegisterRef<String> reg2 = bucket.register("staticReadWrite_reg2", ValueCoder.utf8String);
-
-        AntidoteStaticTransaction stx = antidoteClient.createStaticTransaction();
-        reg1.set(stx, "a");
-        reg2.set(stx, "b");
-        stx.commitTransaction();
-
-        BatchRead br = antidoteClient.newBatchRead();
-        BatchReadResult<String> v1 = reg1.read(br);
-        BatchReadResult<String> v2 = reg2.read(br);
-
-        assertEquals("a", v1.get());
-        assertEquals("b", v2.get());
-
-        // We expect that there was one static read transaction and one static write:
-        assertEquals(readCount + 1, messageCounter.getStaticReadsCounter());
-        assertEquals(updateCount + 1, messageCounter.getStaticUpdatesCounter());
-    }
 
     @Test
     public void staticReadWrite3() {
-        // same as above, but using implicit commit
 
         int readCount = messageCounter.getStaticReadsCounter();
         int updateCount = messageCounter.getStaticUpdatesCounter();
 
-        RegisterRef<String> reg1 = bucket.register("staticReadWrite_reg1", ValueCoder.utf8String);
-        RegisterRef<String> reg2 = bucket.register("staticReadWrite_reg2", ValueCoder.utf8String);
+        RegisterKey<String> reg1 = Key.register("staticReadWrite_reg1", ValueCoder.utf8String);
+        RegisterKey<String> reg2 = Key.register("staticReadWrite_reg2", ValueCoder.utf8String);
 
         AntidoteStaticTransaction stx = antidoteClient.createStaticTransaction();
-        reg1.set(stx, "a");
-        reg2.set(stx, "b");
+        bucket.update(stx, reg1.assign("a"));
+        bucket.update(stx, reg2.assign("b"));
         stx.commitTransaction();
 
         class Obst {
@@ -96,7 +68,7 @@ public class StaticTxTest extends AbstractAntidoteTest {
 
         }
 
-        RegisterRef<Apfel> regA = bucket.register("staticReadWrite_reg1", new ValueCoder<Apfel>() {
+        RegisterKey<Apfel> regA = Key.register("staticReadWrite_reg1", new ValueCoder<Apfel>() {
             @Override
             public ByteString encode(Apfel value) {
                 return ByteString.copyFromUtf8("Apfel");
@@ -112,7 +84,7 @@ public class StaticTxTest extends AbstractAntidoteTest {
                 return (Apfel) value;
             }
         });
-        RegisterRef<Birne> regB = bucket.register("staticReadWrite_reg2", new ValueCoder<Birne>() {
+        RegisterKey<Birne> regB = Key.register("staticReadWrite_reg2", new ValueCoder<Birne>() {
             @Override
             public ByteString encode(Birne value) {
                 return ByteString.copyFromUtf8("Birne");
@@ -129,9 +101,8 @@ public class StaticTxTest extends AbstractAntidoteTest {
             }
         });
 
-        List<Obst> obstListe = antidoteClient.readObjects(antidoteClient.noTransaction(), Arrays.asList(regA, regB));
+        List<Obst> obstListe = bucket.readAll(antidoteClient.noTransaction(), Arrays.asList(regA, regB));
         assertEquals(Arrays.asList(new Apfel(), new Birne()), obstListe);
-
 
 
         // We expect that there was one static read transaction and one static write:

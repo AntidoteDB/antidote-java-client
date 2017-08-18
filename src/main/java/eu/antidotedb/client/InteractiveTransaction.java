@@ -6,6 +6,7 @@ import eu.antidotedb.antidotepb.AntidotePB.ApbStartTransaction;
 import eu.antidotedb.antidotepb.AntidotePB.ApbTxnProperties;
 import eu.antidotedb.client.messages.AntidoteRequest;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -143,7 +144,7 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
     }
 
     @Override
-    void performUpdates(List<AntidotePB.ApbUpdateOp.Builder> updateInstructions) {
+    void performUpdates(Collection<AntidotePB.ApbUpdateOp.Builder> updateInstructions) {
         if (getDescriptor() == null) {
             throw new AntidoteException("You need to start the transaction first");
         }

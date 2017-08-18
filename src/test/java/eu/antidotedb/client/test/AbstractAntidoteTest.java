@@ -20,7 +20,7 @@ public class AbstractAntidoteTest {
     final static boolean debugLog = false;
     final CountingTransformer messageCounter;
     final AntidoteClient antidoteClient;
-    final Bucket<String> bucket;
+    final Bucket bucket;
     final String bucketKey;
 
     public AbstractAntidoteTest() {

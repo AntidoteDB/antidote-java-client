@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.util.*;
 
+import static eu.antidotedb.client.Key.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -17,110 +18,120 @@ public class MapTests extends AbstractAntidoteTest {
 
     @Test
     public void testRef() {
-        MapRef<String> testmap = bucket.map_aw("testmap2");
+        MapKey testmap = Key.map_aw("testmap2");
 
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
-        testmap.counter("a").increment(tx, 5);
-        testmap.register("b", ValueCoder.utf8String).set(tx, "Hello");
+        bucket.update(tx,
+                testmap.update(
+                        counter("a").increment(5),
+                        register("b").assign("Hello")
+                ));
         tx.commitTransaction();
 
-        MapRef.MapReadResult<String> res = testmap.read(antidoteClient.noTransaction());
-        assertEquals(5, res.counter("a"));
-        assertEquals("Hello", res.register("b", ValueCoder.utf8String));
+        MapKey.MapReadResult res = bucket.read(antidoteClient.noTransaction(), testmap);
+        assertEquals(5, (long) res.get(counter("a")));
+        assertEquals("Hello", res.get(register("b")));
 
     }
 
     @Test
     public void testRefRemoveKey() {
-        MapRef<String> testmap = bucket.map_aw("testmap2");
+        MapKey testmap = Key.map_aw("testmap2");
 
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
-        testmap.counter("a").increment(tx, 5);
-        testmap.register("b", ValueCoder.utf8String).set(tx, "Hello");
+        bucket.update(tx, testmap.update(
+                counter("a").increment(5),
+                register("b").assign("Hello")
+        ));
         tx.commitTransaction();
 
-        testmap.removeKey(antidoteClient.noTransaction(), MapKey.register("b"));
+        bucket.update(antidoteClient.noTransaction(), testmap.removeKeys(register("b")));
 
-        MapRef.MapReadResult<String> res = testmap.read(antidoteClient.noTransaction());
-        assertEquals(set("a"), res.keySet());
-        assertEquals(5, res.counter("a"));
-        assertEquals(null, res.register("b", ValueCoder.utf8String));
+        MapKey.MapReadResult res = bucket.read(antidoteClient.noTransaction(), testmap);
+        assertEquals(hashset(counter("a")), res.keySet());
+        assertEquals(5, (long) res.get(counter("a")));
+        assertEquals(null, res.get(register("b")));
 
     }
 
     @Test
     public void nonexistingKey() {
-        List<String> res1 = bucket.set("doesnotexist").read(antidoteClient.noTransaction());
+        List<String> res1 = bucket.read(antidoteClient.noTransaction(), set("doesnotexist"));
         assertEquals(Collections.emptyList(), res1);
 
-        List<String> res2 = bucket.map_g("doesnotexist2").set("S").read(antidoteClient.noTransaction());
+        List<String> res2 = bucket.read(antidoteClient.noTransaction(), map_g("doesnotexist2")).get(set("S"));
         assertEquals(Collections.emptyList(), res2);
 
     }
 
-    @Test
-    public void nestedBatchRead() {
-        MapRef<String> testmap = bucket.map_aw("nestedBatchRead");
-        CounterRef a = testmap.counter("a");
-        CounterRef b = testmap.counter("b");
-
-        AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
-        a.increment(tx, 3);
-        b.increment(tx, 4);
-        tx.commitTransaction();
-
-        BatchRead batchRead = antidoteClient.newBatchRead();
-        BatchReadResult<Integer> aRes = a.read(batchRead);
-        BatchReadResult<Integer> bRes = b.read(batchRead);
-
-        assertEquals(3, (long) aRes.get());
-        assertEquals(4, (long) bRes.get());
-
-    }
-
-
-    @Test
-    public void testMutable() {
-        int readCount = messageCounter.getStaticReadsCounter();
-        int updateCount = messageCounter.getStaticUpdatesCounter();
-        {
-            MapRef<String> testmapRef = bucket.map_aw("testmap2");
-            CrdtMap<String, CrdtSet<String>> testmap = testmapRef.toMutable(CrdtSet.creator(ValueCoder.utf8String));
-
-            CrdtSet<String> a = testmap.get("a");
-            a.add("1");
-            a.add("2");
-            CrdtSet<String> b = testmap.get("b");
-            b.add("3");
-            testmap.push(antidoteClient.noTransaction());
-        }
-
-        {
-            CrdtMap<String, CrdtSet<String>> testmap = bucket.map_aw("testmap2", ValueCoder.utf8String).toMutable(CrdtSet.creator(ValueCoder.utf8String));
-            testmap.pull(antidoteClient.noTransaction());
+//    @Test
+//    public void nestedBatchRead() {
+//        MapKey testmap = Key.map_aw("nestedBatchRead");
+//        CounterKey a = counter("a");
+//        CounterKey b = counter("b");
+//
+//        AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
+//        bucket.update(tx, testmap.update(
+//                a.increment(3),
+//                b.increment(4)
+//        ));
+//        tx.commitTransaction();
+//
+//        BatchRead batchRead = antidoteClient.newBatchRead();
+//        BatchReadResult<Integer> aRes = bucket.read(batchRead, a);
+//        BatchReadResult<Integer> bRes = bucket.read(batchRead, b);
+//        batchRead.commit(antidoteClient.noTransaction());
+//
+//        assertEquals(3, (long) aRes.get());
+//        assertEquals(4, (long) bRes.get());
+//
+//    }
 
 
-            assertEquals(set("1", "2"), testmap.get("a").getValues());
-            assertEquals(set("3"), testmap.get("b").getValues());
-        }
-        // We expect that there was one static read transaction and one static write:
-        assertEquals(readCount + 1, messageCounter.getStaticReadsCounter());
-        assertEquals(updateCount + 1, messageCounter.getStaticUpdatesCounter());
-
-    }
+//    @Test
+//    public void testMutable() {
+//        int readCount = messageCounter.getStaticReadsCounter();
+//        int updateCount = messageCounter.getStaticUpdatesCounter();
+//        {
+//            MapKey testmapKey = Key.map_aw("testmap2");
+//            CrdtMap<String, CrdtSet<String>> testmap = testmapRef.toMutable(CrdtSet.creator(ValueCoder.utf8String));
+//
+//            CrdtSet<String> a = testmap.get("a");
+//            a.add("1");
+//            a.add("2");
+//            CrdtSet<String> b = testmap.get("b");
+//            b.add("3");
+//            testmap.push(antidoteClient.noTransaction());
+//        }
+//
+//        {
+//            CrdtMap<String, CrdtSet<String>> testmap = Key.map_aw("testmap2", ValueCoder.utf8String).toMutable(CrdtSet.creator(ValueCoder.utf8String));
+//            testmap.pull(antidoteClient.noTransaction());
+//
+//
+//            assertEquals(hashset("1", "2"), testmap.get("a").getValues());
+//            assertEquals(hashset("3"), testmap.get("b").getValues());
+//        }
+//        // We expect that there was one static read transaction and one static write:
+//        assertEquals(readCount + 1, messageCounter.getStaticReadsCounter());
+//        assertEquals(updateCount + 1, messageCounter.getStaticUpdatesCounter());
+//
+//    }
 
     @Test
     public void testMapResult() {
-        MapRef<String> map = bucket.map_rr("blubmap");
+        MapKey map = map_rr("blubmap");
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
-        map.integer("x").set(tx, 1);
-        map.integer("y").set(tx, 2);
-        map.integer("z").set(tx, 3);
+        bucket.update(tx, map.update(
+                integer("x").assign(1),
+                integer("y").assign(2),
+                integer("z").assign(3)
+        ));
         tx.commitTransaction();
 
-        MapRef.MapReadResult<String> readResult = map.read(antidoteClient.noTransaction());
+        MapKey.MapReadResult readResult = bucket.read(antidoteClient.noTransaction(), map);
 
-        assertEquals(set("x", "y", "z"), readResult.keySet());
+        assertEquals(hashset(integer("x"), integer("y"), integer("z")), readResult.keySet());
 
         Map<String, Long> result = readResult.asJavaMap(ResponseDecoder.integer());
 
@@ -133,28 +144,29 @@ public class MapTests extends AbstractAntidoteTest {
     }
 
     @Test
-    @Ignore // reset not yet implemented on Antidote site
     public void resetTest() {
-        MapRef<String> map = bucket.map_rr("aha");
+        MapKey map = map_rr("aha");
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
-        map.set("x").addAll(tx, Arrays.asList("1", "2", "3"));
-        map.set("y").addAll(tx, Arrays.asList("4", "5"));
+        bucket.update(tx, map.update(
+                set("x").addAll("1", "2", "3"),
+                set("y").addAll("4", "5")
+        ));
         tx.commitTransaction();
 
-        Map<String, List<String>> res1 = map.read(antidoteClient.noTransaction()).asJavaMap(ResponseDecoder.set());
+        Map<String, List<String>> res1 = bucket.read(antidoteClient.noTransaction(), map).asJavaMap(ResponseDecoder.set());
         Map<String, List<String>> expected = new HashMap<>();
         expected.put("x", Arrays.asList("1", "2", "3"));
         expected.put("y", Arrays.asList("4", "5"));
         assertEquals(expected, res1);
 
-        map.reset(antidoteClient.noTransaction());
-        Map<String, List<String>> res2 = map.read(antidoteClient.noTransaction()).asJavaMap(ResponseDecoder.set());
+        bucket.update(antidoteClient.noTransaction(), map.reset());
+        MapKey.MapReadResult res2 = bucket.read(antidoteClient.noTransaction(), map);
         assertTrue(res2.isEmpty());
 
 
     }
 
-    private <T> Set<T> set(T... ts) {
+    private <T> Set<T> hashset(T... ts) {
         return new LinkedHashSet<>(Arrays.asList(ts));
     }
 }

@@ -18,8 +18,7 @@ import java.util.List;
  * Every operation has to be executed in the context of a transaction.
  * See: {@link #startTransaction()}, {@link #createStaticTransaction()}, {@link #noTransaction()}, and {@link #newBatchRead()}.
  * <p>
- * Moreover there is {@link #readObjects(TransactionWithReads, Iterable)} to read several objects at once
- * and {@link #pull(TransactionWithReads, Iterable)} to update several mutable {@link AntidoteCRDT} objects at once.
+ * Moreover there is {@link #readObjects(TransactionWithReads, Iterable)} to read several objects at once.
  */
 public class AntidoteClient {
 
@@ -156,7 +155,7 @@ public class AntidoteClient {
      * The {@link BatchRead} can be committed using {@link BatchRead#commit} or {@link BatchRead#commit(TransactionWithReads)}.
      */
     public BatchRead newBatchRead() {
-        return new BatchRead(this);
+        return new BatchRead();
     }
 
     /**
@@ -182,43 +181,12 @@ public class AntidoteClient {
 
 
     /**
-     * Reads the values of a list of objects in one batch read
-     */
-    public <T> List<T> readObjects(TransactionWithReads tx, Iterable<? extends ObjectRef<? extends T>> objectRefs) {
-        BatchRead batchRead = newBatchRead();
-        List<BatchReadResult<? extends T>> results = new ArrayList<>();
-        for (ObjectRef<? extends T> objectRef : objectRefs) {
-            BatchReadResult<? extends T> res = objectRef.read(batchRead);
-            results.add(res);
-        }
-        batchRead.commit(tx);
-        List<T> list = new ArrayList<>();
-        for (BatchReadResult<? extends T> result : results) {
-            T t = result.get();
-            list.add(t);
-        }
-        return list;
-    }
-
-    /**
      * Use this for executing updates and reads without a transaction context.
      */
     public NoTransaction noTransaction() {
         return new NoTransaction(this);
     }
 
-    /**
-     * pulls in new state for a set of CRDTs
-     * <p>
-     * all reads are based on the same snapshot
-     */
-    public void pull(TransactionWithReads tx, Iterable<? extends AntidoteCRDT> objects) {
-        BatchRead batchRead = newBatchRead();
-        for (AntidoteCRDT object : objects) {
-            object.pull(batchRead);
-        }
-        batchRead.commit(tx);
-    }
 
 }
 

@@ -20,27 +20,27 @@ public class InteractiveTxTest extends AbstractAntidoteTest {
 
     @Test
     public void testInteractiveTx() {
-        RegisterRef<String> reg = bucket.register("testInteractiveTx_reg1", ValueCoder.utf8String);
+        RegisterKey<String> reg = Key.register("testInteractiveTx_reg1", ValueCoder.utf8String);
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            reg.set(tx, "Abc");
+            bucket.update(tx, reg.assign("Abc"));
             tx.commitTransaction();
         }
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            assertEquals("Abc", reg.read(tx));
-            reg.set(tx, "xyz");
-            assertEquals("xyz", reg.read(tx));
+            assertEquals("Abc", bucket.read(tx, reg));
+            bucket.update(tx, reg.assign("xyz"));
+            assertEquals("xyz", bucket.read(tx, reg));
             tx.commitTransaction();
         }
     }
 
     @Test
     public void testAbort() {
-        RegisterRef<String> reg = bucket.register("testAbort", ValueCoder.utf8String);
+        RegisterKey<String> reg = Key.register("testAbort", ValueCoder.utf8String);
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            reg.set(tx, "Abc");
+            bucket.update(tx, reg.assign("Abc"));
             tx.abortTransaction();
         }
-        String x = reg.read(antidoteClient.noTransaction());
+        String x = bucket.read(antidoteClient.noTransaction(), reg);
         assertEquals("", x);
     }
 
@@ -48,35 +48,35 @@ public class InteractiveTxTest extends AbstractAntidoteTest {
     @Test
     public void testMany() {
         IntStream.range(0, 100).parallel().forEach(i -> {
-            RegisterRef<String> reg = bucket.register("testInteractiveTx_reg" + i, ValueCoder.utf8String);
+            RegisterKey<String> reg = Key.register("testInteractiveTx_reg" + i, ValueCoder.utf8String);
             try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-                reg.set(tx, "" + i);
+                bucket.update(tx, reg.assign("" + i));
                 tx.commitTransaction();
             }
         });
-        RegisterRef<String> reg = bucket.register("testInteractiveTx_reg99", ValueCoder.utf8String);
+        RegisterKey<String> reg = Key.register("testInteractiveTx_reg99", ValueCoder.utf8String);
 
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            assertEquals("99", reg.read(tx));
+            assertEquals("99", bucket.read(tx, reg));
             tx.commitTransaction();
         }
     }
 
     @Test
     public void testManyBatch() {
-        RegisterRef<String> reg1 = bucket.register("manyBatch_reg1", ValueCoder.utf8String);
-        RegisterRef<String> reg2 = bucket.register("manyBatch_reg2", ValueCoder.utf8String);
+        RegisterKey<String> reg1 = Key.register("manyBatch_reg1", ValueCoder.utf8String);
+        RegisterKey<String> reg2 = Key.register("manyBatch_reg2", ValueCoder.utf8String);
 
         AntidoteStaticTransaction stx = antidoteClient.createStaticTransaction();
-        reg1.set(stx, "a");
-        reg2.set(stx, "b");
+        bucket.update(stx, reg1.assign("a"));
+        bucket.update(stx, reg2.assign("b"));
         stx.commitTransaction();
 
         IntStream.range(0, 100).forEach(i -> {
             try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
                 BatchRead br = antidoteClient.newBatchRead();
-                BatchReadResult<String> v1 = reg1.read(br);
-                BatchReadResult<String> v2 = reg2.read(br);
+                BatchReadResult<String> v1 = bucket.read(br, reg1);
+                BatchReadResult<String> v2 = bucket.read(br, reg2);
                 br.commit(tx);
                 tx.commitTransaction();
             }

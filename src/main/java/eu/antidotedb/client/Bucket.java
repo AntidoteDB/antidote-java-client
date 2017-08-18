@@ -2,28 +2,26 @@ package eu.antidotedb.client;
 
 import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB;
-import eu.antidotedb.antidotepb.AntidotePB.ApbReadObjectResp;
 
-public class Bucket<Key> implements CrdtContainer<Key> {
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class Bucket {
     private final ByteString name;
-    private final ValueCoder<Key> keyCoder;
 
-
-    Bucket(ByteString name, ValueCoder<Key> keyCoder) {
+    Bucket(ByteString name) {
         this.name = name;
-        this.keyCoder = keyCoder;
     }
 
-    public static Bucket<String> create(String name) {
-        return new Bucket<>(ByteString.copyFromUtf8(name), ValueCoder.utf8String);
+    public static Bucket create(String name) {
+        return new Bucket(ByteString.copyFromUtf8(name));
     }
 
-    public static <K> Bucket<K> create(String name, ValueCoder<K> keyCoder) {
-        return new Bucket<>(ByteString.copyFromUtf8(name), keyCoder);
-    }
-
-    public static <K> Bucket<K> create(ByteString name, ValueCoder<K> keyCoder) {
-        return new Bucket<>(name, keyCoder);
+    public static Bucket create(ByteString name) {
+        return new Bucket(name);
     }
 
 
@@ -31,32 +29,51 @@ public class Bucket<Key> implements CrdtContainer<Key> {
         return name;
     }
 
-
     @Override
-    public ApbReadObjectResp read(TransactionWithReads tx, AntidotePB.CRDT_type type, ByteString key) {
-        AntidotePB.ApbReadObjectsResp apbReadObjectsResp = tx.readHelper(name, key, type);
-        return apbReadObjectsResp.getObjects(0);
+    public String toString() {
+        return "Bucket-" + name;
     }
 
-    @Override
-    public BatchReadResult<ApbReadObjectResp> readBatch(BatchRead tx, AntidotePB.CRDT_type type, ByteString key) {
-        return tx.readHelper(name, key, type);
+    public <T> T read(TransactionWithReads tx, Key<T> key) {
+        AntidotePB.ApbReadObjectsResp resp = tx.readHelper(name, key.getKey(), key.getType());
+        if (resp.getSuccess()) {
+            return key.readResponseToValue(resp.getObjects(0));
+        } else {
+            throw new AntidoteException("Error when reading " + key + " (error code " + resp.getErrorcode() + ")");
+        }
     }
 
-    @Override
-    public void update(AntidoteTransaction tx, AntidotePB.CRDT_type type, ByteString key, AntidotePB.ApbUpdateOperation.Builder builder) {
-        AntidotePB.ApbUpdateOp.Builder update = AntidotePB.ApbUpdateOp.newBuilder();
-        AntidotePB.ApbBoundObject.Builder boundObject = AntidotePB.ApbBoundObject.newBuilder();
-        boundObject.setBucket(name);
-        boundObject.setKey(key);
-        boundObject.setType(type);
-        update.setBoundobject(boundObject);
-        update.setOperation(builder);
-        tx.performUpdate(update);
+
+    public <T> List<T> readAll(TransactionWithReads tx, Collection<? extends Key<? extends T>> keys) {
+        BatchRead batchRead = new BatchRead();
+        List<BatchReadResult<? extends T>> results = new ArrayList<>(keys.size());
+        for (Key<? extends T> key : keys) {
+            BatchReadResult<? extends T> read = read(batchRead, key);
+            results.add(read);
+        }
+        batchRead.commit(tx);
+        return results.stream()
+                .map(BatchReadResult::get)
+                .collect(Collectors.toList());
     }
 
-    @Override
-    public ValueCoder<Key> keyCoder() {
-        return keyCoder;
+
+    public <T> BatchReadResult<T> read(BatchRead tx, Key<T> key) {
+        BatchReadResult<AntidotePB.ApbReadObjectResp> resp = tx.readHelper(name, key.getKey(), key.getType());
+        return resp.map(key::readResponseToValue);
     }
+
+    public void update(AntidoteTransaction tx, InnerUpdateOp update) {
+        update(tx, Collections.singleton(update));
+    }
+
+    public void update(AntidoteTransaction tx, Collection<? extends InnerUpdateOp> updates) {
+        tx.performUpdates(updates.stream().map(this::makeUpd).collect(Collectors.toList()));
+    }
+
+    private AntidotePB.ApbUpdateOp.Builder makeUpd(InnerUpdateOp upd) {
+        return upd.getApbUpdate(name);
+    }
+
+
 }

@@ -8,7 +8,10 @@ import eu.antidotedb.client.InteractiveTransaction.TransactionStatus;
 import eu.antidotedb.client.messages.AntidoteRequest;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The Class AntidoteStaticTransaction.
@@ -69,7 +72,7 @@ public class AntidoteStaticTransaction extends AntidoteTransaction {
     }
 
     @Override
-    void performUpdates(List<ApbUpdateOp.Builder> updateInstructions) {
+    void performUpdates(Collection<ApbUpdateOp.Builder> updateInstructions) {
         transactionUpdateList.addAll(updateInstructions);
     }
 

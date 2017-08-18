@@ -30,39 +30,39 @@ public class AntidoteTest extends AbstractAntidoteTest {
 
     @Test(timeout = 10000)
     public void seqStaticTransaction() {
-        CounterRef lowCounter = bucket.counter("testCounter");
-        IntegerRef lowInt = bucket.integer("testInteger");
-        SetRef<String> orSetRef = bucket.set("testorSetRef", ValueCoder.utf8String);
+        CounterKey lowCounter = Key.counter("testCounter");
+        IntegerKey lowInt = Key.integer("testInteger");
+        SetKey<String> orSetKey = Key.set("testorSetRef", ValueCoder.utf8String);
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
-        lowInt.increment(tx, 3);
-        lowCounter.increment(tx, 4);
-        orSetRef.add(tx, "Hi");
-        orSetRef.add(tx, "Bye");
-        orSetRef.add(tx, "yo");
+        bucket.update(tx, lowInt.increment(3));
+        bucket.update(tx, lowCounter.increment(4));
+        bucket.update(tx, orSetKey.add("Hi"));
+        bucket.update(tx, orSetKey.add("Bye"));
+        bucket.update(tx, orSetKey.add("yo"));
         tx.commitTransaction();
     }
 
 
-    @Test(timeout = 10000)
-    public void seqInteractiveTransaction() {
-        CounterRef lowCounter = bucket.counter("testCounter5");
-        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            CrdtCounter counter = lowCounter.toMutable();
-            counter.pull(tx);
-            int oldValue = counter.getValue();
-            assertEquals(0, oldValue);
-            counter.increment(5);
-            counter.push(tx);
-            tx.commitTransaction();
-        }
-
-        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            CrdtCounter counter = lowCounter.toMutable();
-            counter.pull(tx);
-            int newValue = counter.getValue();
-            assertEquals(5, newValue);
-            tx.commitTransaction();
-        }
+//    @Test(timeout = 10000)
+//    public void seqInteractiveTransaction() {
+//        CounterKey lowCounter = bucket.counter("testCounter5");
+//        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+//            CrdtCounter counter = lowCounter.toMutable();
+//            counter.pull(tx);
+//            int oldValue = counter.getValue();
+//            assertEquals(0, oldValue);
+//            counter.increment(5);
+//            counter.push(tx);
+//            tx.commitTransaction();
+//        }
+//
+//        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+//            CrdtCounter counter = lowCounter.toMutable();
+//            counter.pull(tx);
+//            int newValue = counter.getValue();
+//            assertEquals(5, newValue);
+//            tx.commitTransaction();
+//        }
 
 
 //        counter.increment(antidoteTransaction);
@@ -70,260 +70,260 @@ public class AntidoteTest extends AbstractAntidoteTest {
 //        antidoteTransaction.commitTransaction();
 //        int newValue = counter.getValue();
 //        Assert.assertEquals(newValue, oldValue + 2);
-    }
+//    }
 
-
-    @Test(timeout = 10000)
-    public void testTransaction() {
-
-        CounterRef lowCounter = bucket.counter("testCounter");
-        CounterRef lowCounter1 = bucket.counter("testCounter1");
-        IntegerRef lowInt = bucket.integer("testInteger");
-        IntegerRef lowInt1 = bucket.integer("testInteger1");
-        SetRef<String> orSetRef = bucket.set("testorSetRef", ValueCoder.utf8String);
-        SetRef<String> orSetRef1 = bucket.set("testorSetRef1", ValueCoder.utf8String);
-        SetRef<String> rwSetRef = bucket.set_removeWins("testrwSetRef", ValueCoder.utf8String);
-        SetRef<String> rwSetRef1 = bucket.set_removeWins("testrwSetRef1", ValueCoder.utf8String);
-        MVRegisterRef<String> mvRegisterRef = bucket.multiValueRegister("testMvRegisterRef", ValueCoder.utf8String);
-        MVRegisterRef<String> mvRegisterRef1 = bucket.multiValueRegister("testMvRegisterRef1", ValueCoder.utf8String);
-        RegisterRef<String> lwwRegisterRef = bucket.register("testLwwRegisterRef", ValueCoder.utf8String);
-        RegisterRef<String> lwwRegisterRef1 = bucket.register("testLwwRegisterRef1", ValueCoder.utf8String);
-
-        MapRef<String> gMapRef = bucket.map_g("testgMapRef");
-        MapRef<String> awMapRef = bucket.map_aw("testawMapRef");
-
-
-        CrdtInteger integer = lowInt1.toMutable();
-        CrdtCounter counter = lowCounter1.toMutable();
-        CrdtSet<String> orSet2 = orSetRef.toMutable();
-        CrdtSet<String> orSet = orSetRef1.toMutable();
-        CrdtSet<String> rwSet = rwSetRef1.toMutable();
-        CrdtSet<String> rwSet2 = rwSetRef.toMutable();
-        CrdtMVRegister<String> mvRegister = mvRegisterRef1.toMutable();
-        CrdtMVRegister<String> mvRegister2 = mvRegisterRef.toMutable();
-        CrdtRegister<String> lwwRegister = lwwRegisterRef1.toMutable();
-        CrdtRegister<String> lwwRegister2 = lwwRegisterRef.toMutable();
-        CrdtMapDynamic<String> awMap = awMapRef.toMutable();
-        CrdtMapDynamic<String> gMap = gMapRef.toMutable();
-
-        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            lowInt.increment(tx, 3);
-            lowCounter.increment(tx, 4);
-            orSetRef.add(tx, "Hi");
-            orSetRef.add(tx, "Bye");
-            orSetRef.add(tx, "yo");
-            rwSetRef.add(tx, "Hi2");
-            rwSetRef.add(tx, "Bye2");
-            mvRegisterRef.set(tx, "mvValue1");
-            mvRegisterRef.set(tx, "mvValue2");
-            lwwRegisterRef.set(tx, "lwwValue1");
-            tx.commitTransaction();
-        }
-
-        List<ObjectRef<?>> objectRefs = new ArrayList<>();
-        objectRefs.add(lowInt);
-        objectRefs.add(lowCounter);
-        objectRefs.add(orSetRef);
-        objectRefs.add(rwSetRef);
-        objectRefs.add(mvRegisterRef);
-        objectRefs.add(lwwRegisterRef);
-
-        List<Object> objects = antidoteClient.readObjects(antidoteClient.noTransaction(), objectRefs);
-
-        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            integer.increment(1);
-            integer.push(tx);
-            counter.increment(2);
-            counter.push(tx);
-            orSet.add("hi");
-            orSet.add("bye");
-            orSet.add("ciao");
-            orSet.push(tx);
-            rwSet.add("hi2");
-            rwSet.add("bye2");
-            rwSet.push(tx);
-            mvRegister.set("mvValue");
-            mvRegister.push(tx);
-            lwwRegister.set("lwwValue");
-            lwwRegister.push(tx);
-            orSet2.addAll(((List<String>) objects.get(2)));
-            orSet2.push(tx);
-            rwSet2.addAll(((List<String>) objects.get(3)));
-            rwSet2.push(tx);
-            lwwRegister2.set(((String) objects.get(5)));
-            lwwRegister2.push(tx);
-            tx.commitTransaction();
-        }
-
-        antidoteClient.pull(antidoteClient.noTransaction(), Arrays.asList(integer, counter, orSet, rwSet, mvRegister, lwwRegister, orSet2, rwSet2, mvRegister2, lwwRegister2));
-
-        Assert.assertEquals(3L, objects.get(0));
-        Assert.assertEquals(4, objects.get(1));
-
-        Assert.assertEquals(1, integer.getValue());
-        Assert.assertEquals(2, counter.getValue());
-        Assert.assertThat(orSet.getValues(), CoreMatchers.hasItems("hi", "bye", "ciao"));
-        Assert.assertThat(rwSet.getValues(), CoreMatchers.hasItem("hi2"));
-        Assert.assertThat(orSet2.getValues(), CoreMatchers.hasItems("Bye", "Hi", "yo"));
-        Assert.assertThat(rwSet2.getValues(), CoreMatchers.hasItems("Bye2", "Hi2"));
-        Assert.assertThat(rwSet.getValues(), CoreMatchers.hasItem("bye2"));
-        assertTrue(mvRegister.getValues().contains("mvValue"));
-        assertTrue(lwwRegister.getValue().contains("lwwValue"));
-        assertTrue(lwwRegister2.getValue().contains("lwwValue1"));
-
-        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-
-            List<MapRef<String>> maps = Arrays.asList(awMapRef, gMapRef);
-            for (MapRef<String> map : maps) {
-
-                map.counter("testCounter").increment(tx, 5);
-
-                IntegerRef testInteger = map.integer("testInteger");
-                testInteger.set(tx, 6);
-                testInteger.increment(tx, 2);
-
-                SetRef<String> testORSet = map.set("testORSet", ValueCoder.utf8String);
-                testORSet.add(tx, "Hi");
-                testORSet.add(tx, "Hi2");
-                testORSet.add(tx, "Hi3");
-
-                SetRef<String> testRWSet = map.set_removeWins("testRWSet", ValueCoder.utf8String);
-                testRWSet.add(tx, "Hi");
-                testRWSet.add(tx, "Hi2");
-                testRWSet.add(tx, "Hi3");
-
-
-                RegisterRef<String> testRegister = map.register("testRegister", ValueCoder.utf8String);
-                testRegister.set(tx, "Hi");
-
-                MVRegisterRef<String> testMVRegister = map.multiValueRegister("testMVRegister", ValueCoder.utf8String);
-                testMVRegister.set(tx, "Hi");
-
-                MapRef<String> testAWMap = map.map_aw("testAWMap");
-                testAWMap.counter("testCounter").increment(tx, 5);
-
-                MapRef<String> testGMap = map.map_g("testGMap");
-                testGMap.counter("testCounter").increment(tx, 5);
-            }
-
-
-            tx.commitTransaction();
-        }
-
-        antidoteClient.pull(antidoteClient.noTransaction(), Arrays.asList(awMap, gMap));
-
-
-        Assert.assertEquals(5, awMap.counter("testCounter").getValue());
-        Assert.assertEquals(8, awMap.integer("testInteger").getValue());
-        Assert.assertThat(awMap.set("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
-        Assert.assertThat(awMap.set_RemoveWins("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
-        Assert.assertEquals("Hi", awMap.register("testRegister", ValueCoder.utf8String).getValue());
-        Assert.assertThat(awMap.multiValueRegister("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
-        Assert.assertEquals(5, awMap.map_aw("testAWMap").counter("testCounter").getValue());
-        Assert.assertEquals(5, awMap.map_g("testGMap").counter("testCounter").getValue());
-
-        Assert.assertEquals(5, gMap.counter("testCounter").getValue());
-        Assert.assertEquals(8, gMap.integer("testInteger").getValue());
-        Assert.assertThat(gMap.set("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
-        Assert.assertThat(gMap.set_RemoveWins("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
-        Assert.assertEquals("Hi", gMap.register("testRegister", ValueCoder.utf8String).getValue());
-        Assert.assertThat(gMap.multiValueRegister("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
-        Assert.assertEquals(5, gMap.map_aw("testAWMap").counter("testCounter").getValue());
-        Assert.assertEquals(5, gMap.map_g("testGMap").counter("testCounter").getValue());
-
-        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-
-            awMapRef.counter("testCounter").increment(tx, 5);
-
-            awMapRef.integer("testInteger").increment(tx, 2);
-
-            SetRef<String> testORSet = awMapRef.set("testORSet", ValueCoder.utf8String);
-            testORSet.remove(tx, "Hi");
-            testORSet.remove(tx, "Hi2");
-
-            SetRef<String> testRWSet = awMapRef.set_removeWins("testRWSet", ValueCoder.utf8String);
-            testRWSet.remove(tx, "Hi");
-            testRWSet.remove(tx, "Hi2");
-
-            awMapRef.register("testRegister", ValueCoder.utf8String).set(tx, "Hi2");
-
-            awMapRef.multiValueRegister("testMVRegister", ValueCoder.utf8String).set(tx, "Hi2");
-
-            awMapRef.map_aw("testAWMap").counter("testCounter").increment(tx, 1);
-
-            awMapRef.map_g("testGMap").counter("testCounter").increment(tx, 1);
-
-            tx.abortTransaction();
-        }
-
-        antidoteClient.pull(antidoteClient.noTransaction(), Arrays.asList(awMap));
-
-        Assert.assertEquals(5, awMap.counter("testCounter").getValue());
-        Assert.assertEquals(8, awMap.integer("testInteger").getValue());
-        Assert.assertThat(awMap.set("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
-        Assert.assertThat(awMap.set_RemoveWins("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
-        Assert.assertEquals("Hi", awMap.register("testRegister", ValueCoder.utf8String).getValue());
-        Assert.assertThat(awMap.multiValueRegister("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
-        Assert.assertEquals(5, awMap.map_aw("testAWMap").counter("testCounter").getValue());
-        Assert.assertEquals(5, awMap.map_g("testGMap").counter("testCounter").getValue());
-
-        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-
-            awMapRef.counter("testCounter").increment(tx, 5);
-
-            awMapRef.integer("testInteger").increment(tx, 2);
-
-            SetRef<String> testORSet = awMapRef.set("testORSet", ValueCoder.utf8String);
-            testORSet.remove(tx, "Hi");
-            testORSet.remove(tx, "Hi2");
-
-            SetRef<String> testRWSet = awMapRef.set_removeWins("testRWSet", ValueCoder.utf8String);
-            testRWSet.remove(tx, "Hi");
-            testRWSet.remove(tx, "Hi2");
-
-            awMapRef.register("testRegister", ValueCoder.utf8String).set(tx, "Hi2");
-
-            awMapRef.multiValueRegister("testMVRegister", ValueCoder.utf8String).set(tx, "Hi2");
-
-            awMapRef.map_aw("testAWMap").counter("testCounter").increment(tx, 5);
-
-            awMapRef.map_g("testGMap").counter("testCounter").increment(tx, 5);
-
-            tx.commitTransaction();
-        }
-
-
-        antidoteClient.pull(antidoteClient.noTransaction(), Collections.singletonList(awMap));
-
-        Assert.assertEquals(10, awMap.counter("testCounter").getValue());
-        Assert.assertEquals(10, awMap.integer("testInteger").getValue());
-        Assert.assertThat(awMap.set("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.not(CoreMatchers.hasItems("Hi", "Hi2")));
-        Assert.assertThat(awMap.set_RemoveWins("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.not(CoreMatchers.hasItems("Hi", "Hi2")));
-        Assert.assertEquals("Hi2", awMap.register("testRegister", ValueCoder.utf8String).getValue());
-        Assert.assertThat(awMap.multiValueRegister("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi2"));
-        Assert.assertEquals(10, awMap.map_aw("testAWMap").counter("testCounter").getValue());
-        Assert.assertEquals(10, awMap.map_g("testGMap").counter("testCounter").getValue());
-
-    }
+//
+//    @Test(timeout = 10000)
+//    public void testTransaction() {
+//
+//        CounterKey lowCounter = bucket.counter("testCounter");
+//        CounterKey lowCounter1 = bucket.counter("testCounter1");
+//        IntegerKey lowInt = bucket.integer("testInteger");
+//        IntegerKey lowInt1 = bucket.integer("testInteger1");
+//        SetKey<String> orSetKey = bucket.set("testorSetRef", ValueCoder.utf8String);
+//        SetKey<String> orSetRef1 = bucket.set("testorSetRef1", ValueCoder.utf8String);
+//        SetKey<String> rwSetKey = bucket.set_removeWins("testrwSetRef", ValueCoder.utf8String);
+//        SetKey<String> rwSetRef1 = bucket.set_removeWins("testrwSetRef1", ValueCoder.utf8String);
+//        MVRegisterKey<String> mvRegisterKey = bucket.multiValueRegister("testMvRegisterRef", ValueCoder.utf8String);
+//        MVRegisterKey<String> mvRegisterRef1 = bucket.multiValueRegister("testMvRegisterRef1", ValueCoder.utf8String);
+//        RegisterKey<String> lwwRegisterKey = bucket.register("testLwwRegisterRef", ValueCoder.utf8String);
+//        RegisterKey<String> lwwRegisterRef1 = bucket.register("testLwwRegisterRef1", ValueCoder.utf8String);
+//
+//        MapKey<String> gMapKey = bucket.map_g("testgMapRef");
+//        MapKey<String> awMapKey = bucket.map_aw("testawMapRef");
+//
+//
+//        CrdtInteger integer = lowInt1.toMutable();
+//        CrdtCounter counter = lowCounter1.toMutable();
+//        CrdtSet<String> orSet2 = orSetRef.toMutable();
+//        CrdtSet<String> orSet = orSetRef1.toMutable();
+//        CrdtSet<String> rwSet = rwSetRef1.toMutable();
+//        CrdtSet<String> rwSet2 = rwSetRef.toMutable();
+//        CrdtMVRegister<String> mvRegister = mvRegisterRef1.toMutable();
+//        CrdtMVRegister<String> mvRegister2 = mvRegisterRef.toMutable();
+//        CrdtRegister<String> lwwRegister = lwwRegisterRef1.toMutable();
+//        CrdtRegister<String> lwwRegister2 = lwwRegisterRef.toMutable();
+//        CrdtMapDynamic<String> awMap = awMapRef.toMutable();
+//        CrdtMapDynamic<String> gMap = gMapRef.toMutable();
+//
+//        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+//            lowInt.increment(tx, 3);
+//            lowCounter.increment(tx, 4);
+//            orSetRef.add(tx, "Hi");
+//            orSetRef.add(tx, "Bye");
+//            orSetRef.add(tx, "yo");
+//            rwSetRef.add(tx, "Hi2");
+//            rwSetRef.add(tx, "Bye2");
+//            mvRegisterRef.set(tx, "mvValue1");
+//            mvRegisterRef.set(tx, "mvValue2");
+//            lwwRegisterRef.set(tx, "lwwValue1");
+//            tx.commitTransaction();
+//        }
+//
+//        List<ObjectKey<?>> objectRefs = new ArrayList<>();
+//        objectRefs.add(lowInt);
+//        objectRefs.add(lowCounter);
+//        objectRefs.add(orSetRef);
+//        objectRefs.add(rwSetRef);
+//        objectRefs.add(mvRegisterRef);
+//        objectRefs.add(lwwRegisterRef);
+//
+//        List<Object> objects = antidoteClient.readObjects(antidoteClient.noTransaction(), objectRefs);
+//
+//        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+//            integer.increment(1);
+//            integer.push(tx);
+//            counter.increment(2);
+//            counter.push(tx);
+//            orSet.add("hi");
+//            orSet.add("bye");
+//            orSet.add("ciao");
+//            orSet.push(tx);
+//            rwSet.add("hi2");
+//            rwSet.add("bye2");
+//            rwSet.push(tx);
+//            mvRegister.set("mvValue");
+//            mvRegister.push(tx);
+//            lwwRegister.set("lwwValue");
+//            lwwRegister.push(tx);
+//            orSet2.addAll(((List<String>) objects.get(2)));
+//            orSet2.push(tx);
+//            rwSet2.addAll(((List<String>) objects.get(3)));
+//            rwSet2.push(tx);
+//            lwwRegister2.set(((String) objects.get(5)));
+//            lwwRegister2.push(tx);
+//            tx.commitTransaction();
+//        }
+//
+//        antidoteClient.pull(antidoteClient.noTransaction(), Arrays.asList(integer, counter, orSet, rwSet, mvRegister, lwwRegister, orSet2, rwSet2, mvRegister2, lwwRegister2));
+//
+//        Assert.assertEquals(3L, objects.get(0));
+//        Assert.assertEquals(4, objects.get(1));
+//
+//        Assert.assertEquals(1, integer.getValue());
+//        Assert.assertEquals(2, counter.getValue());
+//        Assert.assertThat(orSet.getValues(), CoreMatchers.hasItems("hi", "bye", "ciao"));
+//        Assert.assertThat(rwSet.getValues(), CoreMatchers.hasItem("hi2"));
+//        Assert.assertThat(orSet2.getValues(), CoreMatchers.hasItems("Bye", "Hi", "yo"));
+//        Assert.assertThat(rwSet2.getValues(), CoreMatchers.hasItems("Bye2", "Hi2"));
+//        Assert.assertThat(rwSet.getValues(), CoreMatchers.hasItem("bye2"));
+//        assertTrue(mvRegister.getValues().contains("mvValue"));
+//        assertTrue(lwwRegister.getValue().contains("lwwValue"));
+//        assertTrue(lwwRegister2.getValue().contains("lwwValue1"));
+//
+//        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+//
+//            List<MapKey<String>> maps = Arrays.asList(awMapRef, gMapRef);
+//            for (MapKey<String> map : maps) {
+//
+//                map.counter("testCounter").increment(tx, 5);
+//
+//                IntegerKey testInteger = map.integer("testInteger");
+//                testInteger.set(tx, 6);
+//                testInteger.increment(tx, 2);
+//
+//                SetKey<String> testORSet = map.set("testORSet", ValueCoder.utf8String);
+//                testORSet.add(tx, "Hi");
+//                testORSet.add(tx, "Hi2");
+//                testORSet.add(tx, "Hi3");
+//
+//                SetKey<String> testRWSet = map.set_removeWins("testRWSet", ValueCoder.utf8String);
+//                testRWSet.add(tx, "Hi");
+//                testRWSet.add(tx, "Hi2");
+//                testRWSet.add(tx, "Hi3");
+//
+//
+//                RegisterKey<String> testRegister = map.register("testRegister", ValueCoder.utf8String);
+//                testRegister.set(tx, "Hi");
+//
+//                MVRegisterKey<String> testMVRegister = map.multiValueRegister("testMVRegister", ValueCoder.utf8String);
+//                testMVRegister.set(tx, "Hi");
+//
+//                MapKey<String> testAWMap = map.map_aw("testAWMap");
+//                testAWMap.counter("testCounter").increment(tx, 5);
+//
+//                MapKey<String> testGMap = map.map_g("testGMap");
+//                testGMap.counter("testCounter").increment(tx, 5);
+//            }
+//
+//
+//            tx.commitTransaction();
+//        }
+//
+//        antidoteClient.pull(antidoteClient.noTransaction(), Arrays.asList(awMap, gMap));
+//
+//
+//        Assert.assertEquals(5, awMap.counter("testCounter").getValue());
+//        Assert.assertEquals(8, awMap.integer("testInteger").getValue());
+//        Assert.assertThat(awMap.set("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
+//        Assert.assertThat(awMap.set_RemoveWins("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
+//        Assert.assertEquals("Hi", awMap.register("testRegister", ValueCoder.utf8String).getValue());
+//        Assert.assertThat(awMap.multiValueRegister("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
+//        Assert.assertEquals(5, awMap.map_aw("testAWMap").counter("testCounter").getValue());
+//        Assert.assertEquals(5, awMap.map_g("testGMap").counter("testCounter").getValue());
+//
+//        Assert.assertEquals(5, gMap.counter("testCounter").getValue());
+//        Assert.assertEquals(8, gMap.integer("testInteger").getValue());
+//        Assert.assertThat(gMap.set("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
+//        Assert.assertThat(gMap.set_RemoveWins("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
+//        Assert.assertEquals("Hi", gMap.register("testRegister", ValueCoder.utf8String).getValue());
+//        Assert.assertThat(gMap.multiValueRegister("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
+//        Assert.assertEquals(5, gMap.map_aw("testAWMap").counter("testCounter").getValue());
+//        Assert.assertEquals(5, gMap.map_g("testGMap").counter("testCounter").getValue());
+//
+//        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+//
+//            awMapRef.counter("testCounter").increment(tx, 5);
+//
+//            awMapRef.integer("testInteger").increment(tx, 2);
+//
+//            SetKey<String> testORSet = awMapRef.set("testORSet", ValueCoder.utf8String);
+//            testORSet.remove(tx, "Hi");
+//            testORSet.remove(tx, "Hi2");
+//
+//            SetKey<String> testRWSet = awMapRef.set_removeWins("testRWSet", ValueCoder.utf8String);
+//            testRWSet.remove(tx, "Hi");
+//            testRWSet.remove(tx, "Hi2");
+//
+//            awMapRef.register("testRegister", ValueCoder.utf8String).set(tx, "Hi2");
+//
+//            awMapRef.multiValueRegister("testMVRegister", ValueCoder.utf8String).set(tx, "Hi2");
+//
+//            awMapRef.map_aw("testAWMap").counter("testCounter").increment(tx, 1);
+//
+//            awMapRef.map_g("testGMap").counter("testCounter").increment(tx, 1);
+//
+//            tx.abortTransaction();
+//        }
+//
+//        antidoteClient.pull(antidoteClient.noTransaction(), Arrays.asList(awMap));
+//
+//        Assert.assertEquals(5, awMap.counter("testCounter").getValue());
+//        Assert.assertEquals(8, awMap.integer("testInteger").getValue());
+//        Assert.assertThat(awMap.set("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
+//        Assert.assertThat(awMap.set_RemoveWins("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi3"));
+//        Assert.assertEquals("Hi", awMap.register("testRegister", ValueCoder.utf8String).getValue());
+//        Assert.assertThat(awMap.multiValueRegister("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi"));
+//        Assert.assertEquals(5, awMap.map_aw("testAWMap").counter("testCounter").getValue());
+//        Assert.assertEquals(5, awMap.map_g("testGMap").counter("testCounter").getValue());
+//
+//        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+//
+//            awMapRef.counter("testCounter").increment(tx, 5);
+//
+//            awMapRef.integer("testInteger").increment(tx, 2);
+//
+//            SetKey<String> testORSet = awMapRef.set("testORSet", ValueCoder.utf8String);
+//            testORSet.remove(tx, "Hi");
+//            testORSet.remove(tx, "Hi2");
+//
+//            SetKey<String> testRWSet = awMapRef.set_removeWins("testRWSet", ValueCoder.utf8String);
+//            testRWSet.remove(tx, "Hi");
+//            testRWSet.remove(tx, "Hi2");
+//
+//            awMapRef.register("testRegister", ValueCoder.utf8String).set(tx, "Hi2");
+//
+//            awMapRef.multiValueRegister("testMVRegister", ValueCoder.utf8String).set(tx, "Hi2");
+//
+//            awMapRef.map_aw("testAWMap").counter("testCounter").increment(tx, 5);
+//
+//            awMapRef.map_g("testGMap").counter("testCounter").increment(tx, 5);
+//
+//            tx.commitTransaction();
+//        }
+//
+//
+//        antidoteClient.pull(antidoteClient.noTransaction(), Collections.singletonList(awMap));
+//
+//        Assert.assertEquals(10, awMap.counter("testCounter").getValue());
+//        Assert.assertEquals(10, awMap.integer("testInteger").getValue());
+//        Assert.assertThat(awMap.set("testORSet", ValueCoder.utf8String).getValues(), CoreMatchers.not(CoreMatchers.hasItems("Hi", "Hi2")));
+//        Assert.assertThat(awMap.set_RemoveWins("testRWSet", ValueCoder.utf8String).getValues(), CoreMatchers.not(CoreMatchers.hasItems("Hi", "Hi2")));
+//        Assert.assertEquals("Hi2", awMap.register("testRegister", ValueCoder.utf8String).getValue());
+//        Assert.assertThat(awMap.multiValueRegister("testMVRegister", ValueCoder.utf8String).getValues(), CoreMatchers.hasItem("Hi2"));
+//        Assert.assertEquals(10, awMap.map_aw("testAWMap").counter("testCounter").getValue());
+//        Assert.assertEquals(10, awMap.map_g("testGMap").counter("testCounter").getValue());
+//
+//    }
 /*
     @Test(timeout = 10000)
     public void testStaticTransaction() {
         List<ObjectRef> objectRefs = new ArrayList<>();
-        CounterRef lowCounter = bucket.counter("testCounter");
-        CounterRef lowCounter1 = bucket.counter("testCounter1");
-        IntegerRef lowInt = bucket.integer("testInteger");
-        IntegerRef lowInt1 = bucket.integer("testInteger1");
-        SetRef<String> orSetRef = bucket.<String>set("testorSetRef", ValueCoder.utf8String);
-        SetRef<String> orSetRef1 = bucket.<String>set("testorSetRef1", ValueCoder.utf8String);
-        SetRef<String> rwSetRef = bucket.set_removeWins("testrwSetRef", ValueCoder.utf8String);
-        SetRef<String> rwSetRef1 = bucket.set_removeWins("testrwSetRef1", ValueCoder.utf8String);
-        MVRegisterRef mvRegisterRef = bucket.multiValueRegister("testMvRegisterRef", ValueCoder.utf8String);
-        MVRegisterRef mvRegisterRef1 = bucket.multiValueRegister("testMvRegisterRef1", ValueCoder.utf8String);
-        RegisterRef<String> lwwRegisterRef = bucket.register("testLwwRegisterRef", ValueCoder.utf8String);
-        RegisterRef<String> lwwRegisterRef1 = bucket.register("testLwwRegisterRef1", ValueCoder.utf8String);
+        CounterKey lowCounter = bucket.counter("testCounter");
+        CounterKey lowCounter1 = bucket.counter("testCounter1");
+        IntegerKey lowInt = bucket.integer("testInteger");
+        IntegerKey lowInt1 = bucket.integer("testInteger1");
+        SetKey<String> orSetKey = bucket.<String>set("testorSetRef", ValueCoder.utf8String);
+        SetKey<String> orSetRef1 = bucket.<String>set("testorSetRef1", ValueCoder.utf8String);
+        SetKey<String> rwSetKey = bucket.set_removeWins("testrwSetRef", ValueCoder.utf8String);
+        SetKey<String> rwSetRef1 = bucket.set_removeWins("testrwSetRef1", ValueCoder.utf8String);
+        MVRegisterKey mvRegisterKey = bucket.multiValueRegister("testMvRegisterRef", ValueCoder.utf8String);
+        MVRegisterKey mvRegisterRef1 = bucket.multiValueRegister("testMvRegisterRef1", ValueCoder.utf8String);
+        RegisterKey<String> lwwRegisterKey = bucket.register("testLwwRegisterRef", ValueCoder.utf8String);
+        RegisterKey<String> lwwRegisterRef1 = bucket.register("testLwwRegisterRef1", ValueCoder.utf8String);
 
-        GMapRef gMapRef = bucket.map_g("testgMap");
-        AWMapRef awMapRef = bucket.map_aw("testawMapRef");
+        GMapKey gMapKey = bucket.map_g("testgMap");
+        AWMapKey awMapKey = bucket.map_aw("testawMapRef");
 
         CrdtInteger integer = lowInt1.createAntidoteInteger();
         CrdtCounter counter = lowCounter1.createAntidoteCounter();
@@ -547,19 +547,19 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 10000)
     public void readStaticTransaction() {
         List<ObjectRef> objectRefs = new ArrayList<>();
-        CounterRef lowCounter = bucket.counter("testCounter");
-        CounterRef lowCounter1 = bucket.counter("testCounter1");
-        IntegerRef lowInt = bucket.integer("testInteger");
-        IntegerRef lowInt1 = bucket.integer("testInteger1");
-        SetRef<String> orSetRef = bucket.<String>set("testorSetRef", ValueCoder.utf8String);
-        SetRef<String> orSetRef1 = bucket.<String>set("testorSetRef1", ValueCoder.utf8String);
-        SetRef<String> rwSetRef = bucket.set_removeWins("testrwSetRef", ValueCoder.utf8String);
-        SetRef<String> rwSetRef1 = bucket.set_removeWins("testrwSetRef1", ValueCoder.utf8String);
-        MVRegisterRef mvRegisterRef = bucket.multiValueRegister("testMvRegisterRef", ValueCoder.utf8String);
-        MVRegisterRef mvRegisterRef1 = bucket.multiValueRegister("testMvRegisterRef1", ValueCoder.utf8String);
-        RegisterRef<String> lwwRegisterRef = bucket.register("testLwwRegisterRef", ValueCoder.utf8String);
-        RegisterRef<String> lwwRegisterRef1 = bucket.register("testLwwRegisterRef1", ValueCoder.utf8String);
-        AWMapRef awMapRef = bucket.map_aw("testawMapRef");
+        CounterKey lowCounter = bucket.counter("testCounter");
+        CounterKey lowCounter1 = bucket.counter("testCounter1");
+        IntegerKey lowInt = bucket.integer("testInteger");
+        IntegerKey lowInt1 = bucket.integer("testInteger1");
+        SetKey<String> orSetKey = bucket.<String>set("testorSetRef", ValueCoder.utf8String);
+        SetKey<String> orSetRef1 = bucket.<String>set("testorSetRef1", ValueCoder.utf8String);
+        SetKey<String> rwSetKey = bucket.set_removeWins("testrwSetRef", ValueCoder.utf8String);
+        SetKey<String> rwSetRef1 = bucket.set_removeWins("testrwSetRef1", ValueCoder.utf8String);
+        MVRegisterKey mvRegisterKey = bucket.multiValueRegister("testMvRegisterRef", ValueCoder.utf8String);
+        MVRegisterKey mvRegisterRef1 = bucket.multiValueRegister("testMvRegisterRef1", ValueCoder.utf8String);
+        RegisterKey<String> lwwRegisterKey = bucket.register("testLwwRegisterRef", ValueCoder.utf8String);
+        RegisterKey<String> lwwRegisterRef1 = bucket.register("testLwwRegisterRef1", ValueCoder.utf8String);
+        AWMapKey awMapKey = bucket.map_aw("testawMapRef");
 
         CrdtInteger integer = lowInt1.createAntidoteInteger();
         CrdtCounter counter = lowCounter1.createAntidoteCounter();
@@ -753,97 +753,97 @@ public class AntidoteTest extends AbstractAntidoteTest {
     }
 */
 
-    @Test(timeout = 10000)
-    public void counterRefCommitStaticTransaction() {
-        CounterRef lowCounter1 = bucket.counter("testCounter5");
-        CounterRef lowCounter2 = bucket.counter("testCounter3");
-        CrdtCounter counter1 = lowCounter1.toMutable();
-        CrdtCounter counter2 = lowCounter2.toMutable();
-        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            counter1.pull(tx);
-            counter2.pull(tx);
-            tx.commitTransaction();
-
-        }
-        int oldValue1 = counter1.getValue();
-        int oldValue2 = counter2.getValue();
-        AntidoteStaticTransaction staticTx = antidoteClient.createStaticTransaction();
-        lowCounter1.increment(staticTx, 5);
-        lowCounter1.increment(staticTx, 5);
-        lowCounter2.increment(staticTx, 3);
-        lowCounter2.increment(staticTx, 3);
-        staticTx.commitTransaction();
-
-        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            counter1.pull(tx);
-            counter2.pull(tx);
-            tx.commitTransaction();
-        }
-        int newValue1 = counter1.getValue();
-        int newValue2 = counter2.getValue();
-        Assert.assertEquals(newValue1, oldValue1 + 10);
-        Assert.assertEquals(newValue2, oldValue2 + 6);
-
-        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
-            counter1.pull(tx);
-            counter2.pull(tx);
-            newValue1 = counter1.getValue();
-            newValue2 = counter2.getValue();
-            tx.commitTransaction();
-        }
-        Assert.assertEquals(newValue1, oldValue1 + 10);
-        Assert.assertEquals(newValue2, oldValue2 + 6);
-    }
-
-
-    @Test(timeout = 10000)
-    public void counterRefCommitTransaction() {
-        CounterRef lowCounter1 = bucket.counter("testCounter5");
-        CounterRef lowCounter2 = bucket.counter("testCounter3");
-        InteractiveTransaction antidoteTransaction = antidoteClient.startTransaction();
-        CrdtCounter counter1old = lowCounter1.toMutable();
-        counter1old.pull(antidoteTransaction);
-        int oldValue1 = counter1old.getValue();
-        CrdtCounter counter2old = lowCounter2.toMutable();
-        counter2old.pull(antidoteTransaction);
-        int oldValue2 = counter2old.getValue();
-
-        antidoteTransaction.commitTransaction();
-
-        InteractiveTransaction tx = antidoteClient.startTransaction();
-        lowCounter1.increment(tx, 5);
-        lowCounter1.increment(tx, 5);
-        lowCounter2.increment(tx, 3);
-        lowCounter2.increment(tx, 3);
-        tx.commitTransaction();
-        tx.close();
-
-        antidoteTransaction = antidoteClient.startTransaction();
-        CrdtCounter counter1new = lowCounter1.toMutable();
-        counter1new.pull(antidoteTransaction);
-        CrdtCounter counter2new = lowCounter2.toMutable();
-        counter2new.pull(antidoteTransaction);
-        antidoteTransaction.commitTransaction();
-
-        int newValue1 = counter1new.getValue();
-        int newValue2 = counter2new.getValue();
-        Assert.assertEquals(newValue1, oldValue1 + 10);
-        Assert.assertEquals(newValue2, oldValue2 + 6);
-        antidoteTransaction = antidoteClient.startTransaction();
-        counter1new.pull(antidoteTransaction);
-        counter2new.pull(antidoteTransaction);
-        newValue1 = counter1new.getValue();
-        newValue2 = counter2new.getValue();
-        antidoteTransaction.commitTransaction();
-        Assert.assertEquals(newValue1, oldValue1 + 10);
-        Assert.assertEquals(newValue2, oldValue2 + 6);
-    }
+//    @Test(timeout = 10000)
+//    public void counterRefCommitStaticTransaction() {
+//        CounterKey lowCounter1 = bucket.counter("testCounter5");
+//        CounterKey lowCounter2 = bucket.counter("testCounter3");
+//        CrdtCounter counter1 = lowCounter1.toMutable();
+//        CrdtCounter counter2 = lowCounter2.toMutable();
+//        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+//            counter1.pull(tx);
+//            counter2.pull(tx);
+//            tx.commitTransaction();
+//
+//        }
+//        int oldValue1 = counter1.getValue();
+//        int oldValue2 = counter2.getValue();
+//        AntidoteStaticTransaction staticTx = antidoteClient.createStaticTransaction();
+//        lowCounter1.increment(staticTx, 5);
+//        lowCounter1.increment(staticTx, 5);
+//        lowCounter2.increment(staticTx, 3);
+//        lowCounter2.increment(staticTx, 3);
+//        staticTx.commitTransaction();
+//
+//        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+//            counter1.pull(tx);
+//            counter2.pull(tx);
+//            tx.commitTransaction();
+//        }
+//        int newValue1 = counter1.getValue();
+//        int newValue2 = counter2.getValue();
+//        Assert.assertEquals(newValue1, oldValue1 + 10);
+//        Assert.assertEquals(newValue2, oldValue2 + 6);
+//
+//        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+//            counter1.pull(tx);
+//            counter2.pull(tx);
+//            newValue1 = counter1.getValue();
+//            newValue2 = counter2.getValue();
+//            tx.commitTransaction();
+//        }
+//        Assert.assertEquals(newValue1, oldValue1 + 10);
+//        Assert.assertEquals(newValue2, oldValue2 + 6);
+//    }
+//
+//
+//    @Test(timeout = 10000)
+//    public void counterRefCommitTransaction() {
+//        CounterKey lowCounter1 = bucket.counter("testCounter5");
+//        CounterKey lowCounter2 = bucket.counter("testCounter3");
+//        InteractiveTransaction antidoteTransaction = antidoteClient.startTransaction();
+//        CrdtCounter counter1old = lowCounter1.toMutable();
+//        counter1old.pull(antidoteTransaction);
+//        int oldValue1 = counter1old.getValue();
+//        CrdtCounter counter2old = lowCounter2.toMutable();
+//        counter2old.pull(antidoteTransaction);
+//        int oldValue2 = counter2old.getValue();
+//
+//        antidoteTransaction.commitTransaction();
+//
+//        InteractiveTransaction tx = antidoteClient.startTransaction();
+//        lowCounter1.increment(tx, 5);
+//        lowCounter1.increment(tx, 5);
+//        lowCounter2.increment(tx, 3);
+//        lowCounter2.increment(tx, 3);
+//        tx.commitTransaction();
+//        tx.close();
+//
+//        antidoteTransaction = antidoteClient.startTransaction();
+//        CrdtCounter counter1new = lowCounter1.toMutable();
+//        counter1new.pull(antidoteTransaction);
+//        CrdtCounter counter2new = lowCounter2.toMutable();
+//        counter2new.pull(antidoteTransaction);
+//        antidoteTransaction.commitTransaction();
+//
+//        int newValue1 = counter1new.getValue();
+//        int newValue2 = counter2new.getValue();
+//        Assert.assertEquals(newValue1, oldValue1 + 10);
+//        Assert.assertEquals(newValue2, oldValue2 + 6);
+//        antidoteTransaction = antidoteClient.startTransaction();
+//        counter1new.pull(antidoteTransaction);
+//        counter2new.pull(antidoteTransaction);
+//        newValue1 = counter1new.getValue();
+//        newValue2 = counter2new.getValue();
+//        antidoteTransaction.commitTransaction();
+//        Assert.assertEquals(newValue1, oldValue1 + 10);
+//        Assert.assertEquals(newValue2, oldValue2 + 6);
+//    }
 /*
     @Test(timeout = 10000)
     public void commitTransaction() {
         antidoteTransaction = antidoteClient.startTransaction();
-        CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
-        CounterRef lowCounter2 = new CounterRef("testCounter3", bucket, antidoteClient);
+        CounterKey lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
+        CounterKey lowCounter2 = new CounterRef("testCounter3", bucket, antidoteClient);
         CrdtCounter counter1old = lowCounter1.createAntidoteCounter(antidoteTransaction);
         int oldValue1 = counter1old.getValue();
         CrdtCounter counter2old = lowCounter2.createAntidoteCounter(antidoteTransaction);
@@ -879,8 +879,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 10000)
     public void commitStaticTransaction() {
         antidoteTransaction = antidoteClient.startTransaction();
-        CounterRef lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
-        CounterRef lowCounter2 = new CounterRef("testCounter3", bucket, antidoteClient);
+        CounterKey lowCounter1 = new CounterRef("testCounter5", bucket, antidoteClient);
+        CounterKey lowCounter2 = new CounterRef("testCounter3", bucket, antidoteClient);
         CrdtCounter counter1old = lowCounter1.createAntidoteCounter(antidoteTransaction);
         int oldValue1 = counter1old.getValue();
         CrdtCounter counter2old = lowCounter2.createAntidoteCounter(antidoteTransaction);
@@ -915,7 +915,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     public void incBy2Test() {
 
         antidoteTransaction = antidoteClient.startTransaction();
-        CounterRef lowCounter = new CounterRef("testCounter5", bucket, antidoteClient);
+        CounterKey lowCounter = new CounterRef("testCounter5", bucket, antidoteClient);
         CrdtCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
         int oldValue = counter.getValue();
         counter.increment(antidoteTransaction);
@@ -933,7 +933,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 2000)
     public void decrementToZeroTest() {
         antidoteTransaction = antidoteClient.startTransaction();
-        CounterRef lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
+        CounterKey lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
         CrdtCounter testCounter = lowCounter.createAntidoteCounter(antidoteTransaction);
         testCounter.increment(0 - testCounter.getValue(), antidoteTransaction);
         Assert.assertEquals(testCounter.getValue(), 0); //operation executed locally
@@ -946,7 +946,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     public void incBy5Test() {
         antidoteTransaction = antidoteClient.startTransaction();
 
-        CounterRef lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
+        CounterKey lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
         CrdtCounter counter = lowCounter.createAntidoteCounter(antidoteTransaction);
         int oldValue = counter.getValue();
         counter.increment(5, antidoteTransaction);
@@ -963,7 +963,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 2000)
     public void addElemTest() {
         antidoteTransaction = antidoteClient.startTransaction();
-        SetRef<String> lowSet = new SetRef<String>("testSet", bucket, antidoteClient);
+        SetKey<String> lowSet = new SetKey<String>("testSet", bucket, antidoteClient);
         CrdtSet<String> testSet = lowSet.createAntidoteORSet(antidoteTransaction);
         testSet.addElement("element", antidoteTransaction);
         antidoteTransaction.commitTransaction();
@@ -976,7 +976,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
         List<String> elements = new ArrayList<String>();
         elements.add("Hi");
         elements.add("Bye");
-        SetRef<String> lowSet = new SetRef<String>("testSet", bucket, antidoteClient);
+        SetKey<String> lowSet = new SetKey<String>("testSet", bucket, antidoteClient);
         CrdtSet<String> testSet = lowSet.createAntidoteORSet(antidoteTransaction);
         testSet.addElement(elements, antidoteTransaction);
         testSet.removeElement("Hi", antidoteTransaction);
@@ -988,7 +988,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 2000)
     public void addElemsTest() {
         antidoteTransaction = antidoteClient.startTransaction();
-        SetRef<String> lowSet = new SetRef<String>("testSet1", bucket, antidoteClient);
+        SetKey<String> lowSet = new SetKey<String>("testSet1", bucket, antidoteClient);
         List<String> elements = new ArrayList<String>();
         elements.add("Wall");
         elements.add("Ball");
@@ -1000,7 +1000,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 2000)
     public void remElemsTest() {
         antidoteTransaction = antidoteClient.startTransaction();
-        SetRef<String> lowSet = new SetRef<String>("testSet1", bucket, antidoteClient);
+        SetKey<String> lowSet = new SetKey<String>("testSet1", bucket, antidoteClient);
         List<String> elements = new ArrayList<String>();
         elements.add("Hi");
         elements.add("Bye");
@@ -1018,7 +1018,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 2000)
     public void updateRegTest() {
         antidoteTransaction = antidoteClient.startTransaction();
-        RegisterRef<String> lowReg = new RegisterRef<String>("testReg", bucket, antidoteClient);
+        RegisterKey<String> lowReg = new RegisterKey<String>("testReg", bucket, antidoteClient);
 
         CrdtRegister<String> testReg = lowReg.createAntidoteLWWRegister(antidoteTransaction);
         testReg.setValue("hi", antidoteTransaction);
@@ -1031,7 +1031,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 2000)
     public void updateMVRegTest() {
         antidoteTransaction = antidoteClient.startTransaction();
-        MVRegisterRef lowReg = new MVRegisterRef("testReg", bucket, antidoteClient);
+        MVRegisterKey lowReg = new MVRegisterRef("testReg", bucket, antidoteClient);
 
         CrdtMVRegister<String> testReg = lowReg.createAntidoteMVRegister(antidoteTransaction);
         testReg.setValue("hi", antidoteTransaction);
@@ -1044,7 +1044,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 2000)
     public void incIntBy1Test() {
         antidoteTransaction = antidoteClient.startTransaction();
-        IntegerRef lowInt = new IntegerRef("testInteger", bucket, antidoteClient);
+        IntegerKey lowInt = new IntegerRef("testInteger", bucket, antidoteClient);
         CrdtInteger integer = lowInt.createAntidoteInteger(antidoteTransaction);
         int oldValue = integer.getValue();
         integer.increment(antidoteTransaction);
@@ -1056,7 +1056,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 2000)
     public void decBy5Test() {
         antidoteTransaction = antidoteClient.startTransaction();
-        IntegerRef lowInt = new IntegerRef("testInteger", bucket, antidoteClient);
+        IntegerKey lowInt = new IntegerRef("testInteger", bucket, antidoteClient);
         CrdtInteger integer = lowInt.createAntidoteInteger(antidoteTransaction);
         int oldValue = integer.getValue();
         integer.increment(-5, antidoteTransaction);
@@ -1068,7 +1068,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 2000)
     public void setIntTest() {
         antidoteTransaction = antidoteClient.startTransaction();
-        IntegerRef lowInt = new IntegerRef("testInteger", bucket, antidoteClient);
+        IntegerKey lowInt = new IntegerRef("testInteger", bucket, antidoteClient);
         CrdtInteger integer = lowInt.createAntidoteInteger(antidoteTransaction);
         integer.setValue(42, antidoteTransaction);
         antidoteTransaction.commitTransaction();
@@ -1079,7 +1079,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     public void counterTest() {
         antidoteTransaction = antidoteClient.startTransaction();
         String counterKey = "counterKey";
-        AWMapRef lowMap = new AWMapRef("testMapBestMap12", bucket, antidoteClient);
+        AWMapKey lowMap = new AWMapRef("testMapBestMap12", bucket, antidoteClient);
         AntidoteOuterAWMap testMap = lowMap.createAntidoteAWMap(antidoteTransaction);
         AntidoteMapUpdate counterUpdate = AntidoteMapUpdate.createCounterIncrement(5);
         testMap.update(counterKey, counterUpdate, antidoteTransaction);
@@ -1103,7 +1103,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
         antidoteTransaction = antidoteClient.startTransaction();
         String integerKey = "integerKey";
         String mapKey = "mapKey";
-        AWMapRef lowMap = new AWMapRef("testMapBestMap12", bucket, antidoteClient);
+        AWMapKey lowMap = new AWMapRef("testMapBestMap12", bucket, antidoteClient);
         AntidoteOuterAWMap testMap = lowMap.createAntidoteAWMap(antidoteTransaction);
         AntidoteMapUpdate integerUpdate = AntidoteMapUpdate.createIntegerIncrement(5);
         AntidoteMapUpdate mapUpdate = AntidoteMapUpdate.createAWMapUpdate(integerKey, integerUpdate);
@@ -1127,7 +1127,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     public void registerTest() {
         antidoteTransaction = antidoteClient.startTransaction();
         String registerKey = "registerKey";
-        AWMapRef lowMap = new AWMapRef("testMapBestMap3", bucket, antidoteClient);
+        AWMapKey lowMap = new AWMapRef("testMapBestMap3", bucket, antidoteClient);
         AntidoteOuterAWMap testMap = lowMap.createAntidoteAWMap(antidoteTransaction);
         AntidoteMapUpdate registerUpdate = AntidoteMapUpdate.createRegisterSet("yes");
         testMap.update(registerKey, registerUpdate, antidoteTransaction);
@@ -1161,7 +1161,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     public void mvRegisterTest() {
         antidoteTransaction = antidoteClient.startTransaction();
         String registerKey = "mvRegisterKey";
-        AWMapRef lowMap = new AWMapRef("testMapBestMap3", bucket, antidoteClient);
+        AWMapKey lowMap = new AWMapRef("testMapBestMap3", bucket, antidoteClient);
         AntidoteOuterAWMap testMap = lowMap.createAntidoteAWMap(antidoteTransaction);
         AntidoteMapUpdate registerUpdate = AntidoteMapUpdate.createMVRegisterSet("yes");
         testMap.update(registerKey, registerUpdate, antidoteTransaction);
@@ -1195,7 +1195,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     public void orSetTest() {
         antidoteTransaction = antidoteClient.startTransaction();
         String setKey = "orSetKey";
-        AWMapRef lowMap = new AWMapRef("testMapBestMap3", bucket, antidoteClient);
+        AWMapKey lowMap = new AWMapRef("testMapBestMap3", bucket, antidoteClient);
         AntidoteOuterAWMap testMap = lowMap.createAntidoteAWMap(antidoteTransaction);
         AntidoteMapUpdate setUpdate = AntidoteMapUpdate.createORSetAdd("yes");
         testMap.update(setKey, setUpdate, antidoteTransaction);
@@ -1221,7 +1221,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     public void rwSetTest() {
         antidoteTransaction = antidoteClient.startTransaction();
         String setKey = "rwSetKey";
-        AWMapRef lowMap = new AWMapRef("testMapBestMap3", bucket, antidoteClient);
+        AWMapKey lowMap = new AWMapRef("testMapBestMap3", bucket, antidoteClient);
         AntidoteOuterAWMap testMap = lowMap.createAntidoteAWMap(antidoteTransaction);
         AntidoteMapUpdate setUpdate = AntidoteMapUpdate.createRWSetAdd("yes");
         testMap.update(setKey, setUpdate, antidoteTransaction);
@@ -1247,7 +1247,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     public void rwSetTest4() {
         antidoteTransaction = antidoteClient.startTransaction();
         String setKey = "rwSetKey";
-        GMapRef lowMap = new GMapRef("testMapBestMap4", bucket, antidoteClient);
+        GMapKey lowMap = new GMapRef("testMapBestMap4", bucket, antidoteClient);
         AntidoteOuterGMap testMap = lowMap.createAntidoteGMap(antidoteTransaction);
         AntidoteMapUpdate setUpdate = AntidoteMapUpdate.createRWSetAdd("yes");
         testMap.update(setKey, setUpdate, antidoteTransaction);
@@ -1272,7 +1272,7 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 10000)
     public void createRemoveTest() {
         antidoteTransaction = antidoteClient.startTransaction();
-        AWMapRef lowMap = new AWMapRef("emptyMapBestMap", bucket, antidoteClient);
+        AWMapKey lowMap = new AWMapRef("emptyMapBestMap", bucket, antidoteClient);
 
 
         AntidoteOuterAWMap testMap = lowMap.createAntidoteAWMap();
@@ -1360,14 +1360,14 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 10000)
     public void updateTest() {
         antidoteTransaction = antidoteClient.startTransaction();
-        CounterRef lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
-        IntegerRef lowInteger = new IntegerRef("testInteger", bucket, antidoteClient);
-        RegisterRef<String> lowLWWRegister = new RegisterRef<String>("testRegister", bucket, antidoteClient);
-        MVRegisterRef lowMVRegister = new MVRegisterRef("testMVRegister", bucket, antidoteClient);
-        SetRef<String> lowORSet = new SetRef<String>("testORSet", bucket, antidoteClient);
-        SetRef<String> lowRWSet = new SetRef<String>("testRWSet", bucket, antidoteClient);
-        AWMapRef lowAWMap = new AWMapRef("testAWMap", bucket, antidoteClient);
-        GMapRef lowGMap = new GMapRef("testGMap", bucket, antidoteClient);
+        CounterKey lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
+        IntegerKey lowInteger = new IntegerRef("testInteger", bucket, antidoteClient);
+        RegisterKey<String> lowLWWRegister = new RegisterKey<String>("testRegister", bucket, antidoteClient);
+        MVRegisterKey lowMVRegister = new MVRegisterRef("testMVRegister", bucket, antidoteClient);
+        SetKey<String> lowORSet = new SetKey<String>("testORSet", bucket, antidoteClient);
+        SetKey<String> lowRWSet = new SetKey<String>("testRWSet", bucket, antidoteClient);
+        AWMapKey lowAWMap = new AWMapRef("testAWMap", bucket, antidoteClient);
+        GMapKey lowGMap = new GMapRef("testGMap", bucket, antidoteClient);
 
 
         lowCounter.increment(2, antidoteTransaction);
@@ -1479,12 +1479,12 @@ public class AntidoteTest extends AbstractAntidoteTest {
 
     @Test(timeout = 10000)
     public void transactionTest() {
-        RegisterRef<String> lowLWWRegister = new RegisterRef<String>("testRegister", bucket, antidoteClient);
-        MVRegisterRef lowMVRegister = new MVRegisterRef("testMVRegister", bucket, antidoteClient);
-        SetRef<String> lowORSet = new SetRef<String>("testORSet", bucket, antidoteClient);
-        SetRef<String> lowRWSet = new SetRef<String>("testRWSet", bucket, antidoteClient);
-        AWMapRef lowAWMap = new AWMapRef("testAWMap", bucket, antidoteClient);
-        GMapRef lowGMap = new GMapRef("testGMap", bucket, antidoteClient);
+        RegisterKey<String> lowLWWRegister = new RegisterKey<String>("testRegister", bucket, antidoteClient);
+        MVRegisterKey lowMVRegister = new MVRegisterRef("testMVRegister", bucket, antidoteClient);
+        SetKey<String> lowORSet = new SetKey<String>("testORSet", bucket, antidoteClient);
+        SetKey<String> lowRWSet = new SetKey<String>("testRWSet", bucket, antidoteClient);
+        AWMapKey lowAWMap = new AWMapRef("testAWMap", bucket, antidoteClient);
+        GMapKey lowGMap = new GMapRef("testGMap", bucket, antidoteClient);
 
         AntidoteMapKey counterKey = new AntidoteMapKey(AntidoteType.CounterType, "testCounter");
         AntidoteMapKey integerKey = new AntidoteMapKey(AntidoteType.IntegerType, "testInteger");
@@ -1512,8 +1512,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
         AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate("testCounter", counterUpdate);
         AntidoteMapUpdate gMapUpdate = AntidoteMapUpdate.createGMapUpdate("testCounter", counterUpdate);
         antidoteTransaction = antidoteClient.startTransaction();
-        CounterRef lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
-        IntegerRef lowInteger = new IntegerRef("testInteger", bucket, antidoteClient);
+        CounterKey lowCounter = new CounterRef("testCounter", bucket, antidoteClient);
+        IntegerKey lowInteger = new IntegerRef("testInteger", bucket, antidoteClient);
 
         lowCounter.increment(2, antidoteTransaction);
         lowInteger.set(7, antidoteTransaction);
@@ -1597,8 +1597,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
         AntidoteMapUpdate awMapUpdate2 = AntidoteMapUpdate.createAWMapUpdate("innerGMap", gMapUpdate);
         AntidoteMapUpdate gMapUpdate2 = AntidoteMapUpdate.createGMapUpdate("innerAWMap", awMapUpdate);
 
-        AWMapRef lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
-        GMapRef lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
+        AWMapKey lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
+        GMapKey lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
 
 
         lowAWMap.update(new AntidoteMapKey(AntidoteType.CounterType, "counterKey"), counterUpdate, antidoteTransaction);
@@ -1657,8 +1657,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
         AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate("integerKey", integerUpdate);
         AntidoteMapUpdate awMapUpdate2 = AntidoteMapUpdate.createAWMapUpdate("innerAWMap", awMapUpdate);
 
-        AWMapRef lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
-        GMapRef lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
+        AWMapKey lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
+        GMapKey lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
 
 
         lowAWMap.update(new AntidoteMapKey(AntidoteType.IntegerType, "integerKey"), integerUpdate, antidoteTransaction);
@@ -1720,8 +1720,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
         AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate("orSetKey", orSetUpdate);
         AntidoteMapUpdate awMapUpdate2 = AntidoteMapUpdate.createAWMapUpdate("innerAWMap", awMapUpdate);
 
-        AWMapRef lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
-        GMapRef lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
+        AWMapKey lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
+        GMapKey lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
 
 
         lowAWMap.update(new AntidoteMapKey(AntidoteType.ORSetType, "orSetKey"), orSetUpdate, antidoteTransaction);
@@ -1781,8 +1781,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
         AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate("rwSetKey", rwSetUpdate);
         AntidoteMapUpdate awMapUpdate2 = AntidoteMapUpdate.createAWMapUpdate("innerAWMap", awMapUpdate);
 
-        AWMapRef lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
-        GMapRef lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
+        AWMapKey lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
+        GMapKey lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
 
 
         lowAWMap.update(new AntidoteMapKey(AntidoteType.RWSetType, "rwSetKey"), rwSetUpdate, antidoteTransaction);
@@ -1844,8 +1844,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
         AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate("registerKey", registerUpdate);
         AntidoteMapUpdate awMapUpdate2 = AntidoteMapUpdate.createAWMapUpdate("innerAWMap", awMapUpdate);
 
-        AWMapRef lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
-        GMapRef lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
+        AWMapKey lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
+        GMapKey lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
 
         lowAWMap.update(new AntidoteMapKey(AntidoteType.LWWRegisterType, "registerKey"), registerUpdate, antidoteTransaction);
         lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate, antidoteTransaction);
@@ -1905,8 +1905,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
         AntidoteMapUpdate awMapUpdate = AntidoteMapUpdate.createAWMapUpdate("mvRegisterKey", mvRegisterUpdate);
         AntidoteMapUpdate awMapUpdate2 = AntidoteMapUpdate.createAWMapUpdate("innerAWMap", awMapUpdate);
 
-        AWMapRef lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
-        GMapRef lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
+        AWMapKey lowAWMap = new AWMapRef("outerAWMap", bucket, antidoteClient);
+        GMapKey lowGMap = new GMapRef("outerGMap", bucket, antidoteClient);
 
         lowAWMap.update(new AntidoteMapKey(AntidoteType.MVRegisterType, "mvRegisterKey"), mvRegisterUpdate, antidoteTransaction);
         lowAWMap.update(new AntidoteMapKey(AntidoteType.AWMapType, "innerAWMap"), awMapUpdate, antidoteTransaction);

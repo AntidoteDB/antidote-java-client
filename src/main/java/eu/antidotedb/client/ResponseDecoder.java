@@ -96,22 +96,20 @@ public abstract class ResponseDecoder<Value> {
     }
 
 
-    public static <K> ResponseDecoder<MapRef.MapReadResult<K>> map(ValueCoder<K> keyCoder) {
-        return new ResponseDecoder<MapRef.MapReadResult<K>>() {
+    public static <K> ResponseDecoder<MapKey.MapReadResult> map() {
+        return new ResponseDecoder<MapKey.MapReadResult>() {
             @Override
-            MapRef.MapReadResult<K> readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+            MapKey.MapReadResult readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
                 if (resp == null) {
-                    return new MapRef.MapReadResult<>(Collections.emptyList(), keyCoder);
+                    return new MapKey.MapReadResult(Collections.emptyList());
                 } else if (resp.getCounter() == null) {
                     throw new AntidoteException("Invalid response " + resp);
                 }
-                return new MapRef.MapReadResult<>(resp.getMap().getEntriesList(), keyCoder);
+                return new MapKey.MapReadResult(resp.getMap().getEntriesList());
             }
         };
     }
 
-    public static ResponseDecoder<MapRef.MapReadResult<String>> map() {
-        return map(ValueCoder.utf8String);
-    }
+
 
 }

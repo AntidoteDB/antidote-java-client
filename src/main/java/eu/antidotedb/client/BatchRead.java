@@ -11,19 +11,7 @@ import java.util.ArrayList;
 public class BatchRead {
 
     private ArrayList<BatchReadResultImpl> requests = new ArrayList<>();
-    private AntidoteClient antidoteClient;
 
-
-    BatchRead(AntidoteClient antidoteClient) {
-        this.antidoteClient = antidoteClient;
-    }
-
-    /**
-     * Commits this batch-read using a static transaction
-     */
-    public void commit() {
-        commit(antidoteClient.noTransaction());
-    }
 
     /**
      * Performs this batch of reads in the context of another transaction

@@ -25,8 +25,8 @@ class BatchReadResultImpl implements BatchReadResult<ApbReadObjectResp> {
     @Override
     public ApbReadObjectResp get() {
         if (result == null) {
-            // result not computed yet, commit batchRead to get result
-            batchRead.commit();
+            // result not computed yet
+            throw new IllegalStateException("Must commit batch-read before reading result.");
         }
         return result;
     }

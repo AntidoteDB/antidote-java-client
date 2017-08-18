@@ -1,7 +1,8 @@
 package eu.antidotedb.client.test;
 
+import eu.antidotedb.client.Key;
 import eu.antidotedb.client.NoTransaction;
-import eu.antidotedb.client.RegisterRef;
+import eu.antidotedb.client.RegisterKey;
 import eu.antidotedb.client.ValueCoder;
 import org.junit.Test;
 
@@ -14,17 +15,17 @@ public class NoTxTest extends AbstractAntidoteTest {
 
     @Test
     public void withoutTransactions() {
-        RegisterRef<String> reg = bucket.register("withoutTransactions_reg1", ValueCoder.utf8String);
+        RegisterKey<String> reg = Key.register("withoutTransactions_reg1", ValueCoder.utf8String);
         NoTransaction tx = antidoteClient.noTransaction();
-        reg.set(tx, "Abc");
-        assertEquals("Abc", reg.read(tx));
-        reg.set(tx, "xyz");
-        assertEquals("xyz", reg.read(tx));
+        bucket.update(tx, reg.assign("Abc"));
+        assertEquals("Abc", bucket.read(tx, reg));
+        bucket.update(tx, reg.assign("xyz"));
+        assertEquals("xyz", bucket.read(tx, reg));
     }
 
     @Test
     public void defaultValue() {
-        RegisterRef<String> reg = bucket.register("empty", ValueCoder.utf8String);
-        assertEquals("", reg.read(antidoteClient.noTransaction()));
+        RegisterKey<String> reg = Key.register("empty", ValueCoder.utf8String);
+        assertEquals("", bucket.read(antidoteClient.noTransaction(), reg));
     }
 }

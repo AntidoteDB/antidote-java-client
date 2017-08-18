@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.client.messages.AntidoteRequest;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -24,7 +25,7 @@ public class NoTransaction extends TransactionWithReads {
     }
 
     @Override
-    void performUpdates(List<AntidotePB.ApbUpdateOp.Builder> updateInstructions) {
+    void performUpdates(Collection<AntidotePB.ApbUpdateOp.Builder> updateInstructions) {
         AntidotePB.ApbStaticUpdateObjects.Builder updateMessage = AntidotePB.ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
         AntidotePB.ApbStartTransaction.Builder startTransaction = AntidotePB.ApbStartTransaction.newBuilder();
         updateMessage.setTransaction(startTransaction);
