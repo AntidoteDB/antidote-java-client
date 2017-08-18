@@ -142,7 +142,7 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
             throw new AntidoteException("You need to start the transaction first");
         }
 
-        List<AntidotePB.ApbUpdateOp.Builder> updates = mergeUpdates();
+        LinkedList<AntidotePB.ApbUpdateOp.Builder> updates = mergeUpdates();
 
         AntidotePB.ApbUpdateObjects.Builder updateMessage = AntidotePB.ApbUpdateObjects.newBuilder();
         updateMessage.setTransactionDescriptor(getDescriptor());
@@ -158,16 +158,16 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         }
     }
 
-    private List<AntidotePB.ApbUpdateOp.Builder> mergeUpdates() {
-        List<AntidotePB.ApbUpdateOp.Builder> res = new LinkedList<>();
+    private LinkedList<AntidotePB.ApbUpdateOp.Builder> mergeUpdates() {
+        LinkedList<AntidotePB.ApbUpdateOp.Builder> res = new LinkedList<>();
 
-        Map<AntidotePB.ApbBoundObject, List<AntidotePB.ApbUpdateOperation>> updateMap = new LinkedHashMap<>();
+        Map<AntidotePB.ApbBoundObject, LinkedList<AntidotePB.ApbUpdateOperation>> updateMap = new LinkedHashMap<>();
         for (AntidotePB.ApbUpdateOp.Builder update : updateInstructionBuffer) {
-            List<AntidotePB.ApbUpdateOperation> objectOperations = updateMap.computeIfAbsent(update.getBoundobject(), k -> new LinkedList<>());
+            LinkedList<AntidotePB.ApbUpdateOperation> objectOperations = updateMap.computeIfAbsent(update.getBoundobject(), k -> new LinkedList<>());
             objectOperations.add(update.getOperation());
         }
 
-        for (Map.Entry<AntidotePB.ApbBoundObject, List<AntidotePB.ApbUpdateOperation>> oplist : updateMap.entrySet()) {
+        for (Map.Entry<AntidotePB.ApbBoundObject, LinkedList<AntidotePB.ApbUpdateOperation>> oplist : updateMap.entrySet()) {
             for (AntidotePB.ApbUpdateOperation mergedUpdate : mergeUpdates(oplist.getKey().getType(), oplist.getValue())) {
                 res.add(AntidotePB.ApbUpdateOp.newBuilder().setBoundobject(oplist.getKey()).setOperation(mergedUpdate));
             }
@@ -176,34 +176,88 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         return res;
     }
 
-    private Collection<? extends AntidotePB.ApbUpdateOperation> mergeUpdates(AntidotePB.CRDT_type type, List<AntidotePB.ApbUpdateOperation> updates) {
+    private LinkedList<AntidotePB.ApbUpdateOperation> mergeUpdates(AntidotePB.CRDT_type type, LinkedList<AntidotePB.ApbUpdateOperation> updates) {
         switch (type) {
             case AWMAP:
             case GMAP:
             case RRMAP:
                 // merge key updates and removes
                 HashSet<AntidotePB.ApbMapKey> removedKeys = new HashSet<>();
-                HashMap<AntidotePB.ApbMapKey, List<AntidotePB.ApbUpdateOperation>> keyUpdates = new LinkedHashMap<>();
+                HashMap<AntidotePB.ApbMapKey, LinkedList<AntidotePB.ApbUpdateOperation>> keyUpdates = new LinkedHashMap<>();
                 for (AntidotePB.ApbUpdateOperation update : updates) {
                     AntidotePB.ApbMapUpdate mapop = update.getMapop();
                     removedKeys.addAll(mapop.getRemovedKeysList());
                     for (AntidotePB.ApbMapNestedUpdate nestedUpdate : mapop.getUpdatesList()) {
-                        List<AntidotePB.ApbUpdateOperation> updateList = keyUpdates.computeIfAbsent(nestedUpdate.getKey(), k -> new LinkedList<>());
+                        LinkedList<AntidotePB.ApbUpdateOperation> updateList = keyUpdates.computeIfAbsent(nestedUpdate.getKey(), k -> new LinkedList<>());
                         updateList.add(nestedUpdate.getUpdate());
                     }
                 }
                 AntidotePB.ApbMapUpdate.Builder mapUpdateBuilder = AntidotePB.ApbMapUpdate.newBuilder();
                 mapUpdateBuilder.addAllRemovedKeys(removedKeys);
-                for (Map.Entry<AntidotePB.ApbMapKey, List<AntidotePB.ApbUpdateOperation>> keyUpdate : keyUpdates.entrySet()) {
-                    for (AntidotePB.ApbUpdateOperation mergedUpdate : mergeUpdates(keyUpdate.getKey().getType(), keyUpdate.getValue())) {
-                        mapUpdateBuilder.addUpdates(AntidotePB.ApbMapNestedUpdate.newBuilder()
+                for (Map.Entry<AntidotePB.ApbMapKey, LinkedList<AntidotePB.ApbUpdateOperation>> keyUpdate : keyUpdates.entrySet()) {
+                    LinkedList<AntidotePB.ApbUpdateOperation> mergedUpdates = mergeUpdates(keyUpdate.getKey().getType(), keyUpdate.getValue());
+                    AntidotePB.ApbUpdateOperation combinedUpdate = combine(keyUpdate.getKey().getType(), mergedUpdates);
+                    mapUpdateBuilder.addUpdates(AntidotePB.ApbMapNestedUpdate.newBuilder()
                             .setKey(keyUpdate.getKey())
-                            .setUpdate(mergedUpdate));
-                    }
+                            .setUpdate(combinedUpdate));
                 }
-                return Collections.singleton(AntidotePB.ApbUpdateOperation.newBuilder().setMapop(mapUpdateBuilder).build());
+                LinkedList<AntidotePB.ApbUpdateOperation> resList = new LinkedList<>();
+                resList.add(AntidotePB.ApbUpdateOperation.newBuilder().setMapop(mapUpdateBuilder).build());
+                return resList;
             default:
                 return updates;
+        }
+    }
+
+    private AntidotePB.ApbUpdateOperation combine(AntidotePB.CRDT_type type, LinkedList<AntidotePB.ApbUpdateOperation> updates) {
+        switch (type) {
+            case AWMAP:
+            case GMAP:
+            case RRMAP:
+                if (updates.size() != 1) {
+                    throw new IllegalStateException("Map updates should have been merged already");
+                }
+                return updates.get(0);
+            case COUNTER:
+            case FATCOUNTER:
+                AntidotePB.ApbCounterUpdate.Builder resCounterOp = AntidotePB.ApbCounterUpdate.newBuilder();
+                for (AntidotePB.ApbUpdateOperation update : updates) {
+                    AntidotePB.ApbCounterUpdate counterop = update.getCounterop();
+                    resCounterOp.setInc(resCounterOp.getInc() + counterop.getInc());
+                }
+                return AntidotePB.ApbUpdateOperation.newBuilder().setCounterop(resCounterOp).build();
+            case ORSET:
+            case RWSET:
+                AntidotePB.ApbSetUpdate.Builder resSetUpdateOp = AntidotePB.ApbSetUpdate.newBuilder();
+                for (AntidotePB.ApbUpdateOperation update : updates) {
+                    AntidotePB.ApbSetUpdate setop = update.getSetop();
+                    resSetUpdateOp.addAllAdds(setop.getAddsList());
+                    resSetUpdateOp.addAllRems(setop.getRemsList());
+                }
+                // FIXME what to set a update type here? Both add and remove might be wrong!!!
+                return AntidotePB.ApbUpdateOperation.newBuilder().setSetop(resSetUpdateOp).build();
+            case INTEGER:
+                AntidotePB.ApbIntegerUpdate.Builder resIntegerOp = AntidotePB.ApbIntegerUpdate.newBuilder();
+                for (AntidotePB.ApbUpdateOperation update : updates) {
+                    AntidotePB.ApbIntegerUpdate integerop = update.getIntegerop();
+                    if (integerop.hasInc()) {
+                        if (resIntegerOp.hasInc()) {
+                            resIntegerOp.setInc(resIntegerOp.getInc() + integerop.getInc());
+                        } else { // a set operation up to this point
+                            resIntegerOp.setSet(resIntegerOp.getSet() + integerop.getInc());
+                        }
+                    } else { // the current operation is a set operation; override previous value
+                        resIntegerOp = integerop.toBuilder();
+                    }
+                }
+                return AntidotePB.ApbUpdateOperation.newBuilder().setIntegerop(resIntegerOp).build();
+            case LWWREG:
+            case MVREG:
+            case POLICY:
+                // registers
+                return updates.getLast();
+            default:
+                throw new IllegalStateException("Unsupported CRDT type for combine operation");
         }
     }
 
