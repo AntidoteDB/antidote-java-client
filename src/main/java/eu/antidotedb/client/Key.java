@@ -22,14 +22,15 @@ public abstract class Key<Value> {
         this.key = key;
     }
 
+    /**
+     * @return the CRDT type for this key
+     */
     public AntidotePB.CRDT_type getType() {
         return type;
     }
 
     /**
-     * Gets the key.
-     *
-     * @return the key
+     * @return the ByteString component of this key
      */
     public ByteString getKey() {
         return key;
@@ -44,8 +45,11 @@ public abstract class Key<Value> {
         return type + "_" + key.toStringUtf8();
     }
 
+    /**
+     * Equality and hashCode on keys is defined only in terms of the key and type fields.
+     */
     @Override
-    public boolean equals(Object obj) {
+    public final boolean equals(Object obj) {
         if (obj == null || !(obj instanceof Key<?>)) {
             return false;
         }
@@ -53,8 +57,11 @@ public abstract class Key<Value> {
         return k.type.equals(type) && k.key.equals(key);
     }
 
+    /**
+     * Equality and hashCode on keys is defined only in terms of the key and type fields.
+     */
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return Objects.hash(type, key);
     }
 
@@ -109,7 +116,6 @@ public abstract class Key<Value> {
      * @param key    the key
      * @param format format of values stored in the register
      * @param <T>    type of value stored in the register
-     * @return
      */
     public static <T> RegisterKey<T> register(ByteString key, ValueCoder<T> format) {
         return new RegisterKey<>(AntidotePB.CRDT_type.LWWREG, key, format);
@@ -128,7 +134,6 @@ public abstract class Key<Value> {
      * @param key    the key
      * @param format format of values stored in the register
      * @param <T>    type of value stored in the register
-     * @return
      */
     public static <T> RegisterKey<T> register(String key, ValueCoder<T> format) {
         return register(ByteString.copyFromUtf8(key), format);
@@ -293,6 +298,9 @@ public abstract class Key<Value> {
         return create(type, k);
     }
 
+    /**
+     * Creates a Key from a CRDT_type and a ByteString.
+     */
     public static Key<?> create(AntidotePB.CRDT_type type, ByteString k) {
         switch (type) {
             case COUNTER:
@@ -322,11 +330,18 @@ public abstract class Key<Value> {
         }
     }
 
+    /**
+     * Creates a reset operation.
+     * If the underlying CRDT type has full support for reset, this operation has the effect
+     * of undoing all previous operations and it has no effect on concurrent operations.
+     * <p>
+     * Use the methods on {@link Bucket} to execute the update.
+     */
     @CheckReturnValue
-    public InnerUpdateOp reset() {
+    public UpdateOp reset() {
         AntidotePB.ApbCrdtReset.Builder op = AntidotePB.ApbCrdtReset.newBuilder();
         AntidotePB.ApbUpdateOperation.Builder updateOperation = AntidotePB.ApbUpdateOperation.newBuilder();
         updateOperation.setResetop(op);
-        return new InnerUpdateOpImpl(this, updateOperation);
+        return new UpdateOpDefaultImpl(this, updateOperation);
     }
 }

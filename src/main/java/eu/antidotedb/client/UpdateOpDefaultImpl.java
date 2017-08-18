@@ -6,10 +6,10 @@ import eu.antidotedb.antidotepb.AntidotePB;
  * A default implementation for inner update operations.
  * Simply stores the Apb update operation
  */
-class InnerUpdateOpImpl extends InnerUpdateOp {
+class UpdateOpDefaultImpl extends UpdateOp {
     private final AntidotePB.ApbUpdateOperation.Builder updateOperation;
 
-    InnerUpdateOpImpl(Key<?> key, AntidotePB.ApbUpdateOperation.Builder updateOperation) {
+    UpdateOpDefaultImpl(Key<?> key, AntidotePB.ApbUpdateOperation.Builder updateOperation) {
         super(key);
         this.updateOperation = updateOperation;
     }

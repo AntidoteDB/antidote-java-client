@@ -10,7 +10,7 @@ import java.util.logging.Logger;
  */
 public class LogTransformer extends TransformerWithDownstream {
     private Logger logger = Logger.getLogger("Antidote Messages");
-    public static final TransformerFactory factory = (downstream,c) -> new LogTransformer(downstream);
+    public static final TransformerFactory factory = (downstream, c) -> new LogTransformer(downstream);
 
     public LogTransformer(Transformer downstream) {
         super(downstream);

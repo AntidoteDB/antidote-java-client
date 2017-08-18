@@ -8,23 +8,28 @@ import javax.annotation.CheckReturnValue;
 public class RegisterKey<T> extends Key<T> {
     private final ValueCoder<T> format;
 
-    public RegisterKey(AntidotePB.CRDT_type type, ByteString key, ValueCoder<T> format) {
+    RegisterKey(AntidotePB.CRDT_type type, ByteString key, ValueCoder<T> format) {
         super(type, key);
         this.format = format;
     }
 
 
+    /**
+     * Creates an update operation which assigns a new value to the register.
+     * <p>
+     * Use the methods on {@link Bucket} to execute the update.
+     */
     @CheckReturnValue
-    public InnerUpdateOpImpl assign(T value) {
+    public UpdateOpDefaultImpl assign(T value) {
         return buildRegisterUpdate(this, format.encode(value));
     }
 
-    static InnerUpdateOpImpl buildRegisterUpdate(Key<?> key, ByteString value) {
+    static UpdateOpDefaultImpl buildRegisterUpdate(Key<?> key, ByteString value) {
         AntidotePB.ApbRegUpdate.Builder regUpdateInstruction = AntidotePB.ApbRegUpdate.newBuilder();
         regUpdateInstruction.setValue(value);
         AntidotePB.ApbUpdateOperation.Builder updateOperation = AntidotePB.ApbUpdateOperation.newBuilder();
         updateOperation.setRegop(regUpdateInstruction);
-        return new InnerUpdateOpImpl(key, updateOperation);
+        return new UpdateOpDefaultImpl(key, updateOperation);
     }
 
     @Override

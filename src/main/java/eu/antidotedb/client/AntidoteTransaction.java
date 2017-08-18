@@ -4,8 +4,6 @@ import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.ApbUpdateOp;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * A transaction, either static (batch of updates) or interactive (mixed reads and writes)

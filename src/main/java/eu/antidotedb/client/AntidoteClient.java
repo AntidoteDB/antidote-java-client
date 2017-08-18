@@ -6,7 +6,6 @@ import eu.antidotedb.client.messages.AntidoteResponse;
 import eu.antidotedb.client.transformer.TransformerFactory;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -17,8 +16,6 @@ import java.util.List;
  * It is the main entry point for working with the client, in particular it is the source of transactions.
  * Every operation has to be executed in the context of a transaction.
  * See: {@link #startTransaction()}, {@link #createStaticTransaction()}, {@link #noTransaction()}, and {@link #newBatchRead()}.
- * <p>
- * Moreover there is {@link #readObjects(TransactionWithReads, Iterable)} to read several objects at once.
  */
 public class AntidoteClient {
 
@@ -47,7 +44,7 @@ public class AntidoteClient {
      * Initializes an AntidoteClient.
      *
      * @param transformerFactories transformers for factories (the last transformer will be at the top of the stack, so applied first)
-     * @param inetAddrs The addresses of the Antidote hosts
+     * @param inetAddrs            The addresses of the Antidote hosts
      */
     public AntidoteClient(List<TransformerFactory> transformerFactories, InetSocketAddress... inetAddrs) {
         this(transformerFactories, Arrays.asList(inetAddrs));
@@ -57,7 +54,7 @@ public class AntidoteClient {
      * Initializes an AntidoteClient.
      *
      * @param transformerFactories transformers for factories (the last transformer will be at the top of the stack, so applied first)
-     * @param inetAddrs The addresses of the Antidote hosts
+     * @param inetAddrs            The addresses of the Antidote hosts
      */
     public AntidoteClient(List<TransformerFactory> transformerFactories, List<InetSocketAddress> inetAddrs) {
         init(transformerFactories, inetAddrs);

@@ -155,7 +155,7 @@ public class ConnectionPool {
                 throw new AntidoteException("Could not open connection to " + inetAddr.toString(), e);
             }
         }
-        throw new AntidoteException("Could not get connection to " +  inetAddr.toString() + " (too many connections)");
+        throw new AntidoteException("Could not get connection to " + inetAddr.toString() + " (too many connections)");
     }
 
     /**

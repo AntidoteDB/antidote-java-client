@@ -3,13 +3,20 @@ package eu.antidotedb.client;
 import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB;
 
-public abstract class InnerUpdateOp {
+/**
+ * An update operation which can be executed with methods on {@link Bucket}.
+ * To create an update operation use the methods defined on the various subclassed of {@link Key}.
+ */
+public abstract class UpdateOp {
     private Key<?> key;
 
-    public InnerUpdateOp(Key<?> key) {
+    UpdateOp(Key<?> key) {
         this.key = key;
     }
 
+    /**
+     * The key of this update operation.
+     */
     public Key<?> getKey() {
         return key;
     }

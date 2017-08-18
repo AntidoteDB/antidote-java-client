@@ -37,7 +37,7 @@ public class AbstractAntidoteTest {
         antidoteClient = new AntidoteClient(transformers, antidoteConfigManager.getConfigHosts());
 
         bucketKey = nextSessionId();
-        bucket = Bucket.create(bucketKey);
+        bucket = Bucket.bucket(bucketKey);
     }
 
     public String nextSessionId() {

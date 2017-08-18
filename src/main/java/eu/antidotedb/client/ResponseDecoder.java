@@ -111,5 +111,4 @@ public abstract class ResponseDecoder<Value> {
     }
 
 
-
 }

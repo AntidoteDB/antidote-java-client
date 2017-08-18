@@ -106,8 +106,8 @@ public class ApbCoder {
 
     private static void readFully(InputStream stream, byte[] data) throws IOException {
         int offset = 0;
-        while(offset<data.length) {
-            int bytesRead = stream.read(data, offset, data.length-offset);
+        while (offset < data.length) {
+            int bytesRead = stream.read(data, offset, data.length - offset);
             if (bytesRead == -1) {
                 throw new IOException("End of input while data expected");
             }
