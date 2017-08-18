@@ -6,9 +6,7 @@ import eu.antidotedb.antidotepb.AntidotePB.ApbStartTransaction;
 import eu.antidotedb.antidotepb.AntidotePB.ApbTxnProperties;
 import eu.antidotedb.client.messages.AntidoteRequest;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class InteractiveTransaction extends TransactionWithReads implements AutoCloseable {
 
@@ -143,9 +141,12 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         if (getDescriptor() == null) {
             throw new AntidoteException("You need to start the transaction first");
         }
+
+        List<AntidotePB.ApbUpdateOp.Builder> updates = mergeUpdates();
+
         AntidotePB.ApbUpdateObjects.Builder updateMessage = AntidotePB.ApbUpdateObjects.newBuilder();
         updateMessage.setTransactionDescriptor(getDescriptor());
-        for (AntidotePB.ApbUpdateOp.Builder updateInstruction : updateInstructionBuffer) {
+        for (AntidotePB.ApbUpdateOp.Builder updateInstruction : updates) {
             updateMessage.addUpdates(updateInstruction);
         }
         updateInstructionBuffer.clear();
@@ -154,6 +155,55 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
         AntidotePB.ApbOperationResp resp = getClient().sendMessage(AntidoteRequest.of(updateMessageObject), connection);
         if (!resp.getSuccess()) {
             throw new AntidoteException("Could not perform update (error code: " + resp.getErrorcode() + ")");
+        }
+    }
+
+    private List<AntidotePB.ApbUpdateOp.Builder> mergeUpdates() {
+        List<AntidotePB.ApbUpdateOp.Builder> res = new LinkedList<>();
+
+        Map<AntidotePB.ApbBoundObject, List<AntidotePB.ApbUpdateOperation>> updateMap = new LinkedHashMap<>();
+        for (AntidotePB.ApbUpdateOp.Builder update : updateInstructionBuffer) {
+            List<AntidotePB.ApbUpdateOperation> objectOperations = updateMap.computeIfAbsent(update.getBoundobject(), k -> new LinkedList<>());
+            objectOperations.add(update.getOperation());
+        }
+
+        for (Map.Entry<AntidotePB.ApbBoundObject, List<AntidotePB.ApbUpdateOperation>> oplist : updateMap.entrySet()) {
+            for (AntidotePB.ApbUpdateOperation mergedUpdate : mergeUpdates(oplist.getKey().getType(), oplist.getValue())) {
+                res.add(AntidotePB.ApbUpdateOp.newBuilder().setBoundobject(oplist.getKey()).setOperation(mergedUpdate));
+            }
+        }
+
+        return res;
+    }
+
+    private Collection<? extends AntidotePB.ApbUpdateOperation> mergeUpdates(AntidotePB.CRDT_type type, List<AntidotePB.ApbUpdateOperation> updates) {
+        switch (type) {
+            case AWMAP:
+            case GMAP:
+            case RRMAP:
+                // merge key updates and removes
+                HashSet<AntidotePB.ApbMapKey> removedKeys = new HashSet<>();
+                HashMap<AntidotePB.ApbMapKey, List<AntidotePB.ApbUpdateOperation>> keyUpdates = new LinkedHashMap<>();
+                for (AntidotePB.ApbUpdateOperation update : updates) {
+                    AntidotePB.ApbMapUpdate mapop = update.getMapop();
+                    removedKeys.addAll(mapop.getRemovedKeysList());
+                    for (AntidotePB.ApbMapNestedUpdate nestedUpdate : mapop.getUpdatesList()) {
+                        List<AntidotePB.ApbUpdateOperation> updateList = keyUpdates.computeIfAbsent(nestedUpdate.getKey(), k -> new LinkedList<>());
+                        updateList.add(nestedUpdate.getUpdate());
+                    }
+                }
+                AntidotePB.ApbMapUpdate.Builder mapUpdateBuilder = AntidotePB.ApbMapUpdate.newBuilder();
+                mapUpdateBuilder.addAllRemovedKeys(removedKeys);
+                for (Map.Entry<AntidotePB.ApbMapKey, List<AntidotePB.ApbUpdateOperation>> keyUpdate : keyUpdates.entrySet()) {
+                    for (AntidotePB.ApbUpdateOperation mergedUpdate : mergeUpdates(keyUpdate.getKey().getType(), keyUpdate.getValue())) {
+                        mapUpdateBuilder.addUpdates(AntidotePB.ApbMapNestedUpdate.newBuilder()
+                            .setKey(keyUpdate.getKey())
+                            .setUpdate(mergedUpdate));
+                    }
+                }
+                return Collections.singleton(AntidotePB.ApbUpdateOperation.newBuilder().setMapop(mapUpdateBuilder).build());
+            default:
+                return updates;
         }
     }
 
