@@ -60,7 +60,7 @@ public class ConnectionPool {
      * @param maxPoolSize          the max pool size
      * @param initialPoolSize      the initial pool size
      * @param inetAddr             the IP Socket Address
-     * @param transformerFactories
+     * @param transformerFactories factories for creating request transformers
      */
     public ConnectionPool(int maxPoolSize, int initialPoolSize, InetSocketAddress inetAddr, List<TransformerFactory> transformerFactories) {
         this.transformerFactories = transformerFactories;

@@ -9,7 +9,7 @@ import java.util.Objects;
 
 /**
  * An Antidote key consists of a CRDT type and a corresponding key.
- * It can be used as a toplevel-key of an Antidote object in a bucket or as a key in a map.
+ * It can be used as a top-level-key of an Antidote object in a bucket or as a key in a map.
  * <p>
  * Use the static methods of this class to create keys for the respective CRDT types.
  */

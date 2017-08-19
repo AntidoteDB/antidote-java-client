@@ -1,13 +1,11 @@
 /**
  * This is the main package of the Antidote Java Client.
  * <h1>Usage</h1>
- * <p>
  * <p>First add the necessary imports if you are not using an IDE that adds them automatically:</p>
  * <pre><code>
  *     import eu.antidotedb.client.*;
  *     import java.net.InetSocketAddress;
  * </code></pre>
- * <p>
  * <p>To connect to Antidote, create a new {@link eu.antidotedb.client.AntidoteClient} instance and pass it one or more
  * {@link java.net.InetSocketAddress}
  * entries:</p>
@@ -19,7 +17,6 @@
  * <p>Objects in the database are addressed using a {@link eu.antidotedb.client.Key}.
  * A key contains the CRDT type and a name of type ByteString.
  * To create a key the static methods on {@link eu.antidotedb.client.Key} can be used:
- * <p>
  * <ul>
  * <li>{@link eu.antidotedb.client.Key#register register}
  * <li>{@link eu.antidotedb.client.Key#multiValueRegister multiValueRegister}
@@ -34,20 +31,17 @@
  * <p>
  * </li>
  * </ul>
- * For example a key for a set datatype stored under key "users" can be retrieved as follows:</p>
+ * <p>For example a key for a set datatype stored under key "users" can be retrieved as follows:</p>
  * <pre><code>
  *     SetKey&lt;String&gt; userSet = Key.set("users");
  * </code></pre>
  * <p>
  * It is also possible to statically import the methods for creating keys:
- * <p>
  * <pre><code>
  *     import static eu.antidotedb.client.Key.*;
  *     ...
  *     SetKey&lt;String&gt; userSet = set("users");
  * </code></pre>
- * <p>
- * <p>
  * <p>The type parameter of {@link eu.antidotedb.client.SetKey SetKey} denotes the type of elements stored in the set.
  * The default is String, but this can easily be configured by passing a {@link eu.antidotedb.client.ValueCoder} to the {@link
  * eu.antidotedb.client.Key#set set} method.
@@ -57,15 +51,12 @@
  * </pre>
  * <p>
  * More information is available in the documentation of the {@link eu.antidotedb.client.ValueCoder ValueCoder} interface.
- * <p>
  * <h2>Buckets</h2>
- * <p>
  * <p>In Antidote each object is stored in a {@link eu.antidotedb.client.Bucket}.
  * To create a bucket use the static {@link eu.antidotedb.client.Bucket#bucket bucket} method:</p>
  * <pre><code>
  *     Bucket bucket = Bucket.bucket("mybucket");
  * </code></pre>
- * <p>
  * <h2>Reading objects</h2>
  * <p>A {@link eu.antidotedb.client.Bucket} has a {@link eu.antidotedb.client.Bucket#read read} method, which
  * retrieves the current value of the
@@ -85,21 +76,18 @@
  *     CounterKey c2 = Key.counter("c2");
  *     CounterKey c3 = Key.counter("c3");
  *     BatchRead batchRead = antidoteClient.newBatchRead();
- *     BatchReadResult<Integer> c1val = bucket.read(batchRead, c1);
- *     BatchReadResult<Integer> c2val = bucket.read(batchRead, c2);
- *     BatchReadResult<Integer> c3val = bucket.read(batchRead, c3);
+ *     BatchReadResult&lt;Integer&gt; c1val = bucket.read(batchRead, c1);
+ *     BatchReadResult&lt;Integer&gt; c2val = bucket.read(batchRead, c2);
+ *     BatchReadResult&lt;Integer&gt; c3val = bucket.read(batchRead, c3);
  *     batchRead.commit(antidoteClient.noTransaction());
  *     int sum = c1val.get() + c2val.get() + c3val.get();
  * </code></pre>
  * <p>
  * If all read values have the same time the {@link eu.antidotedb.client.Bucket#readAll Bucket.readAll}
  * method provides a shortcut for performing several reads simultaneously:
- * <p>
  * <pre><code>
- *     List<Integer> values = bucket.readAll(antidoteClient.noTransaction(), Arrays.asList(c1, c2, c3));
+ *     List&lt;Integer&gt; values = bucket.readAll(antidoteClient.noTransaction(), Arrays.asList(c1, c2, c3));
  * </code></pre>
- * <p>
- * <p>
  * <h2>Updating objects</h2>
  * <p>Each {@link eu.antidotedb.client.Key} has one or more methods to create update operations on the key.
  * To execute the update operation on a bucket it has to be passed to the {@link eu.antidotedb.client.Bucket#update Bucket.update} method.
@@ -114,7 +102,6 @@
  * <p>
  * When constructing map updates, updates for nested CRDTs can be created in the same way as other updates, which makes
  * it possible to buid complex map-updates updating several components of the map at once:
- * <p>
  * <pre><code>
  *     MapKey testmap = map_aw("testmap2");
  *
@@ -125,8 +112,6 @@
  *             register("b").assign("Hello")
  *     ));
  * </code></pre>
- * <p>
- * <p>
  * <h2>Transactions</h2>
  * <p>A transaction can be started with the {@link eu.antidotedb.client.AntidoteClient#startTransaction startTransaction}
  * method on the {@link

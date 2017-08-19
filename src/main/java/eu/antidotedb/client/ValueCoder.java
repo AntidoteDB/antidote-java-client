@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
  * calling conversion functions all the time.
  * <p>
  * As an example consider the following UserId class:
- * <p>
  * <pre><code>
  * class UserId {
  *     private String id;
@@ -31,19 +30,16 @@ import java.util.stream.Collectors;
  * </code></pre>
  * <p>
  * We can create a ValueCoder for this class using the static method {@link #stringCoder(Function, Function)}:
- * <p>
  * <pre><code>
  *     ValueCoder&lt;UserId&gt; userIdCoder = ValueCoder.stringCoder(UserId::getId, UserId::new);
  * </code></pre>
  * <p>
  * Then this ValueCoder can be used to get a key to a set of UserIds:
- * <p>
  * <pre><code>
  *     SetKey&lt;UserId&gt; userSet = Key.set("users", userIdCoder);
  * </code></pre>
  * <p>
  * Now the userSet can be updated and read without converting UserIds to a lower level type like ByteString:
- * <p>
  * <pre><code>
  *     UserId user1 = new UserId("user1");
  *     UserId user2 = new UserId("user2");
