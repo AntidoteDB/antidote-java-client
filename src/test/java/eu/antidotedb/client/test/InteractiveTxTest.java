@@ -3,6 +3,7 @@ package eu.antidotedb.client.test;
 import eu.antidotedb.client.*;
 import org.junit.Test;
 
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
@@ -15,6 +16,17 @@ public class InteractiveTxTest extends AbstractAntidoteTest {
     @Test
     public void testEmptyTx() {
         try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+        }
+    }
+
+    @Test
+    public void interactiveExample() {
+        ValueCoder<Integer> intCoder = ValueCoder.stringCoder(Object::toString, Integer::valueOf);
+        CounterKey c = Key.counter("my_example_counter");
+        SetKey<Integer> numberSet = Key.set("set_of_numbers", intCoder);
+        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+            int val = bucket.read(tx, c);
+            bucket.update(tx, numberSet.add(val));
         }
     }
 

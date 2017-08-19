@@ -213,7 +213,7 @@ public class MapKey extends Key<MapKey.MapReadResult> {
         }
 
         /**
-         * Same as {@link #asJavaMap(Function, ResponseDecoder)} with Strings as keys (keyCoder = key -> key.getKey().toStringUtf8())
+         * Same as {@link #asJavaMap(Function, ResponseDecoder)} with Strings as keys (keyCoder = key -&gt; key.getKey().toStringUtf8())
          */
         public <V> Map<String, V> asJavaMap(ResponseDecoder<V> responseDecoder) {
             return asJavaMap(key -> key.getKey().toStringUtf8(), responseDecoder);

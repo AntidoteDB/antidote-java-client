@@ -3,10 +3,8 @@ package eu.antidotedb.client;
 import com.google.protobuf.ByteString;
 import eu.antidotedb.antidotepb.AntidotePB;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import javax.annotation.CheckReturnValue;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -58,6 +56,7 @@ public class Bucket {
      * @return the returned value
      * @throws AntidoteException when there is a problem with the database
      */
+    @CheckReturnValue
     public <T> T read(TransactionWithReads tx, Key<T> key) {
         AntidotePB.ApbReadObjectsResp resp = tx.readHelper(name, key.getKey(), key.getType());
         if (resp.getSuccess()) {
@@ -66,7 +65,6 @@ public class Bucket {
             throw new AntidoteException("Error when reading " + key + " (error code " + resp.getErrorcode() + ")");
         }
     }
-
 
     /**
      * Reads several objects from the database.
@@ -77,6 +75,22 @@ public class Bucket {
      * @return the returned values
      * @throws AntidoteException when there is a problem with the database
      */
+    @SafeVarargs
+    @CheckReturnValue
+    public final <T> List<T> readAll(TransactionWithReads tx, Key<? extends T>... keys) {
+        return readAll(tx, Arrays.asList(keys));
+    }
+
+    /**
+     * Reads several objects from the database.
+     *
+     * @param tx   The transaction context in which the read will be executed
+     * @param keys The keys of the objects to read
+     * @param <T>  The type of the values being read
+     * @return the returned values
+     * @throws AntidoteException when there is a problem with the database
+     */
+    @CheckReturnValue
     public <T> List<T> readAll(TransactionWithReads tx, Collection<? extends Key<? extends T>> keys) {
         BatchRead batchRead = new BatchRead();
         List<BatchReadResult<? extends T>> results = new ArrayList<>(keys.size());
@@ -100,6 +114,7 @@ public class Bucket {
      * @return an object which will contain the read value after the batch transaction was committed.
      * @throws AntidoteException when there is a problem with the database
      */
+    @CheckReturnValue
     public <T> BatchReadResult<T> read(BatchRead tx, Key<T> key) {
         BatchReadResult<AntidotePB.ApbReadObjectResp> resp = tx.readHelper(name, key.getKey(), key.getType());
         return resp.map(key::readResponseToValue);
@@ -113,7 +128,7 @@ public class Bucket {
      * @throws AntidoteException when there is a problem with the database
      */
     public void update(AntidoteTransaction tx, UpdateOp update) {
-        update(tx, Collections.singleton(update));
+        updates(tx, Collections.singleton(update));
     }
 
     /**
@@ -123,7 +138,18 @@ public class Bucket {
      * @param updates The update operations to perform. Use the {@link Key} class to create update operations on a key.
      * @throws AntidoteException when there is a problem with the database
      */
-    public void update(AntidoteTransaction tx, Collection<? extends UpdateOp> updates) {
+    public void updates(AntidoteTransaction tx, UpdateOp... updates) {
+        updates(tx, Arrays.asList(updates));
+    }
+
+    /**
+     * Performs several updates on the database.
+     *
+     * @param tx      The transaction context in which the update will be executed.
+     * @param updates The update operations to perform. Use the {@link Key} class to create update operations on a key.
+     * @throws AntidoteException when there is a problem with the database
+     */
+    public void updates(AntidoteTransaction tx, Collection<? extends UpdateOp> updates) {
         tx.performUpdates(updates.stream().map(upd -> upd.getApbUpdate(name)).collect(Collectors.toList()));
     }
 

@@ -18,7 +18,7 @@ public class MapTests extends AbstractAntidoteTest {
 
     @Test
     public void testRef() {
-        MapKey testmap = Key.map_aw("testmap2");
+        MapKey testmap = map_aw("testmap2");
 
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
         bucket.update(tx,
@@ -36,7 +36,7 @@ public class MapTests extends AbstractAntidoteTest {
 
     @Test
     public void testRefRemoveKey() {
-        MapKey testmap = Key.map_aw("testmap2");
+        MapKey testmap = map_aw("testmap2");
 
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
         bucket.update(tx, testmap.update(

@@ -2,7 +2,8 @@
 <p>This is a library for working with the <a href="http://antidotedb.eu">Antidote Database</a>.</p>
 
 <h1>Installation</h1>
-<p>The library is available on Maven Central, so you can simply add it as a dependency to your project (make sure to update the version used in this
+<p>The library is available on Maven Central, so you can simply add it as a dependency to your project (make sure to
+    update the version used in this
     example): </p>
 
 <h2>Maven</h2>
@@ -18,107 +19,17 @@
 
 <h2>Local installation</h2>
 
-You can also install the latest version of the library from the source code instead of relying on public Maven repositories:
+You can also install the latest version of the library from the source code instead of relying on public Maven
+repositories:
 
 <pre><code>git clone https://github.com/SyncFree/antidote-java-client.git
 cd antidote-java-client
 ./gradlew install
 </code></pre>
 
-<h1>Usage</h1>
+<h2>Usage</h2>
 
-<p>First add the necessary imports if you are not using an IDE that adds them automatically:</p>
-<pre><code>import eu.antidotedb.client.*;
-</code></pre>
-
-<p>To connect to Antidote, create a new {@link eu.antidotedb.client.AntidoteClient} instance and pass it one or more {@link eu.antidotedb.client.Host}
-    entries:</p>
-<pre><code>AntidoteClient antidote = new AntidoteClient(new Host("localhost", 8087));
-</code></pre>
-<p>You can also pass a {@link eu.antidotedb.client.PoolManager} to get more control over the configuration.</p>
-<h2>Antidote-Objects</h2>
-<p>In Antidote each object is stored in a {@link eu.antidotedb.client.Bucket}.
-    To create a bucket use the static {@link eu.antidotedb.client.Bucket#create create} method:</p>
-<pre><code>Bucket&lt;String&gt; bucket = Bucket.create("mybucket");
-</code></pre>
-<p>The type parameter of bucket denotes the type of keys used to address objects stored in the bucket.
-    The default is <code>String</code>, but you can pass a {@link eu.antidotedb.client.ValueCoder} and choose a different type for the key (and be
-    more typesafe).</p>
-<p>Objects in the database are addressed using immutable references of type {@link eu.antidotedb.client.ObjectRef}, which can be created using methods
-    on the {@link eu.antidotedb.client.Bucket}
-    object (more generally on all {@link eu.antidotedb.client.CrdtContainer} instances).
-    Each datatype supported by Antidote has its own method.
-    For example a reference to a set datatype stored under key "users" can be retrieved as follows:</p>
-<pre><code>SetRef&lt;String&gt; userSet = bucket.set("users");
-</code></pre>
-<p>The type parameter of {@link eu.antidotedb.client.SetRef} denotes the type of elements stored in the set.
-    As with keys, this can be configured by passing a {@link eu.antidotedb.client.ValueCoder} to the {@link eu.antidotedb.client.SetRef#set set}
-    method.</p>
-<p>A list of available types can be found in the {@link eu.antidotedb.client.CrdtContainer} interface, which is implemented by the {@link
-    eu.antidotedb.client.Bucket} class.</p>
-<h2>Reading objects</h2>
-<p>Each {@link eu.antidotedb.client.ObjectRef} has a {@link eu.antidotedb.client.ObjectRef#read read} method, which retrieves the current value of the
-    object from the database.
-    The {@link eu.antidotedb.client.ObjectRef#read read} method takes a transaction object.
-    Use the <code>AntidoteClient.noTransaction</code> method to execute the request without any transactional context:</p>
-<pre><code>List&lt;String&gt; value = userSet.read(antidote.noTransaction());
-</code></pre>
-<p>For reading multiple objects simultaneously, a {@link eu.antidotedb.client.BatchRead} can be used.
-    Start a batch read with the <code>AntidoteClient.newBatchRead</code> method.
-    Then pass the result to several read-requests.
-    Finally, the results can be obtained via the <code>BatchReadResult.get</code> methods:</p>
-<pre><code>CounterRef c1 = bucket.counter("c1");
-CounterRef c2 = bucket.counter("c1");
-CounterRef c3 = bucket.counter("c1");
-BatchRead batchRead = antidote.newBatchRead();
-BatchReadResult&lt;Integer&gt; c1val = c1.read(batchRead);
-BatchReadResult&lt;Integer&gt; c2val = c2.read(batchRead);
-BatchReadResult&lt;Integer&gt; c3val = c3.read(batchRead);
-batchRead.commit();
-int sum = c1val.get() + c2val.get() + c3val.get();
-</code></pre>
-<h2>Updating objects</h2>
-<p>Each {@link eu.antidotedb.client.ObjectRef} has one or more methods to perform updates.
-    Just like with reads, updates take a transactional context as their first parameters.</p>
-<p>For example a {@link eu.antidotedb.client.SetRef} has an {@link eu.antidotedb.client.SetRef#add add} method to add elements to the set:</p>
-<pre><code>bucket.set("users").add(antidote.noTransaction(), "Hans Wurst");
-</code></pre>
-<h2>ValueCoder</h2>
-<p>TODO</p>
-<h2>Session guarantees</h2>
-<p>To ensure session guarantees like "read your writes" Antidote uses vector clocks.
-    Each operation returns a vector clock indicating the time after the operation.
-    At each request to Antidote a vector clock can be given to force a minimum time for the snapshot used in the request.</p>
-<p>TODO</p>
-<h2>Transactions</h2>
-<p>A transaction can be started with the {@link eu.antidotedb.client.AntidoteClient#startTransaction startTransaction} method on the {@link
-    eu.antidotedb.client.AntidoteClient} object.
-    It is good practice to use the resulting {@link eu.antidotedb.client.InteractiveTransaction} with a try-with-resource statement to avoid leaving
-    transactions open
-    accidentially.</p>
-<pre><code>try (InteractiveTransaction tx = antidote.startTransaction()) {
-    int i = bucket.counter("my_counter").read(tx);
-    bucket.set("my_set").add(tx, "i:" + i);
-    tx.commitTransaction();
-}
-</code></pre>
-<h2>Mutable API</h2>
-<p>Call <code>toMutable</code> on a concrete {@link eu.antidotedb.client.ObjectRef} to get a mutable view of the datatype.
-    This view can be updated with the {@link eu.antidotedb.client.AntidoteCRDT#pull pull} method and local updates to the mutable updates can be sent
-    to the database with the {@link eu.antidotedb.client.AntidoteCRDT#push push}
-    method.</p>
-<p>Example:</p>
-<pre><code>MapRef&lt;String&gt; testmapRef = bucket.map_aw("testmap2");
-CrdtMap&lt;String, CrdtSet&lt;String&gt;&gt; testmap = testmapRef.toMutable(CrdtSet.creator(ValueCoder.utf8String));
-
-CrdtSet&lt;String&gt; a = testmap.get("a");
-a.add("1");
-a.add("2");
-CrdtSet&lt;String&gt; b = testmap.get("b");
-b.add("3");
-testmap.push(antidoteClient.noTransaction());
-</code></pre>
-<p>Warning: The mutable objects are <strong>not</strong> thread-safe.</p>
-
+Documentation about using the Client can be found in the documentation of the
+<a href="{@docRoot}/eu/antidotedb/client/package-summary.html#package.description">eu.antidotedb.client package</a>.
 
 </body>
