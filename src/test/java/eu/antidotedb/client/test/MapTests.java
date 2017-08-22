@@ -1,7 +1,9 @@
 package eu.antidotedb.client.test;
 
-import eu.antidotedb.client.*;
-import org.junit.Ignore;
+import eu.antidotedb.client.AntidoteStaticTransaction;
+import eu.antidotedb.client.MapKey;
+import eu.antidotedb.client.NoTransaction;
+import eu.antidotedb.client.ResponseDecoder;
 import org.junit.Test;
 
 import java.util.*;
@@ -142,6 +144,38 @@ public class MapTests extends AbstractAntidoteTest {
 
         assertEquals(expected, result);
     }
+
+
+    @Test
+    public void testMapResult2() {
+        MapKey map = map_aw("blubmap");
+        NoTransaction tx = antidoteClient.noTransaction();
+        bucket.update(tx, map.operation()
+                .update(integer("x").assign(1))
+                .update(integer("xx").assign(1))
+                .update(integer("y").assign(2))
+                .update(integer("yy").assign(2)));
+
+        bucket.update(tx, map.operation()
+                .removeKey(integer("xx"))
+                .update(integer("z").assign(3))
+                .removeKey(integer("yy")));
+
+
+        MapKey.MapReadResult readResult = bucket.read(tx, map);
+
+        assertEquals(hashset(integer("x"), integer("y"), integer("z")), readResult.keySet());
+
+        Map<String, Long> result = readResult.asJavaMap(ResponseDecoder.integer());
+
+        Map<String, Long> expected = new HashMap<>();
+        expected.put("x", 1L);
+        expected.put("y", 2L);
+        expected.put("z", 3L);
+
+        assertEquals(expected, result);
+    }
+
 
     @Test
     public void resetTest() {

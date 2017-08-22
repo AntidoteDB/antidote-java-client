@@ -36,7 +36,23 @@ public class MapKey extends Key<MapKey.MapReadResult> {
      */
     @CheckReturnValue
     public UpdateOp update(Iterable<UpdateOp> keyUpdates) {
-        return new MapUpdateOp().update(keyUpdates);
+        AntidotePB.ApbUpdateOperation.Builder operation = AntidotePB.ApbUpdateOperation.newBuilder();
+        AntidotePB.ApbMapUpdate.Builder mapUpdate = AntidotePB.ApbMapUpdate.newBuilder();
+        for (UpdateOp keyUpdate : keyUpdates) {
+            mapUpdate.addUpdates(keyUpdate.toApbNestedUpdate());
+        }
+        operation.setMapop(mapUpdate);
+        return new UpdateOpDefaultImpl(this, operation);
+    }
+
+    /**
+     * Creates an update operation, which removes a key from the map.
+     * <p>
+     * Use the methods on {@link Bucket} to execute the update.
+     */
+    @CheckReturnValue
+    public UpdateOp removeKey(Key<?> key) {
+        return removeKeys(Collections.singletonList(key));
     }
 
     /**
@@ -56,15 +72,31 @@ public class MapKey extends Key<MapKey.MapReadResult> {
      */
     @CheckReturnValue
     public UpdateOp removeKeys(Iterable<? extends Key<?>> keys) {
-        return new MapUpdateOp().removeKeys(keys);
+        AntidotePB.ApbUpdateOperation.Builder operation = AntidotePB.ApbUpdateOperation.newBuilder();
+        AntidotePB.ApbMapUpdate.Builder mapUpdate = AntidotePB.ApbMapUpdate.newBuilder();
+        for (Key<?> key : keys) {
+            mapUpdate.addRemovedKeys(key.toApbMapKey());
+        }
+        operation.setMapop(mapUpdate);
+        return new UpdateOpDefaultImpl(this, operation);
+    }
+
+    /**
+     * Builds a new update operation.
+     * <p>
+     * Use methods on {@link MapUpdateOpBuilder} to modify the operation before executing it with the update methods on {@link Bucket}.
+     */
+    @CheckReturnValue
+    public MapUpdateOpBuilder operation() {
+        return new MapUpdateOpBuilder();
     }
 
 
-    class MapUpdateOp extends UpdateOp {
+    public class MapUpdateOpBuilder extends UpdateOp {
         Set<Key<?>> changedKeys = new HashSet<>();
         AntidotePB.ApbMapUpdate.Builder op = AntidotePB.ApbMapUpdate.newBuilder();
 
-        MapUpdateOp() {
+        MapUpdateOpBuilder() {
             super(MapKey.this);
         }
 
@@ -79,14 +111,14 @@ public class MapKey extends Key<MapKey.MapReadResult> {
         /**
          * Adds more updates to this map update and returns a reference to the same object to allow chaining of methods.
          */
-        public UpdateOp update(UpdateOp... keyUpdates) {
+        public MapUpdateOpBuilder update(UpdateOp... keyUpdates) {
             return update(Arrays.asList(keyUpdates));
         }
 
         /**
          * Adds more updates to this map update and returns a reference to the same object to allow chaining of methods.
          */
-        public UpdateOp update(Iterable<UpdateOp> keyUpdates) {
+        public MapUpdateOpBuilder update(Iterable<UpdateOp> keyUpdates) {
             for (UpdateOp keyUpdate : keyUpdates) {
                 if (!changedKeys.add(keyUpdate.getKey())) {
                     throw new AntidoteException("Key " + keyUpdate.getKey() + " is already changed in this map update.");
@@ -97,16 +129,23 @@ public class MapKey extends Key<MapKey.MapReadResult> {
         }
 
         /**
+         * Adds one more removed key to this map update and returns a reference to the same object to allow chaining of methods.
+         */
+        public MapUpdateOpBuilder removeKey(Key<?> key) {
+            return removeKeys(Collections.singletonList(key));
+        }
+
+        /**
          * Adds more removed keys to this map update and returns a reference to the same object to allow chaining of methods.
          */
-        public UpdateOp removeKeys(Key<?>... keys) {
+        public MapUpdateOpBuilder removeKeys(Key<?>... keys) {
             return removeKeys(Arrays.asList(keys));
         }
 
         /**
          * Adds more removed keys to this map update and returns a reference to the same object to allow chaining of methods.
          */
-        public UpdateOp removeKeys(Iterable<? extends Key<?>> keys) {
+        public MapUpdateOpBuilder removeKeys(Iterable<? extends Key<?>> keys) {
             for (Key<?> key : keys) {
                 if (!changedKeys.add(key)) {
                     throw new AntidoteException("Key " + key + " is already changed in this map update.");
