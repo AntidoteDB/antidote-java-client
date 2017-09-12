@@ -5,7 +5,7 @@ import eu.antidotedb.antidotepb.AntidotePB;
 
 import javax.annotation.CheckReturnValue;
 
-public class IntegerKey extends Key {
+public class IntegerKey extends Key<Long> {
     IntegerKey(ByteString key) {
         super(AntidotePB.CRDT_type.INTEGER, key);
     }
@@ -40,7 +40,7 @@ public class IntegerKey extends Key {
     }
 
     @Override
-    Object readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+    Long readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
         return ResponseDecoder.integer().readResponseToValue(resp);
     }
 }
