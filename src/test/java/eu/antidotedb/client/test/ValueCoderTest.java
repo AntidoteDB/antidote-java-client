@@ -1,14 +1,15 @@
 package eu.antidotedb.client.test;
 
-import com.google.protobuf.ByteString;
 import eu.antidotedb.client.*;
 import org.junit.Test;
+
+import com.google.protobuf.ByteString;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -16,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 public class ValueCoderTest extends AbstractAntidoteTest {
 
     @Test
-    public void staticReadWrite() {
+    public void customValueCoder() {
 
         NoTransaction tx = antidoteClient.noTransaction();
 
@@ -35,7 +36,20 @@ public class ValueCoderTest extends AbstractAntidoteTest {
 
 
     }
-
+    
+    @Test
+    public void byteStringValueCoder() {
+        
+        byte[] testArray = new byte[20]; 
+        random.nextBytes(testArray);
+        
+        ValueCoder<ByteString> vc = ValueCoder.bytestringEncoder;
+        bucket.update(antidoteClient.noTransaction(), 
+                Key.register("test", vc).assign(ByteString.copyFrom(testArray)));
+        ByteString bs = bucket.read(antidoteClient.noTransaction(), Key.register("test", vc));
+        
+        assertArrayEquals(testArray, bs.toByteArray());
+    }
 }
 
 class UserId {

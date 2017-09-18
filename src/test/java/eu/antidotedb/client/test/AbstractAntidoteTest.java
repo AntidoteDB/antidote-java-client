@@ -22,8 +22,11 @@ public class AbstractAntidoteTest {
     final AntidoteClient antidoteClient;
     final Bucket bucket;
     final String bucketKey;
+    final SecureRandom random;
 
     public AbstractAntidoteTest() {
+        random = new SecureRandom();
+        
         List<TransformerFactory> transformers = new ArrayList<>();
         transformers.add(messageCounter = new CountingTransformer());
         if (debugLog) {
@@ -41,7 +44,6 @@ public class AbstractAntidoteTest {
     }
 
     public String nextSessionId() {
-        SecureRandom random = new SecureRandom();
         return new BigInteger(130, random).toString(32);
     }
 }
