@@ -26,28 +26,13 @@ public abstract class ResponseDecoder<Value> {
         };
     }
 
-
-    public static ResponseDecoder<Long> integer() {
-        return new ResponseDecoder<Long>() {
-            @Override
-            Long readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
-                if (resp == null) {
-                    return 0L;
-                } else if (resp.getInt() == null) {
-                    throw new AntidoteException("Invalid response " + resp);
-                }
-                return resp.getInt().getValue();
-            }
-        };
-    }
-
     public static <T> ResponseDecoder<T> register(ValueCoder<T> format) {
         return new ResponseDecoder<T>() {
             @Override
             T readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
                 if (resp == null) {
                     return null;
-                } else if (resp.getReg() == null) {
+                } else if (!resp.hasReg()) {
                     throw new AntidoteException("Invalid response " + resp);
                 }
                 return format.decode(resp.getReg().getValue());
@@ -65,7 +50,7 @@ public abstract class ResponseDecoder<Value> {
             List<T> readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
                 if (resp == null) {
                     return Collections.emptyList();
-                } else if (resp.getMvreg() == null) {
+                } else if (!resp.hasMvreg()) {
                     throw new AntidoteException("Invalid response " + resp);
                 }
                 return format.decodeList(resp.getMvreg().getValuesList());
@@ -83,7 +68,7 @@ public abstract class ResponseDecoder<Value> {
             List<T> readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
                 if (resp == null) {
                     return Collections.emptyList();
-                } else if (resp.getSet() == null) {
+                } else if (!resp.hasSet()) {
                     throw new AntidoteException("Invalid response " + resp);
                 }
                 return format.decodeList(resp.getSet().getValueList());
@@ -102,7 +87,7 @@ public abstract class ResponseDecoder<Value> {
             MapKey.MapReadResult readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
                 if (resp == null) {
                     return new MapKey.MapReadResult(Collections.emptyList());
-                } else if (resp.getCounter() == null) {
+                } else if (!resp.hasMap()) {
                     throw new AntidoteException("Invalid response " + resp);
                 }
                 return new MapKey.MapReadResult(resp.getMap().getEntriesList());
@@ -110,5 +95,18 @@ public abstract class ResponseDecoder<Value> {
         };
     }
 
+    public static ResponseDecoder<Boolean> flag() {
+        return new ResponseDecoder<Boolean>() {
+            @Override
+            Boolean readResponseToValue(AntidotePB.ApbReadObjectResp resp) {
+                if (resp == null) {
+                    return false;
+                } else if (!resp.hasFlag()) {
+                    throw new AntidoteException("Invalid response " + resp);
+                }
+                return resp.getFlag().getValue();
+            }
+        };
+    }
 
 }

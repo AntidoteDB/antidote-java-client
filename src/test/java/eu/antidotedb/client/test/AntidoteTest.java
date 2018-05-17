@@ -31,10 +31,8 @@ public class AntidoteTest extends AbstractAntidoteTest {
     @Test(timeout = 10000)
     public void seqStaticTransaction() {
         CounterKey lowCounter = Key.counter("testCounter");
-        IntegerKey lowInt = Key.integer("testInteger");
         SetKey<String> orSetKey = Key.set("testorSetRef", ValueCoder.utf8String);
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
-        bucket.update(tx, lowInt.increment(3));
         bucket.update(tx, lowCounter.increment(4));
         bucket.update(tx, orSetKey.add("Hi"));
         bucket.update(tx, orSetKey.add("Bye"));
@@ -174,35 +172,35 @@ public class AntidoteTest extends AbstractAntidoteTest {
 //        try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
 //
 //            List<MapKey<String>> maps = Arrays.asList(awMapRef, gMapRef);
-//            for (MapKey<String> map : maps) {
+//            for (MapKey<String> map_rr : maps) {
 //
-//                map.counter("testCounter").increment(tx, 5);
+//                map_rr.counter("testCounter").increment(tx, 5);
 //
-//                IntegerKey testInteger = map.integer("testInteger");
+//                IntegerKey testInteger = map_rr.integer("testInteger");
 //                testInteger.set(tx, 6);
 //                testInteger.increment(tx, 2);
 //
-//                SetKey<String> testORSet = map.set("testORSet", ValueCoder.utf8String);
+//                SetKey<String> testORSet = map_rr.set("testORSet", ValueCoder.utf8String);
 //                testORSet.add(tx, "Hi");
 //                testORSet.add(tx, "Hi2");
 //                testORSet.add(tx, "Hi3");
 //
-//                SetKey<String> testRWSet = map.set_removeWins("testRWSet", ValueCoder.utf8String);
+//                SetKey<String> testRWSet = map_rr.set_removeWins("testRWSet", ValueCoder.utf8String);
 //                testRWSet.add(tx, "Hi");
 //                testRWSet.add(tx, "Hi2");
 //                testRWSet.add(tx, "Hi3");
 //
 //
-//                RegisterKey<String> testRegister = map.register("testRegister", ValueCoder.utf8String);
+//                RegisterKey<String> testRegister = map_rr.register("testRegister", ValueCoder.utf8String);
 //                testRegister.set(tx, "Hi");
 //
-//                MVRegisterKey<String> testMVRegister = map.multiValueRegister("testMVRegister", ValueCoder.utf8String);
+//                MVRegisterKey<String> testMVRegister = map_rr.multiValueRegister("testMVRegister", ValueCoder.utf8String);
 //                testMVRegister.set(tx, "Hi");
 //
-//                MapKey<String> testAWMap = map.map_aw("testAWMap");
+//                MapKey<String> testAWMap = map_rr.map_aw("testAWMap");
 //                testAWMap.counter("testCounter").increment(tx, 5);
 //
-//                MapKey<String> testGMap = map.map_g("testGMap");
+//                MapKey<String> testGMap = map_rr.map_g("testGMap");
 //                testGMap.counter("testCounter").increment(tx, 5);
 //            }
 //

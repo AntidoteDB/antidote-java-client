@@ -20,7 +20,7 @@ public class MapTests extends AbstractAntidoteTest {
 
     @Test
     public void testRef() {
-        MapKey testmap = map_aw("testmap2");
+        MapKey testmap = map_rr("testmap2");
 
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
         bucket.update(tx,
@@ -38,16 +38,16 @@ public class MapTests extends AbstractAntidoteTest {
 
     @Test
     public void testRefRemoveKey() {
-        MapKey testmap = map_aw("testmap2");
+        MapKey testmap = map_rr("testmap2");
 
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
         bucket.update(tx, testmap.update(
                 counter("a").increment(5),
-                register("b").assign("Hello")
+                multiValueRegister("b").assign("Hello")
         ));
         tx.commitTransaction();
 
-        bucket.update(antidoteClient.noTransaction(), testmap.removeKeys(register("b")));
+        bucket.update(antidoteClient.noTransaction(), testmap.removeKeys(multiValueRegister("b")));
 
         MapKey.MapReadResult res = bucket.read(antidoteClient.noTransaction(), testmap);
         assertEquals(hashset(counter("a")), res.keySet());
@@ -125,22 +125,22 @@ public class MapTests extends AbstractAntidoteTest {
         MapKey map = map_rr("blubmap");
         AntidoteStaticTransaction tx = antidoteClient.createStaticTransaction();
         bucket.update(tx, map.update(
-                integer("x").assign(1),
-                integer("y").assign(2),
-                integer("z").assign(3)
+                counter("x").increment(1),
+                counter("y").increment(2),
+                counter("z").increment(3)
         ));
         tx.commitTransaction();
 
         MapKey.MapReadResult readResult = bucket.read(antidoteClient.noTransaction(), map);
 
-        assertEquals(hashset(integer("x"), integer("y"), integer("z")), readResult.keySet());
+        assertEquals(hashset(counter("x"), counter("y"), counter("z")), readResult.keySet());
 
-        Map<String, Long> result = readResult.asJavaMap(ResponseDecoder.integer());
+        Map<String, Integer> result = readResult.asJavaMap(ResponseDecoder.counter());
 
-        Map<String, Long> expected = new HashMap<>();
-        expected.put("x", 1L);
-        expected.put("y", 2L);
-        expected.put("z", 3L);
+        Map<String, Integer> expected = new HashMap<>();
+        expected.put("x", 1);
+        expected.put("y", 2);
+        expected.put("z", 3);
 
         assertEquals(expected, result);
     }
@@ -148,30 +148,30 @@ public class MapTests extends AbstractAntidoteTest {
 
     @Test
     public void testMapResult2() {
-        MapKey map = map_aw("blubmap");
+        MapKey map = map_rr("blubmap");
         NoTransaction tx = antidoteClient.noTransaction();
         bucket.update(tx, map.operation()
-                .update(integer("x").assign(1))
-                .update(integer("xx").assign(1))
-                .update(integer("y").assign(2))
-                .update(integer("yy").assign(2)));
+                .update(fatCounter("x").increment(1))
+                .update(fatCounter("xx").increment(1))
+                .update(fatCounter("y").increment(2))
+                .update(fatCounter("yy").increment(2)));
 
         bucket.update(tx, map.operation()
-                .removeKey(integer("xx"))
-                .update(integer("z").assign(3))
-                .removeKey(integer("yy")));
+                .removeKey(fatCounter("xx"))
+                .update(fatCounter("z").increment(3))
+                .removeKey(fatCounter("yy")));
 
 
         MapKey.MapReadResult readResult = bucket.read(tx, map);
 
-        assertEquals(hashset(integer("x"), integer("y"), integer("z")), readResult.keySet());
+        assertEquals(hashset(fatCounter("x"), fatCounter("y"), fatCounter("z")), readResult.keySet());
 
-        Map<String, Long> result = readResult.asJavaMap(ResponseDecoder.integer());
+        Map<String, Integer> result = readResult.asJavaMap(ResponseDecoder.counter());
 
-        Map<String, Long> expected = new HashMap<>();
-        expected.put("x", 1L);
-        expected.put("y", 2L);
-        expected.put("z", 3L);
+        Map<String, Integer> expected = new HashMap<>();
+        expected.put("x", 1);
+        expected.put("y", 2);
+        expected.put("z", 3);
 
         assertEquals(expected, result);
     }

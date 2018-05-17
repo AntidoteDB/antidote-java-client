@@ -110,7 +110,7 @@ public class AntidoteConfigManager {
         String cfgPath = filepath;
         if (!this.configFileExist(cfgPath)) {
             // No File Found, returning default values
-            list.add(InetSocketAddress.createUnresolved(DEFAULT_HOST, DEFAULT_PORT));
+            list.add(new InetSocketAddress(DEFAULT_HOST, DEFAULT_PORT));
             return list;
         }
         File config = new File(cfgPath);

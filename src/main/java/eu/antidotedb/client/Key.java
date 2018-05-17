@@ -9,7 +9,7 @@ import java.util.Objects;
 
 /**
  * An Antidote key consists of a CRDT type and a corresponding key.
- * It can be used as a top-level-key of an Antidote object in a bucket or as a key in a map.
+ * It can be used as a top-level-key of an Antidote object in a bucket or as a key in a map_rr.
  * <p>
  * Use the static methods of this class to create keys for the respective CRDT types.
  */
@@ -93,21 +93,6 @@ public abstract class Key<Value> {
      */
     public static CounterKey fatCounter(String key) {
         return fatCounter(ByteString.copyFromUtf8(key));
-    }
-
-    /**
-     * An integer can be incremented and assigned to.
-     */
-    public static IntegerKey integer(ByteString key) {
-        return new IntegerKey(key);
-    }
-
-
-    /**
-     * An integer can be incremented and assigned to.
-     */
-    public static IntegerKey integer(String key) {
-        return integer(ByteString.copyFromUtf8(key));
     }
 
     /**
@@ -234,25 +219,9 @@ public abstract class Key<Value> {
     }
 
     /**
-     * An add-wins map.
-     * Updates win over concurrent deletes.
-     * Deleting an entry uses tombstones which are not garbage-collected.
-     */
-    public static MapKey map_aw(ByteString key) {
-        return new MapKey(AntidotePB.CRDT_type.AWMAP, key);
-    }
-
-    /**
-     * @see #map_aw(ByteString)
-     */
-    public static MapKey map_aw(String key) {
-        return map_aw(ByteString.copyFromUtf8(key));
-    }
-
-
-    /**
      * Remove-resets map.
      * Removing an entry resets the corresponding CRDT.
+     * Entries using a CRDT that does not support resets cannot be removed form the map.
      * Therefore this map should mainly be used with embedded CRDTs that support a reset operation.
      * <p>
      * Reading the map only returns entries which have a value, where the internal state is not equal to the initial CRDT state.
@@ -285,6 +254,23 @@ public abstract class Key<Value> {
     }
 
 
+    public static FlagKey flag_ew(ByteString key) {
+        return new FlagKey(AntidotePB.CRDT_type.FLAG_EW, key);
+    }
+
+    public static FlagKey flag_ew(String key) {
+        return flag_ew(ByteString.copyFromUtf8(key));
+    }
+
+    public static FlagKey flag_dw(ByteString key) {
+        return new FlagKey(AntidotePB.CRDT_type.FLAG_DW, key);
+    }
+
+    public static FlagKey flag_dw(String key) {
+        return flag_ew(ByteString.copyFromUtf8(key));
+    }
+
+
     AntidotePB.ApbMapKey.Builder toApbMapKey() {
         AntidotePB.ApbMapKey.Builder builder = AntidotePB.ApbMapKey.newBuilder();
         builder.setType(type);
@@ -311,20 +297,18 @@ public abstract class Key<Value> {
                 return register(k);
             case MVREG:
                 return multiValueRegister(k);
-            case INTEGER:
-                return integer(k);
             case GMAP:
                 return map_g(k);
-            case AWMAP:
-                return map_aw(k);
             case RWSET:
                 return set_removeWins(k);
             case RRMAP:
                 return map_rr(k);
             case FATCOUNTER:
                 return fatCounter(k);
-            case POLICY:
-                throw new RuntimeException("policy CRDT not yet supported");
+            case FLAG_EW:
+                return flag_ew(k);
+            case FLAG_DW:
+                return flag_dw(k);
             default:
                 throw new RuntimeException("CRDT not yet supported: " + type);
         }

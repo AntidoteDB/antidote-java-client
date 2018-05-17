@@ -21,13 +21,13 @@
  * <li>{@link eu.antidotedb.client.Key#register register}
  * <li>{@link eu.antidotedb.client.Key#multiValueRegister multiValueRegister}
  * <li>{@link eu.antidotedb.client.Key#counter counter}
- * <li>{@link eu.antidotedb.client.Key#integer integer}
  * <li>{@link eu.antidotedb.client.Key#fatCounter fatCounter}
  * <li>{@link eu.antidotedb.client.Key#map_g map_g}
- * <li>{@link eu.antidotedb.client.Key#map_aw map_aw}
  * <li>{@link eu.antidotedb.client.Key#map_rr map_rr}
  * <li>{@link eu.antidotedb.client.Key#set_removeWins set_removeWins}
  * <li>{@link eu.antidotedb.client.Key#set set}
+ * <li>{@link eu.antidotedb.client.Key#flag_ew flag_ew}
+ * <li>{@link eu.antidotedb.client.Key#flag_dw flag_dw}
  * <p>
  * </li>
  * </ul>
