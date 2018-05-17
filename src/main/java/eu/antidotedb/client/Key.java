@@ -270,6 +270,14 @@ public abstract class Key<Value> {
         return flag_ew(ByteString.copyFromUtf8(key));
     }
 
+    public static <V> MergeRegisterKey<V> mergeRegister(ByteString key, ValueCoder<V> format, MergeRegisterKey.ValueMerger<V> merger) {
+        return new MergeRegisterKey<>(key, format, merger);
+    }
+
+    public static <V> MergeRegisterKey<V> mergeRegister(String key, ValueCoder<V> format, MergeRegisterKey.ValueMerger<V> merger) {
+        return mergeRegister(ByteString.copyFromUtf8(key), format, merger);
+    }
+
 
     AntidotePB.ApbMapKey.Builder toApbMapKey() {
         AntidotePB.ApbMapKey.Builder builder = AntidotePB.ApbMapKey.newBuilder();
