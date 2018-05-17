@@ -24,7 +24,7 @@ public class FlagKey extends Key<Boolean> {
     @CheckReturnValue
     public UpdateOpDefaultImpl assign(boolean value) {
         AntidotePB.ApbFlagUpdate.Builder flagUpdateInstruction = AntidotePB.ApbFlagUpdate.newBuilder(); // The specific instruction in update instructions
-        flagUpdateInstruction.setValue(value); // Set increment
+        flagUpdateInstruction.setValue(value);
         AntidotePB.ApbUpdateOperation.Builder updateOperation = AntidotePB.ApbUpdateOperation.newBuilder();
         updateOperation.setFlagop(flagUpdateInstruction);
         return new UpdateOpDefaultImpl(this, updateOperation);

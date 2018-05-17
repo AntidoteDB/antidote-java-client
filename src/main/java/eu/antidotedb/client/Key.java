@@ -267,7 +267,7 @@ public abstract class Key<Value> {
     }
 
     public static FlagKey flag_dw(String key) {
-        return flag_ew(ByteString.copyFromUtf8(key));
+        return flag_dw(ByteString.copyFromUtf8(key));
     }
 
     public static <V> MergeRegisterKey<V> mergeRegister(ByteString key, ValueCoder<V> format, MergeRegisterKey.ValueMerger<V> merger) {
