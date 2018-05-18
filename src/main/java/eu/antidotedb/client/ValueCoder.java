@@ -2,6 +2,7 @@ package eu.antidotedb.client;
 
 import com.google.protobuf.ByteString;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -108,6 +109,78 @@ public interface ValueCoder<T> {
         @Override
         public List<ByteString> decodeList(List<ByteString> byteStringList) {
             return byteStringList;
+        }
+    };
+
+    /**
+     * Stores integers
+     */
+    ValueCoder<Integer> integerCoder = new ValueCoder<Integer>() {
+        @Override
+        public ByteString encode(Integer value) {
+            ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
+            buffer.putInt(value);
+            buffer.flip();
+            return ByteString.copyFrom(buffer);
+        }
+
+        @Override
+        public Integer decode(ByteString bytes) {
+            return bytes.asReadOnlyByteBuffer().getInt();
+        }
+    };
+
+    /**
+     * Stores longs
+     */
+    ValueCoder<Long> longCoder = new ValueCoder<Long>() {
+        @Override
+        public ByteString encode(Long value) {
+            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+            buffer.putLong(value);
+            buffer.flip();
+            return ByteString.copyFrom(buffer);
+        }
+
+        @Override
+        public Long decode(ByteString bytes) {
+            return bytes.asReadOnlyByteBuffer().getLong();
+        }
+    };
+
+    /**
+     * Stores floats
+     */
+    ValueCoder<Float> floatCoder = new ValueCoder<Float>() {
+        @Override
+        public ByteString encode(Float value) {
+            ByteBuffer buffer = ByteBuffer.allocate(Float.BYTES);
+            buffer.putFloat(value);
+            buffer.flip();
+            return ByteString.copyFrom(buffer);
+        }
+
+        @Override
+        public Float decode(ByteString bytes) {
+            return bytes.asReadOnlyByteBuffer().getFloat();
+        }
+    };
+
+    /**
+     * Stores doubles
+     */
+    ValueCoder<Double> doubleCoder = new ValueCoder<Double>() {
+        @Override
+        public ByteString encode(Double value) {
+            ByteBuffer buffer = ByteBuffer.allocate(Double.BYTES);
+            buffer.putDouble(value);
+            buffer.flip();
+            return ByteString.copyFrom(buffer);
+        }
+
+        @Override
+        public Double decode(ByteString bytes) {
+            return bytes.asReadOnlyByteBuffer().getDouble();
         }
     };
 
