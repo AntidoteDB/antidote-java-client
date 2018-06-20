@@ -6,7 +6,7 @@ import eu.antidotedb.antidotepb.AntidotePB;
 /**
  * Responses sent by Antidote on the Protocol Buffer interface.
  * <p>
- * New instance can be created using the methods {@link #of(AntidotePB.ApbErrorResp)}, {@link #of(AntidotePB.ApbCommitResp)},
+ * New instance can be created using the methods {@link #of(AntidotePB.ApbCommitResp)},
  * {@link #of(AntidotePB.ApbOperationResp)}, {@link #of(AntidotePB.ApbReadObjectsResp)}, {@link #of(AntidotePB.ApbStartTransactionResp)}
  * and {@link #of(AntidotePB.ApbStaticReadObjectsResp)}.
  */
@@ -20,9 +20,6 @@ public abstract class AntidoteResponse extends AntidoteMessage {
      * @see AntidoteResponse#accept(Handler)
      */
     public interface Handler<V> {
-        default V handle(AntidotePB.ApbErrorResp op) {
-            throw new ExtractionError(this.getClass() + " - Unexpected message: " + op);
-        }
 
         default V handle(AntidotePB.ApbOperationResp op) {
             throw new ExtractionError(this.getClass() + " - Unexpected message: " + op);
@@ -31,7 +28,6 @@ public abstract class AntidoteResponse extends AntidoteMessage {
         default V handle(AntidotePB.ApbStartTransactionResp op) {
             throw new ExtractionError(this.getClass() + " - Unexpected message: " + op);
         }
-
         default V handle(AntidotePB.ApbReadObjectsResp op) {
             throw new ExtractionError(this.getClass() + " - Unexpected message: " + op);
         }
@@ -43,6 +39,11 @@ public abstract class AntidoteResponse extends AntidoteMessage {
         default V handle(AntidotePB.ApbStaticReadObjectsResp op) {
             throw new ExtractionError(this.getClass() + " - Unexpected message: " + op);
         }
+
+        default V handle(AntidotePB.ApbGetConnectionDescriptorResponse op) {
+            throw new ExtractionError(this.getClass() + " - Unexpected message: " + op);
+        }
+
     }
 
     /**
@@ -50,7 +51,6 @@ public abstract class AntidoteResponse extends AntidoteMessage {
      *
      * @see MsgCommitResp.Extractor
      * @see MsgReadObjectsResp.Extractor
-     * @see MsgErrorResp.Extractor
      * @see MsgOperationResp.Extractor
      * @see MsgStartTransactionResp.Extractor
      * @see MsgStaticReadObjectsResp.Extractor
@@ -59,16 +59,11 @@ public abstract class AntidoteResponse extends AntidoteMessage {
         public ExtractionError(String message) {
             super(message);
         }
-    }
 
-    public static AntidoteResponse of(AntidotePB.ApbErrorResp op) {
-        return new MsgErrorResp(op);
     }
-
     public static AntidoteResponse of(AntidotePB.ApbOperationResp op) {
         return new MsgOperationResp(op);
     }
-
     public static AntidoteResponse of(AntidotePB.ApbStartTransactionResp op) {
         return new MsgStartTransactionResp(op);
     }
@@ -85,6 +80,10 @@ public abstract class AntidoteResponse extends AntidoteMessage {
         return new MsgStaticReadObjectsResp(op);
     }
 
+    public static AntidoteResponse of(AntidotePB.ApbGetConnectionDescriptorResponse op) {
+        return new MsgGetConnectionDescriptorResponse(op);
+    }
+
     /**
      * Handle the response using the given response transformer.
      *
@@ -93,48 +92,14 @@ public abstract class AntidoteResponse extends AntidoteMessage {
      * @return the result of the matching transformer method
      */
     public abstract <V> V accept(Handler<V> handler);
-
-    public static class MsgErrorResp extends AntidoteResponse {
-        private final AntidotePB.ApbErrorResp op;
-
-        /**
-         * A response transformer used to extract the encapsulated Protocol Buffer message
-         */
-        public static class Extractor implements Handler<AntidotePB.ApbErrorResp> {
-
-            @Override
-            public AntidotePB.ApbErrorResp handle(AntidotePB.ApbErrorResp op) {
-                return op;
-            }
-
-        }
-
-        private MsgErrorResp(AntidotePB.ApbErrorResp op) {
-            this.op = op;
-        }
-
-        @Override
-        public <V> V accept(Handler<V> handler) {
-            return handler.handle(op);
-        }
-
-        @Override
-        public String toString() {
-            return "MsgErrorResp{" +
-                    "op=" + op +
-                    '}';
-        }
-    }
-
     public static class MsgOperationResp extends AntidoteResponse {
+
         private final AntidotePB.ApbOperationResp op;
 
         /**
          * A response transformer used to extract the encapsulated Protocol Buffer message
          */
         public static class Extractor implements Handler<AntidotePB.ApbOperationResp> {
-
-
             @Override
             public AntidotePB.ApbOperationResp handle(AntidotePB.ApbOperationResp op) {
                 return op;
@@ -166,8 +131,6 @@ public abstract class AntidoteResponse extends AntidoteMessage {
          * A response transformer used to extract the encapsulated Protocol Buffer message
          */
         public static class Extractor implements Handler<AntidotePB.ApbStartTransactionResp> {
-
-
             @Override
             public AntidotePB.ApbStartTransactionResp handle(AntidotePB.ApbStartTransactionResp op) {
                 return op;
@@ -199,8 +162,6 @@ public abstract class AntidoteResponse extends AntidoteMessage {
          * A response transformer used to extract the encapsulated Protocol Buffer message
          */
         public static class Extractor implements Handler<AntidotePB.ApbReadObjectsResp> {
-
-
             @Override
             public AntidotePB.ApbReadObjectsResp handle(AntidotePB.ApbReadObjectsResp op) {
                 return op;
@@ -232,8 +193,6 @@ public abstract class AntidoteResponse extends AntidoteMessage {
          * A response transformer used to extract the encapsulated Protocol Buffer message
          */
         public static class Extractor implements Handler<AntidotePB.ApbCommitResp> {
-
-
             @Override
             public AntidotePB.ApbCommitResp handle(AntidotePB.ApbCommitResp op) {
                 return op;
@@ -265,32 +224,6 @@ public abstract class AntidoteResponse extends AntidoteMessage {
          * A response transformer used to extract the encapsulated Protocol Buffer message
          */
         public static class Extractor implements Handler<AntidotePB.ApbStaticReadObjectsResp> {
-
-            @Override
-            public AntidotePB.ApbStaticReadObjectsResp handle(AntidotePB.ApbErrorResp op) {
-                throw new ExtractionError("MsgStaticReadObjectsResp: Unexpected message: " + op);
-            }
-
-            @Override
-            public AntidotePB.ApbStaticReadObjectsResp handle(AntidotePB.ApbOperationResp op) {
-                throw new ExtractionError("MsgStaticReadObjectsResp: Unexpected message: " + op);
-            }
-
-            @Override
-            public AntidotePB.ApbStaticReadObjectsResp handle(AntidotePB.ApbStartTransactionResp op) {
-                throw new ExtractionError("MsgStaticReadObjectsResp: Unexpected message: " + op);
-            }
-
-            @Override
-            public AntidotePB.ApbStaticReadObjectsResp handle(AntidotePB.ApbReadObjectsResp op) {
-                throw new ExtractionError("MsgStaticReadObjectsResp: Unexpected message: " + op);
-            }
-
-            @Override
-            public AntidotePB.ApbStaticReadObjectsResp handle(AntidotePB.ApbCommitResp op) {
-                throw new ExtractionError("MsgStaticReadObjectsResp: Unexpected message: " + op);
-            }
-
             @Override
             public AntidotePB.ApbStaticReadObjectsResp handle(AntidotePB.ApbStaticReadObjectsResp op) {
                 return op;
@@ -311,6 +244,26 @@ public abstract class AntidoteResponse extends AntidoteMessage {
             return "MsgStaticReadObjectsResp{" +
                     "op=" + op +
                     '}';
+        }
+    }
+
+    public static class MsgGetConnectionDescriptorResponse extends AntidoteResponse {
+        private AntidotePB.ApbGetConnectionDescriptorResponse op;
+
+        public static class Extractor implements Handler<AntidotePB.ApbGetConnectionDescriptorResponse> {
+            @Override
+            public AntidotePB.ApbGetConnectionDescriptorResponse handle(AntidotePB.ApbGetConnectionDescriptorResponse op) {
+                return op;
+            }
+        }
+
+        private MsgGetConnectionDescriptorResponse(AntidotePB.ApbGetConnectionDescriptorResponse op) {
+            this.op = op;
+        }
+
+        @Override
+        public <V> V accept(Handler<V> handler) {
+            return handler.handle(op);
         }
     }
 }

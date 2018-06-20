@@ -57,6 +57,15 @@ public class ApbCoder {
             case ApbStaticReadObjects:
                 AntidotePB.ApbStaticReadObjects apbStaticReadObjects = AntidotePB.ApbStaticReadObjects.parseFrom(data);
                 return AntidoteRequest.of(apbStaticReadObjects);
+            case ApbCreateDC:
+                AntidotePB.ApbCreateDC apbCreateDC = AntidotePB.ApbCreateDC.parseFrom(data);
+                return AntidoteRequest.of(apbCreateDC);
+            case ApbConnectToDCs:
+                AntidotePB.ApbConnectToDcs apbConnectToDcs = AntidotePB.ApbConnectToDcs.parseFrom(data);
+                return AntidoteRequest.of(apbConnectToDcs);
+            case ApbGetConnectionDescriptor:
+                AntidotePB.ApbGetConnectionDescriptor apbGetConnectionDescriptor = AntidotePB.ApbGetConnectionDescriptor.parseFrom(data);
+                return AntidoteRequest.of(apbGetConnectionDescriptor);
             default:
                 throw new RuntimeException("Unexpected request message code: " + msgCode);
         }
@@ -81,9 +90,6 @@ public class ApbCoder {
 //        dataInputStream.readFully(data, 0, size - 1);
 
         switch (msgCode) {
-            case 0:
-                AntidotePB.ApbErrorResp apbErrorResp = AntidotePB.ApbErrorResp.parseFrom(data);
-                return AntidoteResponse.of(apbErrorResp);
             case 111:
                 AntidotePB.ApbOperationResp apbOperationResp = AntidotePB.ApbOperationResp.parseFrom(data);
                 return AntidoteResponse.of(apbOperationResp);
@@ -99,6 +105,9 @@ public class ApbCoder {
             case 128:
                 AntidotePB.ApbStaticReadObjectsResp apbStaticReadObjectsResp = AntidotePB.ApbStaticReadObjectsResp.parseFrom(data);
                 return AntidoteResponse.of(apbStaticReadObjectsResp);
+            case ApbGetConnectionDescriptorResponse:
+                AntidotePB.ApbGetConnectionDescriptorResponse apbGetConnectionDescriptorResponse = AntidotePB.ApbGetConnectionDescriptorResponse.parseFrom(data);
+                return AntidoteResponse.of(apbGetConnectionDescriptorResponse);
             default:
                 throw new RuntimeException("Unexpected message code: " + msgCode);
         }
@@ -143,10 +152,18 @@ public class ApbCoder {
         encode(122, op, stream);
     }
 
-
-    public static void encodeResponse(AntidotePB.ApbErrorResp op, OutputStream stream) {
-        encode(0, op, stream);
+    public static void encodeRequest(AntidotePB.ApbCreateDC op, OutputStream stream) {
+        encode(ApbCreateDC, op, stream);
     }
+
+    public static void encodeRequest(AntidotePB.ApbConnectToDcs op, OutputStream stream) {
+        encode(ApbConnectToDCs, op, stream);
+    }
+
+    public static void encodeRequest(AntidotePB.ApbGetConnectionDescriptor op, OutputStream stream) {
+        encode(ApbGetConnectionDescriptor, op, stream);
+    }
+
 
     public static void encodeResponse(AntidotePB.ApbOperationResp op, OutputStream stream) {
         encode(111, op, stream);
@@ -166,6 +183,10 @@ public class ApbCoder {
 
     public static void encodeResponse(AntidotePB.ApbStaticReadObjectsResp op, OutputStream stream) {
         encode(128, op, stream);
+    }
+
+    public static void encodeResponse(AntidotePB.ApbGetConnectionDescriptorResponse op, OutputStream stream) {
+        encode(ApbGetConnectionDescriptorResponse, op, stream);
     }
 
     private static void encode(int msgCode, GeneratedMessageV3 msg, OutputStream stream) {
@@ -228,17 +249,23 @@ public class ApbCoder {
                 encodeRequest(op, stream);
                 return null;
             }
+
+            @Override
+            public Void handle(AntidotePB.ApbCreateDC op) {
+                encodeRequest(op, stream);
+                return null;
+            }
+
+            @Override
+            public Void handle(AntidotePB.ApbConnectToDcs op) {
+                encodeRequest(op, stream);
+                return null;
+            }
         });
     }
 
     public static void encodeResponse(AntidoteResponse response, OutputStream stream) {
         response.accept(new AntidoteResponse.Handler<Void>() {
-            @Override
-            public Void handle(AntidotePB.ApbErrorResp op) {
-                encodeResponse(op, stream);
-                return null;
-            }
-
             @Override
             public Void handle(AntidotePB.ApbOperationResp op) {
                 encodeResponse(op, stream);

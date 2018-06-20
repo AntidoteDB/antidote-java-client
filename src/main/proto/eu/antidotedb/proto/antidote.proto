@@ -16,11 +16,6 @@ enum CRDT_type {
     FLAG_DW = 14;
 }
 
-// Riak Error response
-message ApbErrorResp {
-    required bytes errmsg = 1;
-    required uint32 errcode = 2;
-}
 
 //------------------
 // Counter
@@ -161,12 +156,12 @@ message ApbUpdateOp {
 }
 
 message ApbUpdateOperation { // TODO use this above
-    optional ApbCounterUpdate counterop = 1;
-    optional ApbSetUpdate setop = 2;
-    optional ApbRegUpdate regop = 3;
-    optional ApbMapUpdate mapop = 5;
-    optional ApbCrdtReset resetop = 6;
-    optional ApbFlagUpdate flagop = 7;
+                             optional ApbCounterUpdate counterop = 1;
+                             optional ApbSetUpdate setop = 2;
+                             optional ApbRegUpdate regop = 3;
+                             optional ApbMapUpdate mapop = 5;
+                             optional ApbCrdtReset resetop = 6;
+                             optional ApbFlagUpdate flagop = 7;
 }
 
 // Objects to be updated
@@ -235,4 +230,24 @@ message ApbCommitResp {
 message ApbStaticReadObjectsResp {
     required ApbReadObjectsResp objects = 1;
     required ApbCommitResp committime = 2;
+}
+
+//------------ Cluster Management API ---------
+
+message ApbCreateDC{
+    repeated string nodes = 1;
+}
+
+message ApbGetConnectionDescriptor{
+}
+
+message ApbGetConnectionDescriptorResponse{
+    required bool success = 1;
+    //structure of descriptor is internal to antidote.
+    optional bytes conDesc = 2;
+    optional uint32 errorcode = 3;
+}
+
+message ApbConnectToDcs{
+    repeated bytes descriptors = 1;
 }

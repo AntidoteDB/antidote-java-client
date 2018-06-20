@@ -92,4 +92,34 @@ class SocketSender implements Transformer {
             throw new AntidoteSocketException(e);
         }
     }
+
+    @Override
+    public AntidoteResponse handle(AntidotePB.ApbCreateDC op) {
+        try {
+            ApbCoder.encodeRequest(op, socket.getOutputStream());
+            return ApbCoder.decodeResponse(socket.getInputStream());
+        } catch (IOException e) {
+            throw new AntidoteSocketException(e);
+        }
+    }
+
+    @Override
+    public AntidoteResponse handle(AntidotePB.ApbConnectToDcs op) {
+        try {
+            ApbCoder.encodeRequest(op, socket.getOutputStream());
+            return ApbCoder.decodeResponse(socket.getInputStream());
+        } catch (IOException e) {
+            throw new AntidoteSocketException(e);
+        }
+    }
+
+    @Override
+    public AntidoteResponse handle(AntidotePB.ApbGetConnectionDescriptor op) {
+        try {
+            ApbCoder.encodeRequest(op, socket.getOutputStream());
+            return ApbCoder.decodeResponse(socket.getInputStream());
+        } catch (IOException e) {
+            throw new AntidoteSocketException(e);
+        }
+    }
 }
