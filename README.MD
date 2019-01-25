@@ -21,7 +21,7 @@ The overview page contains a short tutorial.
 
 # Development / Contributing
 
-[![Build Status](https://travis-ci.org/SyncFree/antidote-java-client.svg?branch=master)](https://travis-ci.org/SyncFree/antidote-java-client)
+[![Build Status](https://travis-ci.org/AntidoteDB/antidote-java-client.svg?branch=master)](https://travis-ci.org/AntidoteDB/antidote-java-client)
 
 The project requires Java 8 and uses gradle as a build tool.
 To build the project run the gradle wrapper included in the project:

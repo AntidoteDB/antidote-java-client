@@ -1,11 +1,15 @@
 package eu.antidotedb.client;
 
+import com.google.protobuf.ByteString;
+import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.ApbCommitResp;
 import eu.antidotedb.client.messages.AntidoteRequest;
 import eu.antidotedb.client.messages.AntidoteResponse;
 import eu.antidotedb.client.transformer.TransformerFactory;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -223,5 +227,43 @@ public class AntidoteClient {
     }
 
 
+    public static boolean createDC(InetSocketAddress managerNode, List<String> nodeNames) throws IOException {
+        try (Socket s = new Socket()) {
+            s.connect(managerNode);
+            AntidotePB.ApbCreateDC createDCMsg = AntidotePB.ApbCreateDC.newBuilder()
+                    .addAllNodes(nodeNames)
+                    .build();
+            SocketSender socketSender = new SocketSender(s);
+            AntidotePB.ApbOperationResp createDCResp = socketSender.handle(createDCMsg).accept(new AntidoteResponse.MsgOperationResp.Extractor());
+            return createDCResp.getSuccess();
+        }
+    }
+
+    public static ByteString getConnectionDescriptor(InetSocketAddress managerNode) throws IOException {
+        try (Socket s = new Socket()) {
+            s.connect(managerNode);
+            AntidotePB.ApbGetConnectionDescriptor apbGetConnectionDescriptor = AntidotePB.ApbGetConnectionDescriptor.newBuilder()
+                    .build();
+            SocketSender socketSender = new SocketSender(s);
+            AntidotePB.ApbGetConnectionDescriptorResponse connectionDescriptor = socketSender.handle(apbGetConnectionDescriptor).accept(new AntidoteResponse.MsgGetConnectionDescriptorResponse.Extractor());
+            if (connectionDescriptor.getSuccess()) {
+                return connectionDescriptor.getConDesc();
+            } else {
+                throw new IOException("Error getting connection descriptor of node: Error code " + connectionDescriptor.getErrorcode());
+            }
+        }
+    }
+
+    public static boolean connectToDCs(InetSocketAddress managerNode, List<ByteString> descriptors) throws IOException {
+        try (Socket s = new Socket()) {
+            s.connect(managerNode);
+            AntidotePB.ApbConnectToDcs apbConnectToDcs = AntidotePB.ApbConnectToDcs.newBuilder()
+                    .addAllDescriptors(descriptors)
+                    .build();
+            SocketSender socketSender = new SocketSender(s);
+            AntidotePB.ApbOperationResp createDCResp = socketSender.handle(apbConnectToDcs).accept(new AntidoteResponse.MsgOperationResp.Extractor());
+            return createDCResp.getSuccess();
+        }
+    }
 }
 

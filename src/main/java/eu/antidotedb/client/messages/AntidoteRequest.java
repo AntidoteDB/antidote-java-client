@@ -11,6 +11,8 @@ import eu.antidotedb.antidotepb.AntidotePB;
  * {@link #of(AntidotePB.ApbStaticReadObjects)} and {@link #of(AntidotePB.ApbStaticUpdateObjects)}.
  */
 public abstract class AntidoteRequest<Response> extends AntidoteMessage {
+
+
     /**
      * A transformer for all possible cases of Antidote requests.
      * <p>
@@ -20,6 +22,7 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
      * @see AntidoteRequest#accept(Handler)
      */
     public interface Handler<V> {
+
         default V handle(AntidotePB.ApbReadObjects op) {
             throw new ExtractionError("Unexpected message: " + op);
         }
@@ -27,7 +30,6 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
         default V handle(AntidotePB.ApbUpdateObjects op) {
             throw new ExtractionError("Unexpected message: " + op);
         }
-
         default V handle(AntidotePB.ApbStartTransaction op) {
             throw new ExtractionError("Unexpected message: " + op);
         }
@@ -47,8 +49,19 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
         default V handle(AntidotePB.ApbStaticUpdateObjects op) {
             throw new ExtractionError("Unexpected message: " + op);
         }
-    }
 
+        default V handle(AntidotePB.ApbCreateDC op) {
+            throw new ExtractionError("Unexpected message: " + op);
+        }
+
+        default V handle(AntidotePB.ApbConnectToDcs op) {
+            throw new ExtractionError("Unexpected message: " + op);
+        }
+
+        default V handle(AntidotePB.ApbGetConnectionDescriptor op) {
+            throw new ExtractionError("Unexpected message: " + op);
+        }
+    }
     /**
      * An exception thrown by response extractors when response type does not match.
      *
@@ -64,12 +77,11 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
         public ExtractionError(String message) {
             super(message);
         }
-    }
 
+    }
     public static MsgReadObjects of(AntidotePB.ApbReadObjects op) {
         return new MsgReadObjects(op);
     }
-
     public static MsgUpdateObjects of(AntidotePB.ApbUpdateObjects op) {
         return new MsgUpdateObjects(op);
     }
@@ -92,6 +104,18 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
 
     public static MsgStaticUpdateObjects of(AntidotePB.ApbStaticUpdateObjects op) {
         return new MsgStaticUpdateObjects(op);
+    }
+
+    public static MsgCreateDC of(AntidotePB.ApbCreateDC op) {
+        return new MsgCreateDC(op);
+    }
+
+    public static MsgConnectToDCs of(AntidotePB.ApbConnectToDcs op) {
+        return new MsgConnectToDCs(op);
+    }
+
+    public static MsgGetConnectionDescriptor of(AntidotePB.ApbGetConnectionDescriptor op) {
+        return new MsgGetConnectionDescriptor(op);
     }
 
     /**
@@ -342,6 +366,94 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
             return "MsgStaticUpdateObjects{" +
                     "op=" + op +
                     '}';
+        }
+    }
+
+    private static class MsgCreateDC extends AntidoteRequest<AntidotePB.ApbOperationResp> {
+        private AntidotePB.ApbCreateDC op;
+
+        public static class Extractor implements Handler<AntidotePB.ApbCreateDC> {
+
+
+            @Override
+            public AntidotePB.ApbCreateDC handle(AntidotePB.ApbCreateDC op) {
+                return op;
+            }
+        }
+
+        private MsgCreateDC(AntidotePB.ApbCreateDC op) {
+            this.op = op;
+        }
+
+        @Override
+        public <V> V accept(Handler<V> handler) {
+            return handler.handle(op);
+        }
+
+        @Override
+        public AntidoteResponse.Handler<AntidotePB.ApbOperationResp> readResponseExtractor() {
+            return new AntidoteResponse.MsgOperationResp.Extractor();
+        }
+
+        @Override
+        public String toString() {
+            return "MsgCreateDC{" +
+                    "op=" + op +
+                    '}';
+        }
+    }
+
+    private static class MsgConnectToDCs extends AntidoteRequest<AntidotePB.ApbOperationResp> {
+        private final AntidotePB.ApbConnectToDcs op;
+
+        public static class Extractor implements Handler<AntidotePB.ApbConnectToDcs> {
+
+
+            @Override
+            public AntidotePB.ApbConnectToDcs handle(AntidotePB.ApbConnectToDcs op) {
+                return op;
+            }
+        }
+
+        private MsgConnectToDCs(AntidotePB.ApbConnectToDcs apbConnectToDcs) {
+            this.op = apbConnectToDcs;
+        }
+
+        @Override
+        public <V> V accept(Handler<V> handler) {
+            return handler.handle(op);
+        }
+
+        @Override
+        public AntidoteResponse.Handler<AntidotePB.ApbOperationResp> readResponseExtractor() {
+            return new AntidoteResponse.MsgOperationResp.Extractor();
+        }
+    }
+
+    private static class MsgGetConnectionDescriptor extends AntidoteRequest<AntidotePB.ApbGetConnectionDescriptorResponse> {
+        private final AntidotePB.ApbGetConnectionDescriptor op;
+
+        public static class Extractor implements Handler<AntidotePB.ApbGetConnectionDescriptor> {
+
+
+            @Override
+            public AntidotePB.ApbGetConnectionDescriptor handle(AntidotePB.ApbGetConnectionDescriptor op) {
+                return op;
+            }
+        }
+
+        private MsgGetConnectionDescriptor(AntidotePB.ApbGetConnectionDescriptor op) {
+            this.op = op;
+        }
+
+        @Override
+        public <V> V accept(Handler<V> handler) {
+            return handler.handle(op);
+        }
+
+        @Override
+        public AntidoteResponse.Handler<AntidotePB.ApbGetConnectionDescriptorResponse> readResponseExtractor() {
+            return new AntidoteResponse.MsgGetConnectionDescriptorResponse.Extractor();
         }
     }
 }

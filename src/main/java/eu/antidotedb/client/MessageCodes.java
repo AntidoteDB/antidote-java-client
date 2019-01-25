@@ -36,5 +36,10 @@ public class MessageCodes {
      * The Constant ApbAbortTransaction.
      */
     public static final int ApbAbortTransaction = 120;
+    
+    public static final int ApbCreateDC = 129;
+    public static final int ApbConnectToDCs = 130;
+    public static final int ApbGetConnectionDescriptor = 131;
+    public static final int ApbGetConnectionDescriptorResponse = 132;
 }
 

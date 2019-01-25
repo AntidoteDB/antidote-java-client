@@ -45,6 +45,11 @@ public abstract class AntidoteResponse extends AntidoteMessage {
         default V handle(AntidotePB.ApbStaticReadObjectsResp op) {
             throw new ExtractionError(this.getClass() + " - Unexpected message: " + op);
         }
+
+        default V handle(AntidotePB.ApbGetConnectionDescriptorResponse op) {
+            throw new ExtractionError(this.getClass() + " - Unexpected message: " + op);
+        }
+
     }
 
     /**
@@ -85,6 +90,10 @@ public abstract class AntidoteResponse extends AntidoteMessage {
 
     public static AntidoteResponse of(AntidotePB.ApbStaticReadObjectsResp op) {
         return new MsgStaticReadObjectsResp(op);
+    }
+
+    public static AntidoteResponse of(AntidotePB.ApbGetConnectionDescriptorResponse op) {
+        return new MsgGetConnectionDescriptorResponse(op);
     }
 
     /**
@@ -313,6 +322,26 @@ public abstract class AntidoteResponse extends AntidoteMessage {
             return "MsgStaticReadObjectsResp{" +
                     "op=" + op +
                     '}';
+        }
+    }
+
+    public static class MsgGetConnectionDescriptorResponse extends AntidoteResponse {
+        private AntidotePB.ApbGetConnectionDescriptorResponse op;
+
+        public static class Extractor implements Handler<AntidotePB.ApbGetConnectionDescriptorResponse> {
+            @Override
+            public AntidotePB.ApbGetConnectionDescriptorResponse handle(AntidotePB.ApbGetConnectionDescriptorResponse op) {
+                return op;
+            }
+        }
+
+        private MsgGetConnectionDescriptorResponse(AntidotePB.ApbGetConnectionDescriptorResponse op) {
+            this.op = op;
+        }
+
+        @Override
+        public <V> V accept(Handler<V> handler) {
+            return handler.handle(op);
         }
     }
 }
