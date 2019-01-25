@@ -15,7 +15,7 @@ import java.util.List;
  * <p>
  * It is the main entry point for working with the client, in particular it is the source of transactions.
  * Every operation has to be executed in the context of a transaction.
- * See: {@link #startTransaction()}, {@link #createStaticTransaction()}, {@link #noTransaction()}, and {@link #newBatchRead()}.
+ * See: {@link #startTransaction(CommitInfo)}, {@link #createStaticTransaction(CommitInfo)}, {@link #noTransaction()}, and {@link #newBatchRead()}.
  */
 public class AntidoteClient {
 
@@ -135,7 +135,29 @@ public class AntidoteClient {
      * </pre>
      */
     public InteractiveTransaction startTransaction() {
-        return new InteractiveTransaction(this);
+        return new InteractiveTransaction(this, null);
+    }
+
+    /**
+     * Starts an interactive transactions.
+     * Interactive transactions allow to mix several reads and writes in a single atomic unit.
+     * <p>
+     * Since an interactive transaction uses database resources, you should ensure that the transaction is closed in any case.
+     * The recommended pattern is to use a try-with-resource statement and commit the transaction at the end of it:
+     * <pre>
+     * {@code
+     * try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+     *     // updates and reads here
+     *     tx.commitTransaction();
+     * }
+     * }
+     * </pre>
+     * @param timestamp The minimal timestamp that this transaction should be based on.
+     *                  Use the CommitInfo from the commit of a previous transaction if
+     *                  you want to guarantee that the new transaction sees the former one.
+     */
+    public InteractiveTransaction startTransaction(CommitInfo timestamp) {
+        return new InteractiveTransaction(this, timestamp);
     }
 
     /**
@@ -143,7 +165,16 @@ public class AntidoteClient {
      * Static transactions can be used to execute a set of updates atomically.
      */
     public AntidoteStaticTransaction createStaticTransaction() {
-        return new AntidoteStaticTransaction(this);
+        return new AntidoteStaticTransaction(this, null);
+    }
+
+    /**
+     * Creates a static transaction.
+     * Static transactions can be used to execute a set of updates atomically.
+     * @param timestamp
+     */
+    public AntidoteStaticTransaction createStaticTransaction(CommitInfo timestamp) {
+        return new AntidoteStaticTransaction(this, timestamp);
     }
 
 
@@ -181,7 +212,14 @@ public class AntidoteClient {
      * Use this for executing updates and reads without a transaction context.
      */
     public NoTransaction noTransaction() {
-        return new NoTransaction(this);
+        return new NoTransaction(this, null);
+    }
+
+    /**
+     * Use this for executing updates and reads without a transaction context.
+     */
+    public NoTransaction noTransaction(CommitInfo timestamp) {
+        return new NoTransaction(this, timestamp);
     }
 
 

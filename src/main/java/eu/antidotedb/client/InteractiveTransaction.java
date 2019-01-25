@@ -39,18 +39,31 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
      * @param antidoteClient the antidote client
      */
     public InteractiveTransaction(AntidoteClient antidoteClient) {
+        this(antidoteClient, null);
+    }
+
+    /**
+     * Instantiates a new antidote transaction.
+     *
+     * @param antidoteClient the antidote client
+     * @param timestamp the minimum timestamp this transaction should be based on
+     */
+    public InteractiveTransaction(AntidoteClient antidoteClient, CommitInfo timestamp) {
         this.antidoteClient = antidoteClient;
         this.connection = antidoteClient.getPoolManager().getConnection();
         onGetConnection(connection);
-        startTransaction();
+        startTransaction(timestamp);
         this.transactionStatus = TransactionStatus.STARTED;
     }
 
-    private void startTransaction() {
+    private void startTransaction(CommitInfo timestamp) {
         ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
 
         ApbStartTransaction.Builder readwriteTransaction = ApbStartTransaction.newBuilder();
         readwriteTransaction.setProperties(transactionProperties);
+        if (timestamp != null) {
+            readwriteTransaction.setTimestamp(timestamp.getCommitTime());
+        }
 
         ApbStartTransaction startTransactionMessage = readwriteTransaction.build();
         AntidotePB.ApbStartTransactionResp transactionResponse = getClient().sendMessage(AntidoteRequest.of(startTransactionMessage), connection);

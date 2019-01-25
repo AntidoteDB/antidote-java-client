@@ -14,9 +14,16 @@ import java.util.List;
 public class NoTransaction extends TransactionWithReads {
 
     private final AntidoteClient client;
+    private final CommitInfo timestamp;
+    private CommitInfo lastCommitTimestamp;
 
     public NoTransaction(AntidoteClient client) {
+        this(client, null);
+    }
+
+    public NoTransaction(AntidoteClient client, CommitInfo timestamp) {
         this.client = client;
+        this.timestamp = timestamp;
     }
 
     @Override
@@ -28,13 +35,16 @@ public class NoTransaction extends TransactionWithReads {
     void performUpdates(Collection<AntidotePB.ApbUpdateOp.Builder> updateInstructions) {
         AntidotePB.ApbStaticUpdateObjects.Builder updateMessage = AntidotePB.ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
         AntidotePB.ApbStartTransaction.Builder startTransaction = AntidotePB.ApbStartTransaction.newBuilder();
+        if (timestamp != null) {
+            startTransaction.setTimestamp(timestamp.getCommitTime());
+        }
         updateMessage.setTransaction(startTransaction);
         for (AntidotePB.ApbUpdateOp.Builder updateInstruction : updateInstructions) {
             updateMessage.addUpdates(updateInstruction);
         }
         AntidotePB.ApbCommitResp commitResponse =
                 client.sendMessageArbitraryConnection(this, AntidoteRequest.of(updateMessage.build()));
-        client.completeTransaction(commitResponse);
+        lastCommitTimestamp = client.completeTransaction(commitResponse);
     }
 
     @Override
@@ -79,4 +89,7 @@ public class NoTransaction extends TransactionWithReads {
         }
     }
 
+    public CommitInfo getLastCommitTimestamp() {
+        return lastCommitTimestamp;
+    }
 }

@@ -16,7 +16,8 @@ import java.util.List;
  */
 public class AntidoteStaticTransaction extends AntidoteTransaction {
 
-    private AntidoteClient client;
+    private final AntidoteClient client;
+    private final CommitInfo timestamp;
 
     private TransactionStatus transactionStatus = TransactionStatus.STARTED;
 
@@ -29,7 +30,18 @@ public class AntidoteStaticTransaction extends AntidoteTransaction {
      * @param antidoteClient the antidote client
      */
     AntidoteStaticTransaction(AntidoteClient antidoteClient) {
+        this(antidoteClient, null);
+    }
+
+    /**
+     * Instantiates a new antidote static transaction.
+     *
+     * @param antidoteClient the antidote client
+     * @param timestamp minimal timestamp for the transaction
+     */
+    AntidoteStaticTransaction(AntidoteClient antidoteClient, CommitInfo timestamp) {
         client = antidoteClient;
+        this.timestamp = timestamp;
     }
 
 
@@ -55,6 +67,9 @@ public class AntidoteStaticTransaction extends AntidoteTransaction {
     protected ApbStaticUpdateObjects createUpdateStaticObject() {
         ApbStaticUpdateObjects.Builder updateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
         ApbStartTransaction.Builder startTransaction = ApbStartTransaction.newBuilder();
+        if (timestamp != null) {
+            startTransaction.setTimestamp(timestamp.getCommitTime());
+        }
         updateMessage.setTransaction(startTransaction);
         // TODO could optimize this by combining updates on same key
         for (ApbUpdateOp.Builder updateInstruction : transactionUpdateList) {
