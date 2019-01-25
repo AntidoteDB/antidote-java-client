@@ -126,6 +126,9 @@ public interface ValueCoder<T> {
 
         @Override
         public Integer decode(ByteString bytes) {
+            if (bytes.isEmpty()) {
+                return 0;
+            }
             return bytes.asReadOnlyByteBuffer().getInt();
         }
     };
@@ -144,6 +147,9 @@ public interface ValueCoder<T> {
 
         @Override
         public Long decode(ByteString bytes) {
+            if (bytes.isEmpty()) {
+                return 0L;
+            }
             return bytes.asReadOnlyByteBuffer().getLong();
         }
     };
@@ -162,6 +168,9 @@ public interface ValueCoder<T> {
 
         @Override
         public Float decode(ByteString bytes) {
+            if (bytes.isEmpty()) {
+                return 0.f;
+            }
             return bytes.asReadOnlyByteBuffer().getFloat();
         }
     };
@@ -180,6 +189,9 @@ public interface ValueCoder<T> {
 
         @Override
         public Double decode(ByteString bytes) {
+            if (bytes.isEmpty()) {
+                return 0.;
+            }
             return bytes.asReadOnlyByteBuffer().getDouble();
         }
     };
