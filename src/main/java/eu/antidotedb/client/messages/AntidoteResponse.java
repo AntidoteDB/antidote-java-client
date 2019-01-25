@@ -21,7 +21,9 @@ public abstract class AntidoteResponse extends AntidoteMessage {
      */
     public interface Handler<V> {
         default V handle(AntidotePB.ApbErrorResp op) {
-            throw new ExtractionError(this.getClass() + " - Unexpected message: " + op);
+            int code = op.getErrcode();
+            String msg = op.getErrmsg().toStringUtf8();
+            throw new ExtractionError(this.getClass() + " - Unexpected error message with errorcode " + code + "\n" + msg);
         }
 
         default V handle(AntidotePB.ApbOperationResp op) {
