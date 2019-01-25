@@ -19,7 +19,7 @@ import java.util.List;
  * <p>
  * It is the main entry point for working with the client, in particular it is the source of transactions.
  * Every operation has to be executed in the context of a transaction.
- * See: {@link #startTransaction(CommitInfo)}, {@link #createStaticTransaction(CommitInfo)}, {@link #noTransaction()}, and {@link #newBatchRead()}.
+ * See: {@link #startTransaction()}, {@link #createStaticTransaction()}, {@link #noTransaction()}, and {@link #newBatchRead()}.
  */
 public class AntidoteClient {
 
