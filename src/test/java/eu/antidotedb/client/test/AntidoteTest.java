@@ -29,6 +29,53 @@ public class AntidoteTest extends AbstractAntidoteTest {
 
 
     @Test(timeout = 10000)
+    public void test() {
+        /**
+         * def getUser(id: UserId): getUserResult {
+         *   atomic {
+         *     if (user_exists(id)) {
+         *       return found(user_name_get(id), user_mail_get(id))
+         *     } else {
+         *       return notFound()
+         *     }
+         *   }
+         * }
+         */
+        UserId userId = new UserId("user123");
+        RegisterKey<String> nameKey = Key.register("name");
+        RegisterKey<String> mailKey = Key.register("mail");
+        FlagKey removed = Key.flag_dw("removed");
+
+        CounterKey lowCounter = Key.counter("testCounter");
+        SetKey<String> orSetKey = Key.set("testorSetRef", ValueCoder.utf8String);
+        InteractiveTransaction tx = antidoteClient.startTransaction();
+
+        bucket.update(tx, userMap(userId).update(nameKey.assign("Neuer Name")));
+        bucket.update(tx, userMap(userId).update(mailKey.assign("test@example.com")));
+        bucket.update(tx, userMap(userId).update(removed.assign(false)));
+
+        // remove
+        bucket.update(tx, userMap(userId).reset());
+        bucket.update(tx, userMap(userId).update(removed.assign(true)));
+
+        MapKey.MapReadResult result = bucket.read(tx, userMap(userId));
+        String mail = result.get(mailKey);
+
+        bucket.update(tx, lowCounter.increment(4));
+        bucket.update(tx, orSetKey.add("Hi"));
+        bucket.update(tx, orSetKey.add("Bye"));
+        bucket.update(tx, orSetKey.add("yo"));
+        tx.commitTransaction();
+    }
+
+    ValueCoder<UserId> userIdCoder = ValueCoder.stringCoder(UserId::getId, UserId::new);
+
+    private MapKey userMap(UserId userId) {
+
+        return Key.map_rr(userIdCoder.encode(userId));
+    }
+
+    @Test(timeout = 10000)
     public void seqStaticTransaction() {
         CounterKey lowCounter = Key.counter("testCounter");
         SetKey<String> orSetKey = Key.set("testorSetRef", ValueCoder.utf8String);
