@@ -90,6 +90,9 @@ public class ApbCoder {
 //        dataInputStream.readFully(data, 0, size - 1);
 
         switch (msgCode) {
+            case 0:
+                AntidotePB.ApbErrorResp apbErrorResp = AntidotePB.ApbErrorResp.parseFrom(data);
+                return AntidoteResponse.of(apbErrorResp);
             case 111:
                 AntidotePB.ApbOperationResp apbOperationResp = AntidotePB.ApbOperationResp.parseFrom(data);
                 return AntidoteResponse.of(apbOperationResp);
