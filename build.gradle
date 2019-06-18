@@ -1,5 +1,5 @@
 group 'eu.antidotedb'
-version '0.3.1'
+version '0.3.2'
 
 apply plugin: 'java'
 apply plugin: 'maven'
@@ -26,7 +26,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.google.protobuf:protobuf-java:3.0.0'
+    compile 'com.google.protobuf:protobuf-java:3.8.0'
     compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
@@ -35,7 +35,7 @@ protobuf {
     generatedFilesBaseDir = "$projectDir/gen"
     protoc {
         // Download protoc from repositories
-        artifact = 'com.google.protobuf:protoc:3.0.0'
+        artifact = 'com.google.protobuf:protoc:3.8.0'
     }
 }
 
