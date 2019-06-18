@@ -31,7 +31,7 @@ To build the project run the gradle wrapper included in the project:
 The tests require an Antidote instance running locally on port 8087.
 You can use Docker to start an instance:
 
-    docker run --rm -it -p "8087:8087" mweber/antidotedb
+    docker run --rm -it -p "8087:8087" antidotedb/antidote
 
 
 Feel free to open pull requests or open issues.
