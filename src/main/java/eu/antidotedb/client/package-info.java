@@ -110,6 +110,16 @@
  * <pre><code>
  *     List&lt;Integer&gt; values = bucket.readAll(antidoteClient.noTransaction(), Arrays.asList(c1, c2, c3));
  * </code></pre>
+ * The return value datatype of the read method corresponds to the datatype of the CRDT object being read:
+ * <ul>
+ * <li> Reading a {@link eu.antidotedb.client.Key#register register} returns T (the type passed with ValueCoder to Key.register(), default is String)
+ * <li> Reading a {@link eu.antidotedb.client.Key#multiValueRegister multiValueRegister} returns List&lt;T&gt; (default is String)
+ * <li> Reading a {@link eu.antidotedb.client.Key#counter counter} returns Integer
+ * <li> Reading a {@link eu.antidotedb.client.Key#map_g map_g} or {@link eu.antidotedb.client.Key#map_rr map_rr} returns {@link eu.antidotedb.client.MapKey.MapReadResult MapReadResult}
+ * <li> Reading a {@link eu.antidotedb.client.Key#set set} or {@link eu.antidotedb.client.Key#set_removeWins set_removeWins} returns List&lt;T&gt;
+ * <li> Reading a {@link eu.antidotedb.client.Key#flag_ew flag_ew} or {@link eu.antidotedb.client.Key#flag_dw flag_dw} returns Boolean
+ * </li>
+ * </ul>
  * <h3>Reading Map CRDTs</h3>
  * <p>Reading a map CRDT object consists of two steps: First, reading the map object using the {@link eu.antidotedb.client.Bucket#read read} method.
  * This returns a {@link eu.antidotedb.client.MapKey.MapReadResult MapReadResult} object which presents the result of a read request on a map CRDT.</p>
