@@ -57,15 +57,37 @@
  * <pre><code>
  *     Bucket bucket = Bucket.bucket("mybucket");
  * </code></pre>
+ * <h2>Transactions</h2>
+ * <p>A unit of operation in Antidote is a transaction. A client should first start a transaction, then read and/or update several objects,
+ * and finally commit the transaction.
+ * There are two types of transactions: interactive transactions and static transactions.</p>
+ * <h3>Interactive transactions</h3>
+ * <p>With an interactive transaction, a client can execute several updates and reads before committing the transactions.
+ * An interactive transaction can be started with the {@link eu.antidotedb.client.AntidoteClient#startTransaction startTransaction}
+ * method on the {@link eu.antidotedb.client.AntidoteClient} object.
+ * It is good practice to use the resulting {@link eu.antidotedb.client.InteractiveTransaction} with a
+ * try-with-resource statement to avoid leaving transactions open accidentially.</p>
+ * <pre><code>
+ *     ValueCoder&lt;Integer&gt; intCoder = ValueCoder.stringCoder(Object::toString, Integer::valueOf);
+ *     CounterKey c = Key.counter("my_example_counter");
+ *     SetKey&lt;Integer&gt; numberSet = Key.set("set_of_numbers", intCoder);
+ *     try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
+ *         int val = bucket.read(tx, c);
+ *         bucket.update(tx, numberSet.add(val));
+ *     }
+ * </code></pre>
+ * <h3>Static transactions</h3>
+ * <p>Static transactions consist of a single bulk operation. A static transaction can update multiple objects atomically or
+ * read multiple objects atomically,  but it is not possible to read and update in the same static transaction.</p>
+ * <p>Alternatively, use the {@link eu.antidotedb.client.AntidoteClient#noTransaction()} method to execute the request without any transactional context:</p>
+ * <pre><code>List&lt;String&gt; value = bucket.read(antidote.noTransaction(), userSet);
+ * </code></pre>
  * <h2>Reading objects</h2>
  * <p>A {@link eu.antidotedb.client.Bucket} has a {@link eu.antidotedb.client.Bucket#read read} method, which
  * retrieves the current value of the
  * object from the database.
  * The {@link eu.antidotedb.client.Bucket#read read} method takes a transaction object.
- * Use the {@link eu.antidotedb.client.AntidoteClient#noTransaction()} method to execute the request without any transactional context:
  * </p>
- * <pre><code>List&lt;String&gt; value = bucket.read(antidote.noTransaction(), userSet);
- * </code></pre>
  * <p>For reading multiple objects simultaneously, a {@link eu.antidotedb.client.BatchRead} can be used.
  * Start a batch read with the {@link eu.antidotedb.client.AntidoteClient#newBatchRead()} method.
  * Then use the {@link eu.antidotedb.client.BatchRead} as the transaction context for several read-requests.
@@ -87,6 +109,25 @@
  * method provides a shortcut for performing several reads simultaneously:
  * <pre><code>
  *     List&lt;Integer&gt; values = bucket.readAll(antidoteClient.noTransaction(), Arrays.asList(c1, c2, c3));
+ * </code></pre>
+ * The return value datatype of the read method corresponds to the datatype of the CRDT object being read:
+ * <ul>
+ * <li> Reading a {@link eu.antidotedb.client.Key#register register} returns T (the type passed with ValueCoder to Key.register(), default is String)
+ * <li> Reading a {@link eu.antidotedb.client.Key#multiValueRegister multiValueRegister} returns List&lt;T&gt; (default is String)
+ * <li> Reading a {@link eu.antidotedb.client.Key#counter counter} returns Integer
+ * <li> Reading a {@link eu.antidotedb.client.Key#map_g map_g} or {@link eu.antidotedb.client.Key#map_rr map_rr} returns {@link eu.antidotedb.client.MapKey.MapReadResult MapReadResult}
+ * <li> Reading a {@link eu.antidotedb.client.Key#set set} or {@link eu.antidotedb.client.Key#set_removeWins set_removeWins} returns List&lt;T&gt;
+ * <li> Reading a {@link eu.antidotedb.client.Key#flag_ew flag_ew} or {@link eu.antidotedb.client.Key#flag_dw flag_dw} returns Boolean
+ * </li>
+ * </ul>
+ * <h3>Reading Map CRDTs</h3>
+ * <p>Reading a map CRDT object consists of two steps: First, reading the map object using the {@link eu.antidotedb.client.Bucket#read read} method.
+ * This returns a {@link eu.antidotedb.client.MapKey.MapReadResult MapReadResult} object which presents the result of a read request on a map CRDT.</p>
+ * <p>The second step is to get the values of nested CRDTs from the MapReadResult. This can be done using the {@link eu.antidotedb.client.MapKey.MapReadResult#get get} method:</p>
+ * <pre><code>
+ *     MapKey m = Key.map_rr("test_map");
+ *     MapKey.MapReadResult mapReadResult = bucket.read(client.noTransaction(), m);
+ *     String mapReadResult.get(Key.register("map_register_entry"));
  * </code></pre>
  * <h2>Updating objects</h2>
  * <p>Each {@link eu.antidotedb.client.Key} has one or more methods to create update operations on the key.
@@ -111,23 +152,6 @@
  *             counter("a").increment(5),
  *             register("b").assign("Hello")
  *     ));
- * </code></pre>
- * <h2>Transactions</h2>
- * <p>A transaction can be started with the {@link eu.antidotedb.client.AntidoteClient#startTransaction startTransaction}
- * method on the {@link
- * eu.antidotedb.client.AntidoteClient} object.
- * It is good practice to use the resulting {@link eu.antidotedb.client.InteractiveTransaction} with a
- * try-with-resource statement to avoid leaving
- * transactions open
- * accidentially.</p>
- * <pre><code>
- *     ValueCoder&lt;Integer&gt; intCoder = ValueCoder.stringCoder(Object::toString, Integer::valueOf);
- *     CounterKey c = Key.counter("my_example_counter");
- *     SetKey&lt;Integer&gt; numberSet = Key.set("set_of_numbers", intCoder);
- *     try (InteractiveTransaction tx = antidoteClient.startTransaction()) {
- *         int val = bucket.read(tx, c);
- *         bucket.update(tx, numberSet.add(val));
- *     }
  * </code></pre>
  * <h2>Session guarantees</h2>
  * <p>To ensure session guarantees like "read your writes" Antidote uses vector clocks.
