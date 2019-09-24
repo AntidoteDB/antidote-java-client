@@ -61,7 +61,7 @@ public class ApbCoder {
                 AntidotePB.ApbCreateDC apbCreateDC = AntidotePB.ApbCreateDC.parseFrom(data);
                 return AntidoteRequest.of(apbCreateDC);
             case ApbConnectToDCs:
-                AntidotePB.ApbConnectToDcs apbConnectToDcs = AntidotePB.ApbConnectToDcs.parseFrom(data);
+                AntidotePB.ApbConnectToDCs apbConnectToDcs = AntidotePB.ApbConnectToDCs.parseFrom(data);
                 return AntidoteRequest.of(apbConnectToDcs);
             case ApbGetConnectionDescriptor:
                 AntidotePB.ApbGetConnectionDescriptor apbGetConnectionDescriptor = AntidotePB.ApbGetConnectionDescriptor.parseFrom(data);
@@ -109,7 +109,7 @@ public class ApbCoder {
                 AntidotePB.ApbStaticReadObjectsResp apbStaticReadObjectsResp = AntidotePB.ApbStaticReadObjectsResp.parseFrom(data);
                 return AntidoteResponse.of(apbStaticReadObjectsResp);
             case ApbGetConnectionDescriptorResponse:
-                AntidotePB.ApbGetConnectionDescriptorResponse apbGetConnectionDescriptorResponse = AntidotePB.ApbGetConnectionDescriptorResponse.parseFrom(data);
+                AntidotePB.ApbGetConnectionDescriptorResp apbGetConnectionDescriptorResponse = AntidotePB.ApbGetConnectionDescriptorResp.parseFrom(data);
                 return AntidoteResponse.of(apbGetConnectionDescriptorResponse);
             default:
                 throw new RuntimeException("Unexpected message code: " + msgCode);
@@ -159,7 +159,7 @@ public class ApbCoder {
         encode(ApbCreateDC, op, stream);
     }
 
-    public static void encodeRequest(AntidotePB.ApbConnectToDcs op, OutputStream stream) {
+    public static void encodeRequest(AntidotePB.ApbConnectToDCs op, OutputStream stream) {
         encode(ApbConnectToDCs, op, stream);
     }
 
@@ -188,7 +188,7 @@ public class ApbCoder {
         encode(128, op, stream);
     }
 
-    public static void encodeResponse(AntidotePB.ApbGetConnectionDescriptorResponse op, OutputStream stream) {
+    public static void encodeResponse(AntidotePB.ApbGetConnectionDescriptorResp op, OutputStream stream) {
         encode(ApbGetConnectionDescriptorResponse, op, stream);
     }
 
@@ -260,7 +260,7 @@ public class ApbCoder {
             }
 
             @Override
-            public Void handle(AntidotePB.ApbConnectToDcs op) {
+            public Void handle(AntidotePB.ApbConnectToDCs op) {
                 encodeRequest(op, stream);
                 return null;
             }

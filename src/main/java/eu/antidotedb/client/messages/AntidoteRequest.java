@@ -54,7 +54,7 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
             throw new ExtractionError("Unexpected message: " + op);
         }
 
-        default V handle(AntidotePB.ApbConnectToDcs op) {
+        default V handle(AntidotePB.ApbConnectToDCs op) {
             throw new ExtractionError("Unexpected message: " + op);
         }
 
@@ -110,7 +110,7 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
         return new MsgCreateDC(op);
     }
 
-    public static MsgConnectToDCs of(AntidotePB.ApbConnectToDcs op) {
+    public static MsgConnectToDCs of(AntidotePB.ApbConnectToDCs op) {
         return new MsgConnectToDCs(op);
     }
 
@@ -404,18 +404,18 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
     }
 
     private static class MsgConnectToDCs extends AntidoteRequest<AntidotePB.ApbOperationResp> {
-        private final AntidotePB.ApbConnectToDcs op;
+        private final AntidotePB.ApbConnectToDCs op;
 
-        public static class Extractor implements Handler<AntidotePB.ApbConnectToDcs> {
+        public static class Extractor implements Handler<AntidotePB.ApbConnectToDCs> {
 
 
             @Override
-            public AntidotePB.ApbConnectToDcs handle(AntidotePB.ApbConnectToDcs op) {
+            public AntidotePB.ApbConnectToDCs handle(AntidotePB.ApbConnectToDCs op) {
                 return op;
             }
         }
 
-        private MsgConnectToDCs(AntidotePB.ApbConnectToDcs apbConnectToDcs) {
+        private MsgConnectToDCs(AntidotePB.ApbConnectToDCs apbConnectToDcs) {
             this.op = apbConnectToDcs;
         }
 
@@ -430,7 +430,7 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
         }
     }
 
-    private static class MsgGetConnectionDescriptor extends AntidoteRequest<AntidotePB.ApbGetConnectionDescriptorResponse> {
+    private static class MsgGetConnectionDescriptor extends AntidoteRequest<AntidotePB.ApbGetConnectionDescriptorResp> {
         private final AntidotePB.ApbGetConnectionDescriptor op;
 
         public static class Extractor implements Handler<AntidotePB.ApbGetConnectionDescriptor> {
@@ -452,7 +452,7 @@ public abstract class AntidoteRequest<Response> extends AntidoteMessage {
         }
 
         @Override
-        public AntidoteResponse.Handler<AntidotePB.ApbGetConnectionDescriptorResponse> readResponseExtractor() {
+        public AntidoteResponse.Handler<AntidotePB.ApbGetConnectionDescriptorResp> readResponseExtractor() {
             return new AntidoteResponse.MsgGetConnectionDescriptorResponse.Extractor();
         }
     }

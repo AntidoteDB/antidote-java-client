@@ -4,3 +4,4 @@ Antidote.iml
 .gradle/
 build/
 gen/
+out/

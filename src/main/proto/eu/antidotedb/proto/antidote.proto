@@ -260,7 +260,7 @@ message ApbGetConnectionDescriptor {
 message ApbGetConnectionDescriptorResp {
   required bool success = 1;
   //structure of descriptor is internal to antidote.
-  optional bytes descriptor = 2;
+  optional bytes d = 2;
   optional uint32 errorcode = 3;
 }
 
