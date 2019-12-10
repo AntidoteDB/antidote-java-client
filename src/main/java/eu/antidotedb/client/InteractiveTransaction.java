@@ -57,13 +57,9 @@ public class InteractiveTransaction extends TransactionWithReads implements Auto
     }
 
     private void startTransaction(CommitInfo timestamp) {
-        ApbTxnProperties.Builder transactionProperties = ApbTxnProperties.newBuilder();
 
-        ApbStartTransaction.Builder readwriteTransaction = ApbStartTransaction.newBuilder();
-        readwriteTransaction.setProperties(transactionProperties);
-        if (timestamp != null) {
-            readwriteTransaction.setTimestamp(timestamp.getCommitTime());
-        }
+        ApbStartTransaction.Builder readwriteTransaction = AntidoteStaticTransaction.newStartTransaction(timestamp);
+
 
         ApbStartTransaction startTransactionMessage = readwriteTransaction.build();
         AntidotePB.ApbStartTransactionResp transactionResponse = getClient().sendMessage(AntidoteRequest.of(startTransactionMessage), connection);

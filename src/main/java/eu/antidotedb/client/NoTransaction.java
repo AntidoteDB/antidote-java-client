@@ -34,10 +34,7 @@ public class NoTransaction extends TransactionWithReads {
     @Override
     void performUpdates(Collection<AntidotePB.ApbUpdateOp.Builder> updateInstructions) {
         AntidotePB.ApbStaticUpdateObjects.Builder updateMessage = AntidotePB.ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
-        AntidotePB.ApbStartTransaction.Builder startTransaction = AntidotePB.ApbStartTransaction.newBuilder();
-        if (timestamp != null) {
-            startTransaction.setTimestamp(timestamp.getCommitTime());
-        }
+        AntidotePB.ApbStartTransaction.Builder startTransaction = AntidoteStaticTransaction.newStartTransaction(timestamp);
         updateMessage.setTransaction(startTransaction);
         for (AntidotePB.ApbUpdateOp.Builder updateInstruction : updateInstructions) {
             updateMessage.addUpdates(updateInstruction);
@@ -55,7 +52,7 @@ public class NoTransaction extends TransactionWithReads {
                 .setType(type)
                 .setKey(key);
         readMessage.addObjects(obj);
-        AntidotePB.ApbStartTransaction.Builder startTransaction = AntidotePB.ApbStartTransaction.newBuilder();
+        AntidotePB.ApbStartTransaction.Builder startTransaction = AntidoteStaticTransaction.newStartTransaction(timestamp);
         readMessage.setTransaction(startTransaction);
 
         AntidotePB.ApbStaticReadObjectsResp resp =
@@ -70,7 +67,7 @@ public class NoTransaction extends TransactionWithReads {
         for (BatchReadResultImpl request : requests) {
             readObject.addObjects(request.getObject());
         }
-        readObject.setTransaction(AntidotePB.ApbStartTransaction.newBuilder().build());
+        readObject.setTransaction(AntidoteStaticTransaction.newStartTransaction(timestamp));
 
         AntidotePB.ApbStaticReadObjects readObjectsMessage = readObject.build();
         Connection connection = client.getPoolManager().getConnection();

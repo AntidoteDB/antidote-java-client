@@ -1,5 +1,6 @@
 package eu.antidotedb.client;
 
+import eu.antidotedb.antidotepb.AntidotePB;
 import eu.antidotedb.antidotepb.AntidotePB.ApbCommitResp;
 import eu.antidotedb.antidotepb.AntidotePB.ApbStartTransaction;
 import eu.antidotedb.antidotepb.AntidotePB.ApbStaticUpdateObjects;
@@ -66,16 +67,22 @@ public class AntidoteStaticTransaction extends AntidoteTransaction {
      */
     protected ApbStaticUpdateObjects createUpdateStaticObject() {
         ApbStaticUpdateObjects.Builder updateMessage = ApbStaticUpdateObjects.newBuilder(); // Message which will be sent to antidote
-        ApbStartTransaction.Builder startTransaction = ApbStartTransaction.newBuilder();
-        if (timestamp != null) {
-            startTransaction.setTimestamp(timestamp.getCommitTime());
-        }
+        ApbStartTransaction.Builder startTransaction = newStartTransaction(timestamp);
         updateMessage.setTransaction(startTransaction);
         // TODO could optimize this by combining updates on same key
         for (ApbUpdateOp.Builder updateInstruction : transactionUpdateList) {
             updateMessage.addUpdates(updateInstruction);
         }
         return updateMessage.build();
+    }
+
+    protected static ApbStartTransaction.Builder newStartTransaction(CommitInfo timestamp) {
+        ApbStartTransaction.Builder startTransaction = ApbStartTransaction.newBuilder();
+        startTransaction.setProperties(AntidotePB.ApbTxnProperties.newBuilder());
+        if (timestamp != null) {
+            startTransaction.setTimestamp(timestamp.getCommitTime());
+        }
+        return startTransaction;
     }
 
 
