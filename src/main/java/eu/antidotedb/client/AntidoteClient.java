@@ -245,9 +245,9 @@ public class AntidoteClient {
             AntidotePB.ApbGetConnectionDescriptor apbGetConnectionDescriptor = AntidotePB.ApbGetConnectionDescriptor.newBuilder()
                     .build();
             SocketSender socketSender = new SocketSender(s);
-            AntidotePB.ApbGetConnectionDescriptorResponse connectionDescriptor = socketSender.handle(apbGetConnectionDescriptor).accept(new AntidoteResponse.MsgGetConnectionDescriptorResponse.Extractor());
+            AntidotePB.ApbGetConnectionDescriptorResp connectionDescriptor = socketSender.handle(apbGetConnectionDescriptor).accept(new AntidoteResponse.MsgGetConnectionDescriptorResponse.Extractor());
             if (connectionDescriptor.getSuccess()) {
-                return connectionDescriptor.getConDesc();
+                return connectionDescriptor.getD();
             } else {
                 throw new IOException("Error getting connection descriptor of node: Error code " + connectionDescriptor.getErrorcode());
             }
@@ -257,7 +257,7 @@ public class AntidoteClient {
     public static boolean connectToDCs(InetSocketAddress managerNode, List<ByteString> descriptors) throws IOException {
         try (Socket s = new Socket()) {
             s.connect(managerNode);
-            AntidotePB.ApbConnectToDcs apbConnectToDcs = AntidotePB.ApbConnectToDcs.newBuilder()
+            AntidotePB.ApbConnectToDCs apbConnectToDcs = AntidotePB.ApbConnectToDCs.newBuilder()
                     .addAllDescriptors(descriptors)
                     .build();
             SocketSender socketSender = new SocketSender(s);

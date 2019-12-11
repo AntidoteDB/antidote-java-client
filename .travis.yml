@@ -3,6 +3,6 @@ services:
   - docker
 language: java
 jdk:
-  - oraclejdk8
+  - oraclejdk11
 before_install:
-  - docker run -d --name antidote -p "8087:8087" antidotedb/antidote:0.2.0
+  - docker run -d --name antidote -p "8087:8087" antidotedb/antidote:0.2.1

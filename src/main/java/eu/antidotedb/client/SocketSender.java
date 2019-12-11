@@ -104,7 +104,7 @@ class SocketSender implements Transformer {
     }
 
     @Override
-    public AntidoteResponse handle(AntidotePB.ApbConnectToDcs op) {
+    public AntidoteResponse handle(AntidotePB.ApbConnectToDCs op) {
         try {
             ApbCoder.encodeRequest(op, socket.getOutputStream());
             return ApbCoder.decodeResponse(socket.getInputStream());
