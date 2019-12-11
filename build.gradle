@@ -1,5 +1,5 @@
 group 'eu.antidotedb'
-version '0.3.4'
+version '0.3.5'
 
 apply plugin: 'java'
 apply plugin: 'maven'
@@ -8,6 +8,8 @@ apply plugin: 'com.bmuschko.nexus'
 
 // requires 'protoc' to be installed locally
 apply plugin: 'com.google.protobuf'
+
+apply plugin: 'io.codearte.nexus-staging'
 
 sourceCompatibility = 1.8
 
@@ -18,6 +20,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.8'
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.21.1"
     }
 }
 
@@ -76,10 +79,12 @@ clean {
  *
  *
  * 1. Run ./gradlew uploadArchives
- * 2. Go to https://oss.sonatype.org/ and sign in
- * 3. Go to "Staging Repositories" and find project
- * 4. Close repository
- * 5. Release repository
+ * 2. Run ./gradlew closeAndReleaseRepository
+ * Alternative to Step 2 (manual release):
+ *  2. Go to https://oss.sonatype.org/ and sign in
+ *  3. Go to "Staging Repositories" and find project
+ *  4. Close repository
+ *  5. Release repository
  *
  */
 
